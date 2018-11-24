@@ -1,4 +1,4 @@
-from Recherche_visuelle import *
+from eyetracking.Recherche_visuelle import *
 
 experiment = Recherche_visuelle()
 
