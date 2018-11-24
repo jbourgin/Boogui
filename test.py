@@ -4,7 +4,7 @@ experiment = Recherche_visuelle()
 
 myEyelink = Eyelink(experiment)
 
-subject_file = '/home/alex/Dropbox/scripts_Jess/data/results15.txt'
+subject_file = 'data/sub_28.txt'
 
 datafile = open(subject_file,"r")
 
