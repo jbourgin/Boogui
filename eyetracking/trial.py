@@ -39,12 +39,6 @@ class Trial:
         self.checkValid()
         print('Setting trial features')
         self.setFeatures()
-        print('Parsing trial saccades')
-        self.parseSaccades()
-        print('Parsing trial fixations')
-        self.parseFixations()
-        print('Parsing trial blinks')
-        self.parseBlinks()
         print('Setting dominant eye')
         self.eye = self.eyetracker.getEye(lines)
         return rest_lines
@@ -75,7 +69,7 @@ class Trial:
 
     # Parses the given list of lines, to fill the entries attribute.
     # Return the rest of the lines
-    def parseEntries(self,lines) -> List[List[str]]:
+    def parseEntries(self, lines : List[List[str]]) -> List[List[str]]:
         @match(Entry)
         class start(object):
             def Start_trial(a,b,c): return True
@@ -86,7 +80,30 @@ class Trial:
             def Stop_trial(_): return True
             def _(_): return False
 
+        @match(Entry)
+        class isBeginning(object):
+            def Start_saccade(_): return True
+            def Start_fixation(_): return True
+            def Start_blink(_): return True
+            def _(_): return False
+
+        @match(Entry)
+        class isSaccadeEnding(object):
+            def End_saccade(_): return True
+            def _(_): return False
+
+        @match(Entry)
+        class isFixationEnding(object):
+            def End_fixation(_): return True
+            def _(_): return False
+
+        @match(Entry)
+        class isBlinkEnding(object):
+            def End_blink(_): return True
+            def _(_): return False
+
         started = False
+        begin = None
         i = -1
         for line in lines:
             i += 1
@@ -98,6 +115,19 @@ class Trial:
                     entry.check()
                     self.entries.append(entry)
                     if stop(entry): return lines[i+1:]
+
+                    if isBeginning(entry):
+                        begin = i
+                    if begin is not None:
+                        if isSaccadeEnding(entry):
+                            self.saccades.append(Saccade(self, begin, i))
+                            begin = None
+                        if isFixationEnding(entry):
+                            self.fixations.append(Fixation(self, begin, i))
+                            begin = None
+                        if isBlinkEnding(entry):
+                            self.blinks.append(Blink(self, begin, i))
+                            begin = None
         return []
 
     def setFeatures(self):
@@ -112,75 +142,6 @@ class Trial:
                 self.features = variables
                 break
 
-    def parseSaccades(self) -> None:
-        @match(Entry)
-        class isSaccadeBeginning(object):
-            def Start_saccade(_): return True
-            def _(_): return False
-
-        @match(Entry)
-        class isSaccadeEnding(object):
-            def End_saccade(_): return True
-            def _(_): return False
-
-        began = False
-        entries = []
-        for entry in self.entries:
-            if isSaccadeBeginning(entry):
-                began = True
-            if began:
-                entries.append(entry)
-                if isSaccadeEnding(entry):
-                    began = False
-                    self.saccades.append(Saccade(entries))
-                    entries = []
-
-    def parseFixations(self) -> None:
-        @match(Entry)
-        class isFixationBeginning(object):
-            def Start_fixation(_): return True
-            def _(_): return False
-
-        @match(Entry)
-        class isFixationEnding(object):
-            def End_fixation(_): return True
-            def _(_): return False
-
-        began = False
-        entries = []
-        for entry in self.entries:
-            if isFixationBeginning(entry):
-                began = True
-            if began:
-                entries.append(entry)
-                if isFixationEnding(entry):
-                    began = False
-                    self.fixations.append(Fixation(entries))
-                    entries = []
-
-    def parseBlinks(self) -> None:
-        @match(Entry)
-        class isBlinkBeginning(object):
-            def Start_blink(_): return True
-            def _(_): return False
-
-        @match(Entry)
-        class isBlinkEnding(object):
-            def End_blink(_): return True
-            def _(_): return False
-
-        began = False
-        entries = []
-        for entry in self.entries:
-            if isBlinkBeginning(entry):
-                began = True
-            if began:
-                entries.append(entry)
-                if isBlinkEnding(entry):
-                    began = False
-                    self.blinks.append(Blink(entries))
-                    entries = []
-
     # Returns the Start_trial entry of the trial.
     # The trial is assumed to be valid (see checkValid()).
     def getStartTrial(self) -> Entry:
@@ -192,11 +153,7 @@ class Trial:
         return self.entries[-1]
 
     def __str__(self):
-        return 'Trial %s\n%s\nsaccades: %s\nfixations: %s' % (
-            str(self.features),
-            '\n'.join([str(entry) for entry in self.entries]),
-            self.saccades,
-            self.fixations)
+        return 'Trial %s\n' % str(self.features)
 
     #Returns the line where the subject gives a manual response (or where the trial ends).
     def getResponse(self):

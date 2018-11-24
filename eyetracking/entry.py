@@ -132,31 +132,40 @@ class EntryListException(Exception):
         super().__init__(message)
 
 class EntryList:
-    entries = []
+    # Begin is the index of the first line, and end the index of the last line.
+    begin = None
+    end = None
+    trial = None
 
-    def __init__(self, entries):
-        self.entries = entries
-        self.check()
+    def __init__(self, trial, begin, end):
+        self.trial = trial
+        self.begin = begin
+        self.end = end
+
+    def getEntry(self, line : int):
+        if line <= self.end and line >= self.begin:
+            return self.trial.entries[line]
+        else:
+            raise EntryListException('Index %i out of bound' % line)
 
     def duration(self) -> int:
-        if len(self.entries) == 0:
+        if begin == None or end == None:
             return 0
-        return self.entries[len(self.entries)-1].getTime() - self.entries[0].getTime()
+        return getEntry(self.end).getTime() - getEntry(self.begin).getTime()
 
     def checkTimes(self) -> None:
-        n = len(self.entries)
         # Time must increase for all lines except the first and last ones.
-        for i in range(1,n-3):
-            if getTime(self.entries[i]) > getTime(self.entries[i+1]):
-                raise EntryListException('Time is decreasing between %s and %s' % (str(self.entries[i]), str(self.entries[i+1])))
+        for i in range(self.begin+1, self.end-2):
+            if self.getEntry(i).getTime() > self.getEntry(i+1).getTime():
+                raise EntryListException('Time is decreasing between %s and %s' % (str(self.getEntry(i)), str(self.getEntry(i+1))))
 
         # The first line must give the time of the second one
-        if self.entries[0].getTime() != self.entries[1].getTime():
-             raise EntryListException('Incorrect time for the first line %s' % str(self.entries[0]))
+        if self.getEntry(self.begin).getTime() != self.getEntry(self.begin+1).getTime():
+             raise EntryListException('Incorrect time for the first line %s' % str(self.getEntry(self.begin)))
 
         # The last line must give the time of the prevous one
-        if self.entries[n-1].getTime() != self.entries[n-2].getTime():
-             raise EntryListException('Incorrect time for the last line %s' % str(self.entries[n-1]))
+        if self.getEntry(self.end).getTime() != self.getEntry(self.end-1).getTime():
+             raise EntryListException('Incorrect time for the last line %s' % str(self.getEntry(self.end)))
 
     def check(self) -> None:
         pass
@@ -168,8 +177,6 @@ class FixationException(Exception):
         super().__init__(message)
 
 class Fixation(EntryList):
-
-    entries = []
 
     def __str__(self):
         return 'Fixation: %i' % self.duration()
@@ -185,8 +192,8 @@ class Fixation(EntryList):
             def _(_): raise FixationException('Last entry is not a stop fixation')
 
         self.checkTimes()
-        checkStart(self.entries[0])
-        checkEnd(self.entries[len(self.entries) - 1])
+        checkStart(self.getEntry(self.begin))
+        checkEnd(self.getEntry(self.end))
 
 class SaccadeException(Exception):
     def __init__(self, message):
@@ -195,8 +202,6 @@ class SaccadeException(Exception):
         super().__init__(message)
 
 class Saccade(EntryList):
-
-    entries = []
 
     def __str__(self):
         return 'Saccade: %i' % self.duration()
@@ -212,8 +217,8 @@ class Saccade(EntryList):
             def _(_): raise SaccadeException('Last entry is not a stop saccade')
 
         self.checkTimes()
-        checkStart(self.entries[0])
-        checkEnd(self.entries[len(self.entries) - 1])
+        checkStart(self.getEntry(self.begin))
+        checkEnd(self.getEntry(self.end))
 
 class BlinkException(Exception):
     def __init__(self, message):
@@ -222,8 +227,6 @@ class BlinkException(Exception):
         super().__init__(message)
 
 class Blink(EntryList):
-
-    entries = []
 
     def __str__(self):
         return 'Blink: %i' % self.duration()
@@ -240,5 +243,5 @@ class Blink(EntryList):
 
         # À corriger
         #self.checkTimes()
-        checkStart(self.entries[0])
-        checkEnd(self.entries[len(self.entries) - 1])
+        checkStart(self.getEntry(self.begin))
+        checkEnd(self.getEntry(self.end))

@@ -7,8 +7,8 @@ class Recherche_visuelle(Experiment):
     y_center = 384
 
     frame_list_1 = [(164,384),(860,384)]
-	frame_list_3 = [(266,630),(758,630),(266,138),(758,138)]
-	frame_list_5 = [(164,384),(266,630),(758,630),(266,138),(758,138),(860,384)]
+    frame_list_3 = [(266,630),(758,630),(266,138),(758,138)]
+    frame_list_5 = [(164,384),(266,630),(758,630),(266,138),(758,138),(860,384)]
 
     # Half of image width
     #image_width = 163
@@ -44,6 +44,7 @@ class Recherche_visuelle(Experiment):
     def isResponse(self, line: List[str]) -> bool :
         return len(line) >= 6 and 'repondu' in line[5]
 
+    '''
     def processTrial(self, subject, trial_number):
         trial = subject.getTrial(trial_number)
 
@@ -71,8 +72,7 @@ class Recherche_visuelle(Experiment):
         response_entry = trial.getResponse()
 
         response_time = response_entry.getTime() - trial.getStartTrial()
-
-
+    '''
 
     #Creates an image scanpath for one trial.
     def scanpath(trial):#,nb_distractors,targetname,target_hp,target_vp,response_time,frame_list,distance_x,distance_y):
