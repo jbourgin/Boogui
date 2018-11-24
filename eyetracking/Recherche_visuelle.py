@@ -6,6 +6,10 @@ class Recherche_visuelle(Experiment):
     x_center = 512
     y_center = 384
 
+    frame_list_1 = [(164,384),(860,384)]
+	frame_list_3 = [(266,630),(758,630),(266,138),(758,138)]
+	frame_list_5 = [(164,384),(266,630),(758,630),(266,138),(758,138),(860,384)]
+
     # Half of image width
     #image_width = 163
     # Half of image height
@@ -39,6 +43,35 @@ class Recherche_visuelle(Experiment):
 
     def isResponse(self, line: List[str]) -> bool :
         return len(line) >= 6 and 'repondu' in line[5]
+
+    def processTrial(self, subject, trial_number):
+        trial = subject.getTrial(trial_number)
+
+        if trial.saccades == []:
+            print(subject.subject_number,trial_number,"Subject has no saccades!")
+
+        if trial.features['num_of_dis'] == 1:
+            frame_list = [x for x in self.frame_list_1]
+        elif num_of_dis == 3:
+            frame_list = [x for x in self.frame_list_3]
+        elif num_of_dis == 5:
+            frame_list = [x for x in self.frame_list_5]
+
+        targetname = trial.entries[0]['stimulus']
+
+        if "mtemo" in targetname:
+			target_cat = "EMO"
+		elif "mtneu" in targetname:
+			target_cat = "NEU"
+		elif "face" in targetname:
+			target_cat = "VISAGE"
+		else:
+			target_cat = None
+
+        response_entry = trial.getResponse()
+
+        response_time = response_entry.getTime() - trial.getStartTrial()
+
 
 
     #Creates an image scanpath for one trial.

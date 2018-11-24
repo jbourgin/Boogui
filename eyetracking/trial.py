@@ -199,7 +199,7 @@ class Trial:
             self.fixations)
 
     #Returns the line where the subject gives a manual response (or where the trial ends).
-    def get_response(self, trial):
+    def getResponse(self):
         @match(Entry)
         class isResponse(object):
             def Response(_): return True
@@ -221,7 +221,14 @@ class Trial:
 
         return getId(self.getStartTrial())
 
+    def getStartTrial(self):
+        return self.entries[0]
+
 class Subject:
+
+    # list of training trials
+    training_trials = []
+    # TODO dissociate training and task
 
     # list of trials
     trials = []
@@ -235,3 +242,9 @@ class Subject:
             lines = trial.setEntries(lines)
             if not trial.isEmpty():
                 self.trials.append(trial)
+
+    def getTrial(self, trial_number : int):
+        for trial in self.trials:
+            if trial.getTrialId() == trial_number:
+                return trial
+        return None
