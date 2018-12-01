@@ -1,5 +1,7 @@
 from eyetracking.eyetracker import *
 from eyetracking.interest_region import *
+from eyetracking.utils import *
+
 from typing import TypeVar, List
 from math import sqrt, pow
 
@@ -37,6 +39,19 @@ class Trial:
 
     def __init__(self, eyetracker):
         self.eyetracker = eyetracker
+        self.entries = []
+        self.features = None
+        self.saccades = []
+        self.fixations = []
+        self.blinks = []
+        self.eye = None
+
+    def __str__(self):
+        return 'Trial %s\n' % str(self.features)
+
+    def printLines(self) -> None:
+        for entry in self.entries:
+            print(entry)
 
     def setEntries(self, lines: List[Line]) -> List[Line]:
         print('Trial: parsing entries')
@@ -47,6 +62,7 @@ class Trial:
         self.setFeatures()
         print('Setting dominant eye')
         self.eye = self.eyetracker.getEye(lines)
+        self.checkValid()
         return rest_lines
 
     def isEmpty(self) -> bool:
@@ -158,8 +174,17 @@ class Trial:
     def getStopTrial(self) -> Entry:
         return self.entries[-1]
 
-    def __str__(self):
-        return 'Trial %s\n' % str(self.features)
+    def getStimulus(self) -> str:
+        @match(Entry)
+        class get_stimulus(object):
+            def Start_trial(time, trial_number, stimulus): return stimulus
+            def _(_): return None
+
+        res = get_stimulus(self.getStartTrial())
+        if res == None:
+            raise TrialException('Trial has no stimulus')
+
+        return res
 
     #Returns the line where the subject gives a manual response (or where the trial ends).
     def getResponse(self) -> Entry:
@@ -216,36 +241,39 @@ class Trial:
                 region_fixation['type'] = "SHORT"
 
         current_region_fixation = initialize_region_fixation()
+        closest_region = None
         region_fixations = []
 
         # We create a copy to be able to remove elements
         blink_list = [blink for blink in self.blinks]
 
         for fixation in self.fixations:
+            print('Looking at fixation: %s' % str(fixation))
             blink_encountered = False
             barycentre = fixation.barycentre()
             watched_region = regions.point_inside(barycentre)
 
             for blink in blink_list:
-                if fixation.begin() > blink.end():
+                if fixation.getStartTime() > blink.getEndTime():
                     blink_list.remove(blink)
                     blink_encountered = True
+                    break
 
             # If we find no corresponding frame, we determine the closer one. If its distance to the fixation is shorter enough, we take this frame.
             if closest_region == None:
                 closest_region = regions.find_minimal_distance(barycentre)
                 # maximum distance allowed between a point and a region
                 max_dist = sqrt(pow(closest_region.half_width, 2) + pow(closest_region.half_height,2) + 30)
-                if regions.distance(closest_region.center, barycentre) < max_dist:
+                if distance(closest_region.center, barycentre) < max_dist:
                     watched_region = closest_region
 
             if current_region_fixation['begin'] == None and watched_region != None:
-                current_region_fixation['begin'] = fixation.getEntry(fixation.get_begin())
+                current_region_fixation['begin'] = fixation.getEntry(fixation.getBegin())
                 current_region_fixation['region'] = watched_region
-                current_region_fixation['end'] = fixation.getEntry(fixation.get_end())
+                current_region_fixation['end'] = fixation.getEntry(fixation.getEnd())
 
             # If we change of frame or encounter a blink, we end the previous fixation and add it to our list.
-            if current_region_fixation['begin'] != None and watched_region != current_region_fixation['region'] or blink_encountered:
+            if current_region_fixation['begin'] != None and (watched_region != current_region_fixation['region'] or blink_encountered):
                 current_region_fixation['time'] = current_region_fixation['end'].getTime() - current_region_fixation['begin'].getTime()
                 set_type_fixation(current_region_fixation)
                 current_region_fixation['target'] = (target_region == current_region_fixation['region'])
@@ -256,7 +284,7 @@ class Trial:
                 current_region_fixation = initialize_region_fixation()
             # If we already have a fixation and are still in it, we continue it and just change the ending point.
             elif current_region_fixation['begin'] != None and watched_region == current_region_fixation['region']:
-                current_region_fixation['end'] = fixation.getEntry(fixation.get_end())
+                current_region_fixation['end'] = fixation.getEntry(fixation.getEnd())
 
         # For the last region_fixation
         if current_region_fixation['begin'] != None:
@@ -286,6 +314,7 @@ class Subject:
             print('nombre de lignes à traiter : %i' % len(lines))
             trial = Trial(eyetracker)
             lines = trial.setEntries(lines)
+            print('trial has %i lines' % (len(trial.entries)))
             if not trial.isEmpty():
                 self.trials.append(trial)
 

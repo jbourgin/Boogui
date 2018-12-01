@@ -21,10 +21,10 @@ class InterestRegion:
 
     def point_inside(self, p: Point) -> bool :
         (x,y) = p
-        return (x >= self.center[0] - half_width
-            and x <= self.center[0] + half_width
-            and y >= self.center[1] - half_height
-            and y <= self.center[1] + half_height)
+        return (x >= self.center[0] - self.half_width
+            and x <= self.center[0] + self.half_width
+            and y >= self.center[1] - self.half_height
+            and y <= self.center[1] + self.half_height)
 
 class InterestRegionList:
 
@@ -35,10 +35,10 @@ class InterestRegionList:
 
     # Returns the closest region to the given point
     def find_minimal_distance(self, point : Point) -> InterestRegion:
-        minimal_distance = amplitude(self.regions[0], point)
+        minimal_distance = distance(self.regions[0].center, point)
         minimal_region = self.regions[0]
         for region in self.regions[1:]:
-        	ampl = distance(region,point)
+        	ampl = distance(region.center, point)
         	if ampl < minimal_distance:
         		minimal_distance = ampl
         		minimal_region = region

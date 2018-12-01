@@ -149,22 +149,31 @@ class EntryList:
         self.begin = begin
         self.end = end
 
-    def get_begin(self) -> int :
-        return begin
+    def getBegin(self) -> int :
+        return self.begin
 
-    def get_end(self) -> int :
-        return end
+    def getEnd(self) -> int :
+        return self.end
+
+    def getStartTime(self) -> int:
+        return self.getEntry(self.getBegin()).getTime()
+
+    def getEndTime(self) -> int:
+        return self.getEntry(self.getEnd()).getTime()
 
     def getEntry(self, line : int) -> Entry:
         if line <= self.end and line >= self.begin:
+            print('zbi:')
+            print(len(self.trial.entries))
+            print(line)
             return self.trial.entries[line]
         else:
             raise EntryListException('Index %i out of bound' % line)
 
     def duration(self) -> int:
-        if begin == None or end == None:
+        if self.begin == None or self.end == None:
             return 0
-        return getEntry(self.end).getTime() - getEntry(self.begin).getTime()
+        return self.getEntry(self.getEnd()).getTime() - self.getEntry(self.getBegin()).getTime()
 
     def checkTimes(self) -> None:
         # Time must increase for all lines except the first and last ones.
@@ -188,7 +197,7 @@ class EntryList:
         counter = 0
         # We look for the first point
         while i_line <= self.end and self.getEntry(i_line).getGazePosition() == None:
-            i += 1
+            i_line += 1
         if i_line <= self.end:
             (x,y) = self.getEntry(i_line).getGazePosition()
             counter = 1
@@ -199,7 +208,7 @@ class EntryList:
                 x += x2
                 y += y2
                 counter += 1
-                i_line += 1
+            i_line += 1
 
         return (x / counter, y / counter)
 
@@ -211,8 +220,13 @@ class FixationException(Exception):
 
 class Fixation(EntryList):
 
+    def __init__(self, trial, begin, end):
+        super().__init__(trial, begin, end)
+        self.check()
+        self.checkTimes()
+
     def __str__(self):
-        return 'Fixation: %i' % self.duration()
+        return 'Fixation starting at %i, ending at %i' % (self.getStartTime(), self.getEndTime())
 
     def check(self) -> None:
         @match(Entry)
@@ -235,6 +249,11 @@ class SaccadeException(Exception):
         super().__init__(message)
 
 class Saccade(EntryList):
+
+    def __init__(self, trial, begin, end):
+        super().__init__(trial, begin, end)
+        self.check()
+        self.checkTimes()
 
     def __str__(self):
         return 'Saccade: %i' % self.duration()
@@ -261,6 +280,11 @@ class BlinkException(Exception):
 
 class Blink(EntryList):
 
+    def __init__(self, trial, begin, end):
+        super().__init__(trial, begin, end)
+        self.check()
+        self.checkTimes()
+        
     def __str__(self):
         return 'Blink: %i' % self.duration()
 

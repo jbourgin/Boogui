@@ -12,20 +12,21 @@ class Recherche_visuelle(Experiment):
     frame_list_5 = None
 
     def __init__(self):
+        print('Initializing Recherche Visuelle experiment')
         # Initializing regions of interest
         half_width = 163
         half_height = 115
-        frame_list_1 = InterestRegionList([
+        self.frame_list_1 = InterestRegionList([
             InterestRegion((164, 384), half_width, half_height),
             InterestRegion((860, 384), half_width, half_height)
         ])
-        frame_list_3 = InterestRegionList([
+        self.frame_list_3 = InterestRegionList([
             InterestRegion((266, 630), half_width, half_height),
             InterestRegion((758, 630), half_width, half_height),
             InterestRegion((266, 138), half_width, half_height),
             InterestRegion((758, 138), half_width, half_height)
         ])
-        frame_list_3 = InterestRegionList([
+        self.frame_list_5 = InterestRegionList([
             InterestRegion((164, 384), half_width, half_height),
             InterestRegion((860, 384), half_width, half_height),
             InterestRegion((266, 630), half_width, half_height),
@@ -69,18 +70,19 @@ class Recherche_visuelle(Experiment):
 
     def processTrial(self, subject, trial_number):
         trial = subject.getTrial(trial_number)
+        print(trial)
 
         if trial.saccades == []:
             print(subject.subject_number,trial_number,"Subject has no saccades!")
 
         if trial.features['num_of_dis'] == 1:
-            frame_list = [x for x in self.frame_list_1]
-        elif num_of_dis == 3:
-            frame_list = [x for x in self.frame_list_3]
-        elif num_of_dis == 5:
-            frame_list = [x for x in self.frame_list_5]
+            frame_list = self.frame_list_1
+        elif trial.features['num_of_dis'] == 3:
+            frame_list = self.frame_list_3
+        elif trial.features['num_of_dis'] == 5:
+            frame_list = self.frame_list_5
 
-        targetname = trial.entries[0]['stimulus']
+        targetname = trial.getStimulus()
 
         if "mtemo" in targetname:
             target_cat = "EMO"
@@ -93,7 +95,12 @@ class Recherche_visuelle(Experiment):
 
         response_entry = trial.getResponse()
 
-        response_time = response_entry.getTime() - trial.getStartTrial()
+        response_time = response_entry.getTime() - trial.getStartTrial().getTime()
+
+        target_region_position = (trial.features["target_hp"], trial.features["target_vp"])
+        region_fixations = trial.getFixationTime(frame_list, frame_list.point_inside(target_region_position))
+
+        print(region_fixations)
 
 
     #Creates an image scanpath for one trial.
