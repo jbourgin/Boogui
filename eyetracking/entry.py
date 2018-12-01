@@ -1,10 +1,15 @@
 from sumtypes import sumtype, match, constructor
+from typing import Tuple, TypeVar
+from eyetracking.utils import *
 
 class EntryException(Exception):
     def __init__(self, message):
 
         # Call the base class constructor with the parameters it needs
         super().__init__(message)
+
+# Type for entries
+Entry = TypeVar('Entry')
 
 # Class that represents a line in the trial
 # Each constructor has a time
@@ -106,6 +111,8 @@ class checkEntry(object):
     def Stop_trial(time):
         if type(time) != int: raise EntryException('Time of Stop_trial is not int')
 
+# Returns the entry time (integer value)
+# The time is given in ms.
 @match(Entry)
 class getTime(object):
     def Position(time, x, y): return time
@@ -122,7 +129,7 @@ class getTime(object):
 
 @match(Entry)
 class getGazePosition(object):
-    def Position(time, x, y): return (x,y)
+    def Position(time, x, y) -> Point: return (x,y)
     def _(_): return None
 
 class EntryListException(Exception):
@@ -142,7 +149,13 @@ class EntryList:
         self.begin = begin
         self.end = end
 
-    def getEntry(self, line : int):
+    def get_begin(self) -> int :
+        return begin
+
+    def get_end(self) -> int :
+        return end
+
+    def getEntry(self, line : int) -> Entry:
         if line <= self.end and line >= self.begin:
             return self.trial.entries[line]
         else:
@@ -169,6 +182,26 @@ class EntryList:
 
     def check(self) -> None:
         pass
+
+    def barycentre(self) -> Point:
+        i_line = self.begin
+        counter = 0
+        # We look for the first point
+        while i_line <= self.end and self.getEntry(i_line).getGazePosition() == None:
+            i += 1
+        if i_line <= self.end:
+            (x,y) = self.getEntry(i_line).getGazePosition()
+            counter = 1
+            i_line += 1
+        while i_line <= self.end:
+            if self.getEntry(i_line).getGazePosition() != None:
+                (x2,y2) = self.getEntry(i_line).getGazePosition()
+                x += x2
+                y += y2
+                counter += 1
+                i_line += 1
+
+        return (x / counter, y / counter)
 
 class FixationException(Exception):
     def __init__(self, message):

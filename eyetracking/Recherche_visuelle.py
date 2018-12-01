@@ -1,4 +1,5 @@
 from eyetracking.eyelink import *
+from eyetracking.interest_region import *
 
 class Recherche_visuelle(Experiment):
 
@@ -6,10 +7,32 @@ class Recherche_visuelle(Experiment):
     x_center = 512
     y_center = 384
 
-    frame_list_1 = [(164,384),(860,384)]
-    frame_list_3 = [(266,630),(758,630),(266,138),(758,138)]
-    frame_list_5 = [(164,384),(266,630),(758,630),(266,138),(758,138),(860,384)]
+    frame_list_1 = None
+    frame_list_3 = None
+    frame_list_5 = None
 
+    def __init__(self):
+        # Initializing regions of interest
+        half_width = 163
+        half_height = 115
+        frame_list_1 = InterestRegionList([
+            InterestRegion((164, 384), half_width, half_height),
+            InterestRegion((860, 384), half_width, half_height)
+        ])
+        frame_list_3 = InterestRegionList([
+            InterestRegion((266, 630), half_width, half_height),
+            InterestRegion((758, 630), half_width, half_height),
+            InterestRegion((266, 138), half_width, half_height),
+            InterestRegion((758, 138), half_width, half_height)
+        ])
+        frame_list_3 = InterestRegionList([
+            InterestRegion((164, 384), half_width, half_height),
+            InterestRegion((860, 384), half_width, half_height),
+            InterestRegion((266, 630), half_width, half_height),
+            InterestRegion((758, 630), half_width, half_height),
+            InterestRegion((266, 138), half_width, half_height),
+            InterestRegion((758, 138), half_width, half_height)
+        ])
     # Half of image width
     #image_width = 163
     # Half of image height
@@ -44,7 +67,6 @@ class Recherche_visuelle(Experiment):
     def isResponse(self, line: List[str]) -> bool :
         return len(line) >= 6 and 'repondu' in line[5]
 
-    '''
     def processTrial(self, subject, trial_number):
         trial = subject.getTrial(trial_number)
 
@@ -61,18 +83,18 @@ class Recherche_visuelle(Experiment):
         targetname = trial.entries[0]['stimulus']
 
         if "mtemo" in targetname:
-			target_cat = "EMO"
-		elif "mtneu" in targetname:
-			target_cat = "NEU"
-		elif "face" in targetname:
-			target_cat = "VISAGE"
-		else:
-			target_cat = None
+            target_cat = "EMO"
+        elif "mtneu" in targetname:
+            target_cat = "NEU"
+        elif "face" in targetname:
+            target_cat = "VISAGE"
+        else:
+            target_cat = None
 
         response_entry = trial.getResponse()
 
         response_time = response_entry.getTime() - trial.getStartTrial()
-    '''
+
 
     #Creates an image scanpath for one trial.
     def scanpath(trial):#,nb_distractors,targetname,target_hp,target_vp,response_time,frame_list,distance_x,distance_y):
