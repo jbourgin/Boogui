@@ -7,40 +7,34 @@ class Recherche_visuelle(Experiment):
     x_center = 512
     y_center = 384
 
-    frame_list_1 = None
-    frame_list_3 = None
-    frame_list_5 = None
+    # Initializing regions of interest
+    half_width = 163
+    half_height = 115
 
-    def __init__(self):
-        print('Initializing Recherche Visuelle experiment')
-        # Initializing regions of interest
-        half_width = 163
-        half_height = 115
-        self.frame_list_1 = InterestRegionList([
-            InterestRegion((164, 384), half_width, half_height),
-            InterestRegion((860, 384), half_width, half_height)
-        ])
-        self.frame_list_3 = InterestRegionList([
-            InterestRegion((266, 630), half_width, half_height),
-            InterestRegion((758, 630), half_width, half_height),
-            InterestRegion((266, 138), half_width, half_height),
-            InterestRegion((758, 138), half_width, half_height)
-        ])
-        self.frame_list_5 = InterestRegionList([
-            InterestRegion((164, 384), half_width, half_height),
-            InterestRegion((860, 384), half_width, half_height),
-            InterestRegion((266, 630), half_width, half_height),
-            InterestRegion((758, 630), half_width, half_height),
-            InterestRegion((266, 138), half_width, half_height),
-            InterestRegion((758, 138), half_width, half_height)
-        ])
-    # Half of image width
-    #image_width = 163
-    # Half of image height
-    #image_height = 115
+    frame_list_1 = InterestRegionList([
+        InterestRegion((164, 384), half_width, half_height),
+        InterestRegion((860, 384), half_width, half_height)
+    ])
+
+    frame_list_3 = InterestRegionList([
+        InterestRegion((266, 630), half_width, half_height),
+        InterestRegion((758, 630), half_width, half_height),
+        InterestRegion((266, 138), half_width, half_height),
+        InterestRegion((758, 138), half_width, half_height)
+    ])
+
+    frame_list_5 = InterestRegionList([
+        InterestRegion((164, 384), half_width, half_height),
+        InterestRegion((860, 384), half_width, half_height),
+        InterestRegion((266, 630), half_width, half_height),
+        InterestRegion((758, 630), half_width, half_height),
+        InterestRegion((266, 138), half_width, half_height),
+        InterestRegion((758, 138), half_width, half_height)
+    ])
 
     # Returns a dictionary of experiment variables
-    def parseVariables(self, line: List[str]):
+    @staticmethod
+    def parseVariables(line: List[str]):
         if len(line) > 24 and line[8] == "tgt_hor":
             try:
                 if len(line) > 24 and line[8] == "tgt_hor":
@@ -65,14 +59,16 @@ class Recherche_visuelle(Experiment):
                 pass
         return None
 
-    def isResponse(self, line: List[str]) -> bool :
+    @staticmethod
+    def isResponse(line: List[str]) -> bool :
         return len(line) >= 6 and 'repondu' in line[5]
 
     @staticmethod
     def isTraining(trial) -> bool:
         return 'face' in trial.getStimulus()
 
-    def processTrial(self, subject, trial_number):
+    @staticmethod
+    def processTrial(subject, trial_number):
         trial = subject.getTrial(trial_number)
         print(trial)
 
@@ -80,11 +76,11 @@ class Recherche_visuelle(Experiment):
             print(subject.subject_number,trial_number,"Subject has no saccades!")
 
         if trial.features['num_of_dis'] == 1:
-            frame_list = self.frame_list_1
+            frame_list = Recherche_visuelle.frame_list_1
         elif trial.features['num_of_dis'] == 3:
-            frame_list = self.frame_list_3
+            frame_list = Recherche_visuelle.frame_list_3
         elif trial.features['num_of_dis'] == 5:
-            frame_list = self.frame_list_5
+            frame_list = Recherche_visuelle.frame_list_5
 
         targetname = trial.getStimulus()
 
@@ -108,6 +104,7 @@ class Recherche_visuelle(Experiment):
 
 
     #Creates an image scanpath for one trial.
+    @staticmethod
     def scanpath(trial):#,nb_distractors,targetname,target_hp,target_vp,response_time,frame_list,distance_x,distance_y):
         print('scanpath')
         print(trial.features)
