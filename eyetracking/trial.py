@@ -184,7 +184,7 @@ class Trial:
         return res
 
     #Returns the line where the subject gives a manual response (or where the trial ends).
-    def getResponse(self) -> Entry:
+    def getResponse(self) -> Union[Entry, None]:
         @match(Entry)
         class isResponse(object):
             def Response(_): return True
@@ -194,7 +194,7 @@ class Trial:
             if isResponse(entry):
                 return entry
 
-        return self.getStopTrial()
+        return None
 
     # Returns the trial id
     # The trial is assumed to be valid (see checkValid()).

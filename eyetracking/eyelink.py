@@ -157,8 +157,8 @@ class Eyelink (EyetrackerInterface):
             Eyelink.parseEndBlink,
             Eyelink.parseStartSaccade,
             Eyelink.parseEndSaccade,
-            self.parseExperimentVariables,
-            self.parseResponse]
+            self.parseResponse,
+            self.parseExperimentVariables]
 
         for parser in parsers:
             res = parser(line)
