@@ -23,11 +23,17 @@ class InterestRegion:
             and y >= self.center[1] - self.half_height
             and y <= self.center[1] + self.half_height)
 
+    def isTarget(self, target_center : Point) -> bool :
+        return target_center == self.center
+
 class InterestRegionList:
 
     def __init__(self, regions : List[InterestRegion]):
         self.regions = [x for x in regions]
 
+    def getRegions(self) -> List[InterestRegion]:
+        return self.regions
+        
     # Returns the closest region to the given point
     def find_minimal_distance(self, point : Point) -> InterestRegion:
         minimal_distance = distance(self.regions[0].center, point)

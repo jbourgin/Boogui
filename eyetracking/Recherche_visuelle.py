@@ -1,5 +1,7 @@
 from eyetracking.eyelink import *
 from eyetracking.interest_region import *
+from eyetracking.scanpath import *
+import matplotlib.pyplot as plt
 
 class Recherche_visuelle(Experiment):
 
@@ -199,57 +201,60 @@ class Recherche_visuelle(Experiment):
 
         print(s)
 
+    @staticmethod
+    def plot_target(region: InterestRegion, cor_resp, color):
+    	lu_corner = [region.center[0]-region.half_width, region.center[1]+region.half_height]
+    	lb_corner = [region.center[0]-region.half_width, region.center[1]-region.half_height]
+    	ru_corner = [region.center[0]+region.half_width, region.center[1]+region.half_height]
+    	rb_corner = [region.center[0]+region.half_width, region.center[1]-region.half_height]
+
+    	if cor_resp == 2:
+    		hole_up = [region.center[0]+region.half_width, region.center[1]+30]
+    		hole_down = [region.center[0]+region.half_width, region.center[1]-30]
+    		plot_segment(lu_corner, lb_corner, c=color)
+    		plot_segment(lb_corner, rb_corner, c=color)
+    		plot_segment(rb_corner, hole_down, c=color)
+    		plot_segment(hole_up, ru_corner, c=color)
+    		plot_segment(ru_corner, lu_corner, c=color)
+
+    	elif cor_resp == 1:
+    		hole_up = [region.center[0]-region.half_width, region.center[1]+30]
+    		hole_down = [region.center[0]-region.half_width, region.center[1]-30]
+    		plot_segment(lb_corner, rb_corner, c=color)
+    		plot_segment(rb_corner, ru_corner, c=color)
+    		plot_segment(ru_corner, lu_corner, c=color)
+    		plot_segment(lb_corner, hole_down, c=color)
+    		plot_segment(hole_up, lu_corner, c=color)
+
     #Creates an image scanpath for one trial.
     @staticmethod
-    def scanpath(trial):#,nb_distractors,targetname,target_hp,target_vp,response_time,frame_list,distance_x,distance_y):
+    def scanpath(subject_id, trial, folder):#,nb_distractors,targetname,target_hp,target_vp,response_time,frame_list,distance_x,distance_y):
         print('scanpath')
         print(trial.features)
-        '''
-        point_list = []
-        nb_points = 0
-        color = (1,1,0)
 
-        for line in trial:
-            if Eyelink.is_line_recording(line):
-                point_list.append([float(line[1]),float(line[2])])
-            elif len(line) >= 5 and line[3] == "sujet" and line[4] == "a":
-                break
-        nb_points = float(len(point_list))
+        plt.clf()
 
+        frame_color = (0,0,0)
+        target_color = (1,0,0)
         plt.axis([0,1024,0,768])
         plt.gca().invert_yaxis()
         plt.axis('off')
 
-        #Draws distractors and target frames.
-        for i in range(0,len(point_list)-1):
-            plot_segment([point_list[i][0],point_list[i+1][0]],[point_list[i][1],point_list[i+1][1]],c=color)
-            color = (1, color[1] - 1.0/nb_points , 0)
+        # Plotting frames
+        if trial.features['num_of_dis'] == 1:
+            frame_list = Recherche_visuelle.frame_list_1.getRegions()
+        elif trial.features['num_of_dis'] == 3:
+            frame_list = Recherche_visuelle.frame_list_3.getRegions()
+        elif trial.features['num_of_dis'] == 5:
+            frame_list = Recherche_visuelle.frame_list_5.getRegions()
 
-        if nb_distractors == "1":
-            if (target_hp,target_vp) == frame_list[0]:
-                plot_target(frame_list[0],cor_resp,(0,0,0),distance_x,distance_y)
-                plot_frame(frame_list[5],(0,0,0),distance_x,distance_y)
+        for frame in frame_list:
+            if frame.isTarget((trial.features['target_hp'], trial.features['target_vp'])):
+                Recherche_visuelle.plot_target(frame, trial.features['cor_resp'], target_color)
             else:
-                plot_target(frame_list[5],cor_resp,(0,0,0),distance_x,distance_y)
-                plot_frame(frame_list[0],(0,0,0),distance_x,distance_y)
+                plot_region(frame, frame_color)
 
-        elif nb_distractors == "3":
-            for i in range (1,5):
-                if (target_hp,target_vp) == frame_list[i]:
-                    plot_target(frame_list[i],cor_resp,(0,0,0),distance_x,distance_y)
-                else:
-                    plot_frame(frame_list[i],(0,0,0),distance_x,distance_y)
-        elif nb_distractors == "5":
-            for i in range (0,6):
-                if (target_hp,target_vp) == frame_list[i]:
-                    plot_target(frame_list[i],cor_resp,(0,0,0),distance_x,distance_y)
-                else:
-                    plot_frame(frame_list[i],(0,0,0),distance_x,distance_y)
+        # Plotting gaze positions
+        trial.plot()
 
-        targetname = targetname.replace("jessi\\Images_finales\\","")
-        targetname = targetname.replace(".png","")
-        response_time = int(response_time)
-
-        plt.text(float(target_hp)-(10*len(targetname)),float(target_vp),targetname)
-        plt.text(800,-20,"response_time = " + str(response_time))
-        '''
+        plt.savefig('%s\\%i_%i.png' % (folder, subject_id, trial.getTrialId()))

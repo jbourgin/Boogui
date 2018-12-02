@@ -1,7 +1,7 @@
 from eyetracking.eyetracker import *
 from eyetracking.interest_region import *
 from eyetracking.utils import *
-
+from eyetracking.scanpath import plot_segment
 from typing import TypeVar, List
 from math import sqrt, pow
 
@@ -317,6 +317,31 @@ class Trial:
                 region_fixations.append(current_region_fixation)
 
         return region_fixations
+
+    # Plot the trial on the current image
+    def plot(self):
+        @match(Entry)
+        class isResponse(object):
+            def Response(time) : return True
+            def _(_): return False
+
+        point_list = []
+        nb_points = 0
+        color = (1,1,0)
+
+        for entry in self.entries:
+            if isResponse(entry):
+                break
+            else:
+                point = entry.getGazePosition()
+                if point is not None:
+                    point_list.append(point)
+
+        nb_points = float(len(point_list))
+
+        for i in range(0,len(point_list)-1):
+            plot_segment(point_list[i],point_list[i+1],c=color)
+            color = (1, color[1] - 1.0/nb_points , 0)
 
 class Subject:
 
