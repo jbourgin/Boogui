@@ -6,7 +6,8 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-attrs = "*"
+attr = "*"
+sumtypes = "*"
 
 [requires]
 python_version = "3.6"
