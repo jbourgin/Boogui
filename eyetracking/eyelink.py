@@ -33,7 +33,7 @@ class Eyelink (EyetrackerInterface):
             try:
                 time = int(line[1])
                 trial_number = int(line[3])
-                stimulus = line[6]
+                stimulus = ''.join(line[4:])
                 return Entry.Start_trial(time, trial_number, stimulus)
             except:
                 pass

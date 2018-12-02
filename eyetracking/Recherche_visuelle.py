@@ -4,8 +4,9 @@ from eyetracking.interest_region import *
 class Recherche_visuelle(Experiment):
 
     #Center of the screen.
-    x_center = 512
-    y_center = 384
+    screen_center = (512,384)
+
+    valid_distance_center = 125 #3 degres of visual angle 95 (+ marge)
 
     # Initializing regions of interest
     half_width = 163
@@ -32,18 +33,21 @@ class Recherche_visuelle(Experiment):
         InterestRegion((758, 138), half_width, half_height)
     ])
 
+    # Patients with inhibition difficulties
+    list_patients_cong = [13,14]
+
     # Returns a dictionary of experiment variables
     @staticmethod
     def parseVariables(line: List[str]):
         if len(line) > 24 and line[8] == "tgt_hor":
             try:
                 if len(line) > 24 and line[8] == "tgt_hor":
-                    target_hp = int(line[10]) + Recherche_visuelle.x_center
-                    target_vp = int(line[15]) + Recherche_visuelle.y_center
+                    target_hp = int(line[10]) + Recherche_visuelle.screen_center[0]
+                    target_vp = int(line[15]) + Recherche_visuelle.screen_center[1]
                     num_of_dis = int(line[5])
                     cor_resp = int(line[20])
                     response = int(line[24])
-                    if target_hp < Recherche_visuelle.x_center:
+                    if target_hp < Recherche_visuelle.screen_center[0]:
                         target_side = "L"
                     else:
                         target_side = "R"
@@ -68,9 +72,9 @@ class Recherche_visuelle(Experiment):
         return 'face' in trial.getStimulus()
 
     @staticmethod
-    def processTrial(subject, trial_number):
-        trial = subject.getTrial(trial_number)
-        print(trial)
+    def processTrial(subject, trial):
+        print('Processing trial n°%i' % trial.getTrialId())
+        trial_number = trial.getTrialId()
 
         if trial.saccades == []:
             print(subject.subject_number,trial_number,"Subject has no saccades!")
@@ -82,7 +86,21 @@ class Recherche_visuelle(Experiment):
         elif trial.features['num_of_dis'] == 5:
             frame_list = Recherche_visuelle.frame_list_5
 
+        start_trial_time = trial.getStartTrial().getTime()
+
         targetname = trial.getStimulus()
+
+        response_entry = trial.getResponse()
+
+        response_time = response_entry.getTime() - trial.getStartTrial().getTime()
+
+        target_region_position = (trial.features["target_hp"], trial.features["target_vp"])
+
+        region_fixations = trial.getFixationTime(frame_list, frame_list.point_inside(target_region_position))
+
+        total_target_fixation_time = sum(x['time'] for x in region_fixations if x['target'])
+        if total_target_fixation_time == 0:
+            total_target_fixation_time = None
 
         if "mtemo" in targetname:
             target_cat = "EMO"
@@ -93,15 +111,93 @@ class Recherche_visuelle(Experiment):
         else:
             target_cat = None
 
-        response_entry = trial.getResponse()
+        #We determine in which block occurred each trial
+        block = None
+        if int(trial_number) < 60 and target_cat != "VISAGE":
+            block = 1
+        elif int(trial_number) >= 60:
+            block = 2
 
-        response_time = response_entry.getTime() - trial.getStartTrial().getTime()
+        #We determine congruency between target side and frame break side.
+        congruency = None
+        if ((trial.features['target_hp'] < Recherche_visuelle.screen_center[0] and trial.features['cor_resp'] == 1)
+        or (trial.features['target_hp'] > Recherche_visuelle.screen_center[0] and trial.features['cor_resp'] == 2)):
+            congruency = "YES"
+        else:
+            congruency = "NO"
 
-        target_region_position = (trial.features["target_hp"], trial.features["target_vp"])
-        region_fixations = trial.getFixationTime(frame_list, frame_list.point_inside(target_region_position))
+        # First and last good fixations
+        try:
+            first_good_fixation = next(fixation for fixation in region_fixations if fixation['target'])
+            last_good_fixation = next(fixation for fixation in reversed(region_fixations) if fixation['target'])
+            response_delay_last = response_time - (last_good_fixation['begin'].getTime() - start_trial_time)
+            # Delay of capture to the first good fixation
+            capture_delay_first = first_good_fixation['begin'].getTime() - start_trial_time
+        except:
+            first_good_fixation = None
+            last_good_fixation = None
+            response_delay_last = None
+            capture_delay_first = None
 
-        print(region_fixations)
+        # Time on target and distractors
+        total_target_fixation_time = sum(x['time'] for x in region_fixations if x['target'])
+        if total_target_fixation_time == 0:
+            total_target_fixation_time = None
+        total_distractor_fixation_time = sum(x['time'] for x in region_fixations if not x['target'])
+        if total_distractor_fixation_time == 0:
+            total_distractor_fixation_time = None
 
+        # Determining blink category
+        if trial.blinks == []:
+            blink_category = "No blink"
+        else:
+            if trial.blinks[0].getStartTime() < first_good_fixation['begin'].getTime():
+                blink_category = "early capture"
+            else:
+                blink_category = "late"
+
+        # Error :
+        if (not trial.isStartValid(Recherche_visuelle.screen_center, Recherche_visuelle.valid_distance_center)
+            or first_good_fixation == None
+            or trial.features['response'] == 'None'
+            or blink_category == 'early capture'
+            or capture_delay_first < 100):
+            error = '#N/A'
+        elif (subject.group == 'MA'
+            and subject in list_patients_cong
+            and congruency == "NO"
+            and trial.features['cor_resp'] != trial.features['response']):
+            error = 'CONG'
+        else:
+            if trial.features['cor_resp'] != trial.features['response']:
+                error = '1'
+            else:
+                error = '0'
+
+        # Writing data in result csv file
+        s = [str(subject.id) + "-E", # Subject name
+            subject.group,
+            trial_number,
+            block,
+            trial.eye,
+            target_cat,
+            targetname,
+            trial.features['num_of_dis'],
+            trial.features['target_hp'],
+            trial.features['target_vp'],
+            trial.features['target_side'],
+            congruency,
+            trial.features['cor_resp'],
+            trial.features['response'],
+            error,
+            response_time,
+            capture_delay_first,
+            response_delay_last,
+            total_target_fixation_time,
+            total_distractor_fixation_time,
+            blink_category]
+
+        print(s)
 
     #Creates an image scanpath for one trial.
     @staticmethod

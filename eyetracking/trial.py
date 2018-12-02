@@ -108,32 +108,46 @@ class Trial:
 
         started = False
         begin = None
-        i = -1
+        #Number of entries
+        n_entries = 0
+        i_line = -1
         for line in lines:
+            i_line += 1
             entry = self.eyetracker.parseEntry(line)
             if entry != None:
                 if start(entry):
                     started = True
                 if started:
                     entry.check()
+                    n_entries += 1
                     self.entries.append(entry)
-                    # We count only lines that are added to entries
-                    i += 1
-                    if stop(entry): return lines[i+1:]
+                    if stop(entry): return lines[i_line + 1:]
 
                     if isBeginning(entry):
-                        begin = i
+                        begin = n_entries - 1
                     if begin is not None:
                         if isSaccadeEnding(entry):
-                            self.saccades.append(Saccade(self, begin, i))
+                            self.saccades.append(Saccade(self, begin, n_entries - 1))
                             begin = None
                         if isFixationEnding(entry):
-                            self.fixations.append(Fixation(self, begin, i))
+                            self.fixations.append(Fixation(self, begin, n_entries - 1))
                             begin = None
                         if isBlinkEnding(entry):
-                            self.blinks.append(Blink(self, begin, i))
+                            self.blinks.append(Blink(self, begin, n_entries - 1))
                             begin = None
         return []
+
+    def getFirstGazePosition(self) -> Union[Entry,None]:
+        @match(Entry)
+        class is_position(object):
+            def Position(time,x,y) : return True
+            def _(_) : return False
+
+        for entry in self.entries:
+            if is_position(entry):
+                return entry
+
+        return None
 
     def setFeatures(self) -> None:
         @match(Entry)
@@ -194,6 +208,31 @@ class Trial:
 
     def getStartTrial(self) -> Entry:
         return self.entries[0]
+
+    def isStartValid(self, screen_center : Point, valid_distance_center : int) -> bool :
+        @match(Entry)
+        class is_end_saccade(object):
+            def End_saccade(time): return True
+            def _(_): return False
+        @match(Entry)
+        class is_something_else(object):
+            def Start_trial(time, trial_number, stimulus): return False
+            def Position(time, x, y) : return False
+            def _(_): return True
+
+        # Check if a saccade had begun before the trial start
+        for entry in self.entries:
+            if is_end_saccade(entry):
+                return False
+                break
+            elif is_something_else(entry):
+                break
+
+        first_pos = self.getFirstGazePosition()
+        if first_pos == None or distance(first_pos.getGazePosition(), screen_center) > valid_distance_center:
+            return False
+
+        return True
 
     def getFixationTime(self, regions : InterestRegionList, target_region : InterestRegion):
         # Initializer of result type.
@@ -281,12 +320,15 @@ class Trial:
 
 class Subject:
 
-    def __init__(self, eyetracker, lines):
+    def __init__(self, eyetracker, lines, id : int, group : str):
         # list of training trials
         self.training_trials = []
         # list of trials
         self.trials = []
-        self.subject_number = None
+        # subject number
+        self.id = id
+        # subject group
+        self.group = group
 
         print('Parsing trials entries')
         while lines != []:

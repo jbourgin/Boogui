@@ -17,7 +17,7 @@ import re #To format data lists
 #We add a tabulation and space separator.
 data = [re.split("[\t ]+",line) for line in data]
 
-s = Subject(myEyelink, data)
+s = Subject(myEyelink, data, 28, "SAS")
 
-for i in range(len(s.trials)):
-    experiment.processTrial(s, i)
+for trial in s.trials:
+    experiment.processTrial(s, trial)
