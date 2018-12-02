@@ -14,9 +14,11 @@ class Experiment:
     def isResponse(line: List[str]) -> bool:
         pass
 
-class EyetrackerInterface:
+    @abstractmethod
+    def isTraining(trial) -> bool:
+        pass
 
-    experiment = None
+class EyetrackerInterface:
 
     def __init__(self, experiment):
         self.experiment = experiment

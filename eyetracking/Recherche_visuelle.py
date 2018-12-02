@@ -68,6 +68,10 @@ class Recherche_visuelle(Experiment):
     def isResponse(self, line: List[str]) -> bool :
         return len(line) >= 6 and 'repondu' in line[5]
 
+    @staticmethod
+    def isTraining(trial) -> bool:
+        return 'face' in trial.getStimulus()
+
     def processTrial(self, subject, trial_number):
         trial = subject.getTrial(trial_number)
         print(trial)

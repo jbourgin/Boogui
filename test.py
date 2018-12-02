@@ -19,6 +19,5 @@ data = [re.split("[\t ]+",line) for line in data]
 
 s = Subject(myEyelink, data)
 
-print(s)
-
-experiment.processTrial(s, 0)
+for i in range(len(s.trials)):
+    experiment.processTrial(s, i)

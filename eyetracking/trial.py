@@ -15,35 +15,21 @@ class TrialException(Exception):
 Line = List[str]
 
 class Trial:
-    # List of entries
-    entries = []
-
-    # Dictionary of trial features
-    features = None
-
-    # Eyetracker that implements EyetrackerInterface
-    eyetracker = None
-
-    # List of saccades
-    saccades = []
-
-    # List of fixations
-    fixations = []
-
-    # List of blinks
-    blinks = []
-
-    # Dominant eye.
-    # Either "Left" or "Right"
-    eye = None
-
     def __init__(self, eyetracker):
+        # Eyetracker that implements EyetrackerInterface
         self.eyetracker = eyetracker
+        # List of entries
         self.entries = []
+            # Dictionary of trial features
         self.features = None
+            # List of saccades
         self.saccades = []
+            # List of fixations
         self.fixations = []
+            # List of blinks
         self.blinks = []
+            # Dominant eye.
+            # Either "Left" or "Right"
         self.eye = None
 
     def __str__(self):
@@ -54,15 +40,11 @@ class Trial:
             print(entry)
 
     def setEntries(self, lines: List[Line]) -> List[Line]:
-        print('Trial: parsing entries')
         rest_lines = self.parseEntries(lines)
-        print('Checking trial consistency')
-        self.checkValid()
-        print('Setting trial features')
-        self.setFeatures()
-        print('Setting dominant eye')
-        self.eye = self.eyetracker.getEye(lines)
-        self.checkValid()
+        if not self.isEmpty():
+            self.checkValid()
+            self.setFeatures()
+            self.eye = self.eyetracker.getEye(lines)
         return rest_lines
 
     def isEmpty(self) -> bool:
@@ -128,7 +110,6 @@ class Trial:
         begin = None
         i = -1
         for line in lines:
-            i += 1
             entry = self.eyetracker.parseEntry(line)
             if entry != None:
                 if start(entry):
@@ -136,6 +117,8 @@ class Trial:
                 if started:
                     entry.check()
                     self.entries.append(entry)
+                    # We count only lines that are added to entries
+                    i += 1
                     if stop(entry): return lines[i+1:]
 
                     if isBeginning(entry):
@@ -248,7 +231,6 @@ class Trial:
         blink_list = [blink for blink in self.blinks]
 
         for fixation in self.fixations:
-            print('Looking at fixation: %s' % str(fixation))
             blink_encountered = False
             barycentre = fixation.barycentre()
             watched_region = regions.point_inside(barycentre)
@@ -297,26 +279,24 @@ class Trial:
 
         return region_fixations
 
-
 class Subject:
 
-    # list of training trials
-    training_trials = []
-    # TODO dissociate training and task
-
-    # list of trials
-    trials = []
-
-    subject_number = None
-
     def __init__(self, eyetracker, lines):
+        # list of training trials
+        self.training_trials = []
+        # list of trials
+        self.trials = []
+        self.subject_number = None
+
+        print('Parsing trials entries')
         while lines != []:
-            print('nombre de lignes à traiter : %i' % len(lines))
             trial = Trial(eyetracker)
             lines = trial.setEntries(lines)
-            print('trial has %i lines' % (len(trial.entries)))
             if not trial.isEmpty():
-                self.trials.append(trial)
+                if eyetracker.experiment.isTraining(trial):
+                    self.training_trials.append(trial)
+                else:
+                    self.trials.append(trial)
 
     def getTrial(self, trial_number : int):
         for trial in self.trials:

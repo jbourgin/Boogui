@@ -139,12 +139,9 @@ class EntryListException(Exception):
         super().__init__(message)
 
 class EntryList:
-    # Begin is the index of the first line, and end the index of the last line.
-    begin = None
-    end = None
-    trial = None
 
     def __init__(self, trial, begin, end):
+        # Begin is the index of the first line, and end the index of the last line.
         self.trial = trial
         self.begin = begin
         self.end = end
@@ -163,9 +160,6 @@ class EntryList:
 
     def getEntry(self, line : int) -> Entry:
         if line <= self.end and line >= self.begin:
-            print('zbi:')
-            print(len(self.trial.entries))
-            print(line)
             return self.trial.entries[line]
         else:
             raise EntryListException('Index %i out of bound' % line)
@@ -283,8 +277,8 @@ class Blink(EntryList):
     def __init__(self, trial, begin, end):
         super().__init__(trial, begin, end)
         self.check()
-        self.checkTimes()
-        
+        # times are not checked for blinks
+
     def __str__(self):
         return 'Blink: %i' % self.duration()
 

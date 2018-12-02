@@ -8,16 +8,13 @@ InterestRegionList = TypeVar('RegionList')
 #define a rectangular region of interest
 class InterestRegion:
 
-    # Coordinates of the center
-    center = None
-
-    half_width = None
-    half_height = None
-
     def __init__(self, p : Point, hw : int, hh : int):
         self.center = p
         self.half_width = hw
         self.half_height = hh
+
+    def __str__(self) -> str :
+        return 'Rectangular region centered at (%i,%i), half-width = %i and half_height = %i' % (self.center[0], self.center[1], self.half_width, self.half_height)
 
     def point_inside(self, p: Point) -> bool :
         (x,y) = p
@@ -27,8 +24,6 @@ class InterestRegion:
             and y <= self.center[1] + self.half_height)
 
 class InterestRegionList:
-
-    regions = []
 
     def __init__(self, regions : List[InterestRegion]):
         self.regions = [x for x in regions]
