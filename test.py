@@ -1,10 +1,11 @@
 from eyetracking.Recherche_visuelle import *
 
-experiment = Recherche_visuelle()
+eyetracker = Make_Smi()
 
-myEyelink = Eyelink(experiment)
+experiment = Recherche_visuelle(eyetracker)
 
-subject_file = 'data/sub_28.txt'
+#subject_file = 'data/sub_28.txt'
+subject_file = 'data/results23.txt'
 
 datafile = open(subject_file,"r")
 
@@ -17,9 +18,10 @@ import re #To format data lists
 #We add a tabulation and space separator.
 data = [re.split("[\t ]+",line) for line in data]
 
-s = Subject(myEyelink, data, 28, "SAS")
+#s = Subject(experiment, data, 28, "SAS")
+s = Subject(experiment, data, 23, "SJS")
 
 for trial in s.trials:
     experiment.processTrial(s, trial)
 
-Recherche_visuelle.scanpath_video(5, s.trials[0])
+experiment.scanpath_video(5, s.trials[0])
