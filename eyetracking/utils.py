@@ -16,4 +16,4 @@ def getTmpFolder() -> str:
 
 def clearTmpFodler() -> None:
     folder = getTmpFolder()
-    shutil.rmtree('/%s' % (getTmpFolder()), ignore_errors=True)
+    shutil.rmtree('%s' % (getTmpFolder()), ignore_errors=True)
