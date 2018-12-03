@@ -1,55 +1,58 @@
 from eyetracking.eyelink import *
+from eyetracking.smi import *
 from eyetracking.interest_region import *
 from eyetracking.scanpath import *
 import matplotlib.pyplot as plt
 
-class Recherche_visuelle(Experiment):
+class Make_Eyelink(Eyelink):
+    def __init__(self):
+        super().__init__()
+        # Center of the screen.
+        self.screen_center = (512,384)
+        # Minimal distance at which we consider the subject is looking at the
+        # fixation cross at the trial beginning
+        self.valid_distance_center = 125 #3 degres of visual angle 95 (+ marge)
 
-    #Center of the screen.
-    screen_center = (512,384)
+        # Initializing regions of interest
+        self.half_width = 153
+        self.half_height = 108
 
-    valid_distance_center = 125 #3 degres of visual angle 95 (+ marge)
+        # frames
+        self.frame_list_1 = InterestRegionList([
+            InterestRegion((164, 384), self.half_width, self.half_height),
+            InterestRegion((860, 384), self.half_width, self.half_height)
+        ])
 
-    # Initializing regions of interest
-    half_width = 163
-    half_height = 115
+        self.frame_list_3 = InterestRegionList([
+            InterestRegion((266, 630), self.half_width, self.half_height),
+            InterestRegion((758, 630), self.half_width, self.half_height),
+            InterestRegion((266, 138), self.half_width, self.half_height),
+            InterestRegion((758, 138), self.half_width, self.half_height)
+        ])
 
-    frame_list_1 = InterestRegionList([
-        InterestRegion((164, 384), half_width, half_height),
-        InterestRegion((860, 384), half_width, half_height)
-    ])
+        self.frame_list_5 = InterestRegionList([
+            InterestRegion((164, 384), self.half_width, self.half_height),
+            InterestRegion((860, 384), self.half_width, self.half_height),
+            InterestRegion((266, 630), self.half_width, self.half_height),
+            InterestRegion((758, 630), self.half_width, self.half_height),
+            InterestRegion((266, 138), self.half_width, self.half_height),
+            InterestRegion((758, 138), self.half_width, self.half_height)
+        ])
 
-    frame_list_3 = InterestRegionList([
-        InterestRegion((266, 630), half_width, half_height),
-        InterestRegion((758, 630), half_width, half_height),
-        InterestRegion((266, 138), half_width, half_height),
-        InterestRegion((758, 138), half_width, half_height)
-    ])
-
-    frame_list_5 = InterestRegionList([
-        InterestRegion((164, 384), half_width, half_height),
-        InterestRegion((860, 384), half_width, half_height),
-        InterestRegion((266, 630), half_width, half_height),
-        InterestRegion((758, 630), half_width, half_height),
-        InterestRegion((266, 138), half_width, half_height),
-        InterestRegion((758, 138), half_width, half_height)
-    ])
-
-    # Patients with inhibition difficulties
-    list_patients_cong = [13,14]
+        # Patients with inhibition difficulties
+        self.list_patients_cong = [13,14]
 
     # Returns a dictionary of experiment variables
-    @staticmethod
-    def parseVariables(line: List[str]):
+    def parseVariables(self, line: List[str]):
         if len(line) > 24 and line[8] == "tgt_hor":
             try:
                 if len(line) > 24 and line[8] == "tgt_hor":
-                    target_hp = int(line[10]) + Recherche_visuelle.screen_center[0]
-                    target_vp = int(line[15]) + Recherche_visuelle.screen_center[1]
+                    target_hp = int(line[10]) + self.screen_center[0]
+                    target_vp = int(line[15]) + self.screen_center[1]
                     num_of_dis = int(line[5])
                     cor_resp = int(line[20])
                     response = int(line[24])
-                    if target_hp < Recherche_visuelle.screen_center[0]:
+                    if target_hp < self.screen_center[0]:
                         target_side = "L"
                     else:
                         target_side = "R"
@@ -65,16 +68,89 @@ class Recherche_visuelle(Experiment):
                 pass
         return None
 
-    @staticmethod
-    def isResponse(line: List[str]) -> bool :
+    def isResponse(self, line: Line) -> bool :
         return len(line) >= 6 and 'repondu' in line[5]
 
-    @staticmethod
-    def isTraining(trial) -> bool:
+    def isTraining(self, trial) -> bool:
         return 'face' in trial.getStimulus()
 
-    @staticmethod
-    def processTrial(subject, trial):
+class Make_Smi(Smi):
+    def __init__(self):
+        super().__init__()
+        # Center of the screen.
+        self.screen_center = (683,384)
+        # Minimal distance at which we consider the subject is looking at the
+        # fixation cross at the trial beginning
+        self.valid_distance_center = 130 #3 degres of visual angle 95 (+ marge)
+
+        # Initializing regions of interest
+        self.half_width = 163
+        self.half_height = 115
+
+        # frames
+        self.frame_list_1 = InterestRegionList([
+            InterestRegion((312, 384), self.half_width, self.half_height),
+            InterestRegion((1054, 384), self.half_width, self.half_height)
+        ])
+
+        self.frame_list_3 = InterestRegionList([
+            InterestRegion((421, 646), self.half_width, self.half_height),
+            InterestRegion((945, 646), self.half_width, self.half_height),
+            InterestRegion((945, 122), self.half_width, self.half_height),
+            InterestRegion((421, 122), self.half_width, self.half_height)
+        ])
+
+        self.frame_list_5 = InterestRegionList([
+            InterestRegion((312, 384), self.half_width, self.half_height),
+            InterestRegion((1054, 384), self.half_width, self.half_height),
+            InterestRegion((421, 646), self.half_width, self.half_height),
+            InterestRegion((945, 646), self.half_width, self.half_height),
+            InterestRegion((945, 122), self.half_width, self.half_height),
+            InterestRegion((421, 122), self.half_width, self.half_height)
+        ])
+
+        # Patients with inhibition difficulties
+        self.list_patients_cong = [45, 50, 51, 53]
+
+    # Returns a dictionary of experiment variables
+    def parseVariables(self, line: List[str]):
+        if len(line) > 15 and line[8] == "tgt_hor":
+            try:
+                if len(line) > 15 and line[8] == "tgt_hor":
+                    target_hp = int(line[9]) + self.screen_center[0]
+                    target_vp = int(line[11]) + self.screen_center[1]
+                    num_of_dis = int(line[7])
+                    cor_resp = int(line[13])
+                    response = int(line[15])
+                    if target_hp < self.screen_center[0]:
+                        target_side = "L"
+                    else:
+                        target_side = "R"
+                return {
+                    'target_hp' : target_hp,
+                    'target_vp' : target_vp,
+                    'num_of_dis' : num_of_dis,
+                    'cor_resp' : cor_resp,
+                    'response' : response,
+                    'target_side' : target_side
+                }
+            except:
+                pass
+        return None
+
+    def isResponse(self, line: Line) -> bool :
+        return len(line) >= 8 and 'sujet' in line[6]
+
+    def isTraining(self, trial) -> bool:
+        return 'face' in trial.getStimulus()
+
+
+class Recherche_visuelle(Experiment):
+
+    def __init__(self, eyetracker):
+        super().__init__(eyetracker)
+
+    def processTrial(self, subject, trial):
         print('Processing trial n°%i' % trial.getTrialId())
         trial_number = trial.getTrialId()
 
@@ -82,11 +158,11 @@ class Recherche_visuelle(Experiment):
             print(subject.subject_number,trial_number,"Subject has no saccades!")
 
         if trial.features['num_of_dis'] == 1:
-            frame_list = Recherche_visuelle.frame_list_1
+            frame_list = self.eyetracker.frame_list_1
         elif trial.features['num_of_dis'] == 3:
-            frame_list = Recherche_visuelle.frame_list_3
+            frame_list = self.eyetracker.frame_list_3
         elif trial.features['num_of_dis'] == 5:
-            frame_list = Recherche_visuelle.frame_list_5
+            frame_list = self.eyetracker.frame_list_5
 
         start_trial_time = trial.getStartTrial().getTime()
 
@@ -122,8 +198,8 @@ class Recherche_visuelle(Experiment):
 
         #We determine congruency between target side and frame break side.
         congruency = None
-        if ((trial.features['target_hp'] < Recherche_visuelle.screen_center[0] and trial.features['cor_resp'] == 1)
-        or (trial.features['target_hp'] > Recherche_visuelle.screen_center[0] and trial.features['cor_resp'] == 2)):
+        if ((trial.features['target_hp'] < self.eyetracker.screen_center[0] and trial.features['cor_resp'] == 1)
+        or (trial.features['target_hp'] > self.eyetracker.screen_center[0] and trial.features['cor_resp'] == 2)):
             congruency = "YES"
         else:
             congruency = "NO"
@@ -159,7 +235,7 @@ class Recherche_visuelle(Experiment):
                 blink_category = "late"
 
         # Error :
-        if (not trial.isStartValid(Recherche_visuelle.screen_center, Recherche_visuelle.valid_distance_center)
+        if (not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)
             or first_good_fixation == None
             or trial.features['response'] == 'None'
             or blink_category == 'early capture'
@@ -227,8 +303,7 @@ class Recherche_visuelle(Experiment):
     		plot_segment(hole_up, lu_corner, c=color)
 
     # Creates an image scanpath for one trial.
-    @staticmethod
-    def scanpath(subject_id, trial, folder):
+    def scanpath(self, subject_id, trial, folder):
         print('scanpath')
         print(trial.features)
 
@@ -242,11 +317,11 @@ class Recherche_visuelle(Experiment):
 
         # Plotting frames
         if trial.features['num_of_dis'] == 1:
-            frame_list = Recherche_visuelle.frame_list_1.getRegions()
+            frame_list = self.eyetracker.frame_list_1.getRegions()
         elif trial.features['num_of_dis'] == 3:
-            frame_list = Recherche_visuelle.frame_list_3.getRegions()
+            frame_list = self.eyetracker.frame_list_3.getRegions()
         elif trial.features['num_of_dis'] == 5:
-            frame_list = Recherche_visuelle.frame_list_5.getRegions()
+            frame_list = self.eyetracker.frame_list_5.getRegions()
 
         for frame in frame_list:
             if frame.isTarget((trial.features['target_hp'], trial.features['target_vp'])):
@@ -261,8 +336,7 @@ class Recherche_visuelle(Experiment):
         clearTmpFodler()
 
     # Creates a video scanpath for one trial.
-    @staticmethod
-    def scanpath_video(subject_id, trial):
+    def scanpath_video(self, subject_id, trial):
         print('scanpath video')
         print(trial.features)
 
@@ -276,11 +350,11 @@ class Recherche_visuelle(Experiment):
         image_list = []
         # Plotting frames
         if trial.features['num_of_dis'] == 1:
-            frame_list = Recherche_visuelle.frame_list_1.getRegions()
+            frame_list = self.eyetracker.frame_list_1.getRegions()
         elif trial.features['num_of_dis'] == 3:
-            frame_list = Recherche_visuelle.frame_list_3.getRegions()
+            frame_list = self.eyetracker.frame_list_3.getRegions()
         elif trial.features['num_of_dis'] == 5:
-            frame_list = Recherche_visuelle.frame_list_5.getRegions()
+            frame_list = self.eyetracker.frame_list_5.getRegions()
 
         print('Creating video frames')
         for elem in range(0,len(point_list)-1):

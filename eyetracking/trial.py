@@ -15,9 +15,9 @@ class TrialException(Exception):
 Line = List[str]
 
 class Trial:
-    def __init__(self, eyetracker):
-        # Eyetracker that implements EyetrackerInterface
-        self.eyetracker = eyetracker
+    def __init__(self, experiment):
+        # Experiment
+        self.experiment = experiment
         # List of entries
         self.entries = []
             # Dictionary of trial features
@@ -44,7 +44,7 @@ class Trial:
         if not self.isEmpty():
             self.checkValid()
             self.setFeatures()
-            self.eye = self.eyetracker.getEye(lines)
+            self.eye = self.experiment.eyetracker.getEye(lines)
         return rest_lines
 
     def isEmpty(self) -> bool:
@@ -113,7 +113,7 @@ class Trial:
         i_line = -1
         for line in lines:
             i_line += 1
-            entry = self.eyetracker.parseEntry(line)
+            entry = self.experiment.eyetracker.parseEntry(line)
             if entry != None:
                 if start(entry):
                     started = True
@@ -334,7 +334,7 @@ class Trial:
                     point_list.append(point)
 
         return point_list
-        
+
     # Plot the trial on the current image
     def plot(self):
 
@@ -350,7 +350,7 @@ class Trial:
 
 class Subject:
 
-    def __init__(self, eyetracker, lines, id : int, group : str):
+    def __init__(self, experiment, lines, id : int, group : str):
         # list of training trials
         self.training_trials = []
         # list of trials
@@ -362,10 +362,10 @@ class Subject:
 
         print('Parsing trials entries')
         while lines != []:
-            trial = Trial(eyetracker)
+            trial = Trial(experiment)
             lines = trial.setEntries(lines)
             if not trial.isEmpty():
-                if eyetracker.experiment.isTraining(trial):
+                if experiment.eyetracker.isTraining(trial):
                     self.training_trials.append(trial)
                 else:
                     self.trials.append(trial)
