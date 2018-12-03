@@ -114,6 +114,7 @@ class Make_Smi(Smi):
 
     # Returns a dictionary of experiment variables
     def parseVariables(self, line: List[str]):
+        print(line)
         if len(line) > 15 and line[8] == "tgt_hor":
             try:
                 if len(line) > 15 and line[8] == "tgt_hor":
