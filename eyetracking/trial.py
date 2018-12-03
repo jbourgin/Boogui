@@ -318,17 +318,13 @@ class Trial:
 
         return region_fixations
 
-    # Plot the trial on the current image
-    def plot(self):
+    def getGazePoints(self) -> List[Point] :
         @match(Entry)
         class isResponse(object):
             def Response(time) : return True
             def _(_): return False
 
         point_list = []
-        nb_points = 0
-        color = (1,1,0)
-
         for entry in self.entries:
             if isResponse(entry):
                 break
@@ -337,6 +333,15 @@ class Trial:
                 if point is not None:
                     point_list.append(point)
 
+        return point_list
+        
+    # Plot the trial on the current image
+    def plot(self):
+
+        nb_points = 0
+        color = (1,1,0)
+
+        point_list = self.getGazePoints()
         nb_points = float(len(point_list))
 
         for i in range(0,len(point_list)-1):

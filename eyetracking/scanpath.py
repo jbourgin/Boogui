@@ -1,4 +1,6 @@
 import matplotlib.pyplot as plt
+import os
+from eyetracking.utils import *
 from eyetracking.interest_region import *
 
 def plot_segment(point1 : Point, point2 : Point, c = 'black', alpha = 1.0) -> None:
@@ -19,3 +21,41 @@ def plot_rectangle(center : Point, color, half_width, half_height) -> None:
 
 def plot_region(region : InterestRegion, color) -> None:
     plot_rectangle(region.center, color, region.half_width, region.half_height)
+
+def save_image(folder : str, image_name: str) -> None:
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    plt.savefig(joinPaths(folder, image_name))
+
+def make_video(images : List[str], outvid, fps=20, size=None, format='XVID'):
+    '''
+    Create a video from a list of images.
+ 
+    @param      outvid      output video
+    @param      images      list of images to use in the video
+    @param      fps         frame per second
+    @param      size        size of each frame
+    @param      format      see http://www.fourcc.org/codecs.php
+    @return                 see http://opencv-python-tutroals.readthedocs.org/en/latest/py_tutorials/py_gui/py_video_display/py_video_display.html
+ 
+    The function relies on http://opencv-python-tutroals.readthedocs.org/en/latest/.
+    By default, the video will have the size of the first image.
+    It will resize every image to this size before adding them to the video.
+    '''
+    print('Combining images into video')
+    from cv2 import VideoWriter, VideoWriter_fourcc, imread, resize
+    fourcc = VideoWriter_fourcc(*format)
+    vid = None
+    for image in images:
+        if not os.path.exists(image):
+            raise FileNotFoundError(image)
+        img = imread(image)
+        if vid is None:
+            if size is None:
+                size = img.shape[1], img.shape[0]
+            vid = VideoWriter(outvid, fourcc, float(fps), size)
+        if size[0] != img.shape[1] and size[1] != img.shape[0]:
+            img = resize(img, size)
+        vid.write(img)
+    vid.release()
+    return vid

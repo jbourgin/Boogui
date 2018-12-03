@@ -226,9 +226,9 @@ class Recherche_visuelle(Experiment):
     		plot_segment(lb_corner, hole_down, c=color)
     		plot_segment(hole_up, lu_corner, c=color)
 
-    #Creates an image scanpath for one trial.
+    # Creates an image scanpath for one trial.
     @staticmethod
-    def scanpath(subject_id, trial, folder):#,nb_distractors,targetname,target_hp,target_vp,response_time,frame_list,distance_x,distance_y):
+    def scanpath(subject_id, trial, folder):
         print('scanpath')
         print(trial.features)
 
@@ -256,5 +256,51 @@ class Recherche_visuelle(Experiment):
 
         # Plotting gaze positions
         trial.plot()
+        image_name = '%i_%i.png' % (subject_id, trial.getTrialId())
+        save_image(getTmpFolder(), image_name)
+        clearTmpFodler()
 
-        plt.savefig('%s\\%i_%i.png' % (folder, subject_id, trial.getTrialId()))
+    # Creates a video scanpath for one trial.
+    @staticmethod
+    def scanpath_video(subject_id, trial):
+        print('scanpath video')
+        print(trial.features)
+
+        n_elem_drawn = 20
+        point_list = trial.getGazePoints()
+        nb_points = len(point_list)
+        frame_color = (0,0,0)
+        target_color = (1,0,0)
+        point_color = (1,1,0)
+
+        image_list = []
+        # Plotting frames
+        if trial.features['num_of_dis'] == 1:
+            frame_list = Recherche_visuelle.frame_list_1.getRegions()
+        elif trial.features['num_of_dis'] == 3:
+            frame_list = Recherche_visuelle.frame_list_3.getRegions()
+        elif trial.features['num_of_dis'] == 5:
+            frame_list = Recherche_visuelle.frame_list_5.getRegions()
+
+        print('Creating video frames')
+        for elem in range(0,len(point_list)-1):
+            plt.clf()
+            plt.axis([0,1024,0,768])
+            plt.gca().invert_yaxis()
+            plt.axis('off')
+
+            for j in range(max(0,elem-n_elem_drawn),elem+1):
+                plot_segment(point_list[j], point_list[j+1], c = point_color)
+            point_color = (1, point_color[1] - 1.0/nb_points , 0)
+
+            for frame in frame_list:
+                if frame.isTarget((trial.features['target_hp'], trial.features['target_vp'])):
+                    Recherche_visuelle.plot_target(frame, trial.features['cor_resp'], target_color)
+                else:
+                    plot_region(frame, frame_color)
+
+            image_name = '%i.png' % elem
+            save_image(getTmpFolder(), image_name)
+            image_list.append(joinPaths(getTmpFolder(), image_name))
+        make_video(image_list, 'test_vid.avi', fps=100)
+        clearTmpFodler()

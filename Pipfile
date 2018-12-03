@@ -9,6 +9,7 @@ verify_ssl = true
 attr = "*"
 sumtypes = "*"
 matplotlib = "*"
+opencv-python = "*"
 
 [requires]
 python_version = "3.6"

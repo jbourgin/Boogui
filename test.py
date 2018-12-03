@@ -22,4 +22,4 @@ s = Subject(myEyelink, data, 28, "SAS")
 for trial in s.trials:
     experiment.processTrial(s, trial)
 
-Recherche_visuelle.scanpath(28, s.trials[0], '.')
+Recherche_visuelle.scanpath_video(5, s.trials[0])
