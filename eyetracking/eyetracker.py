@@ -5,6 +5,10 @@ from typing import List, Dict
 from eyetracking.entry import *
 
 class Experiment:
+
+    def __init__(self, eyetracker):
+        self.eyetracker = eyetracker
+        
     # Returns a dictionary of experiment variables
     @abstractmethod
     def parseVariables(line: List[str]):
@@ -20,8 +24,8 @@ class Experiment:
 
 class EyetrackerInterface:
 
-    def __init__(self, experiment):
-        self.experiment = experiment
+    def __init__(self):
+        pass
 
     @abstractmethod
     def parseEntry(line: List[str]) -> Entry:
@@ -34,4 +38,8 @@ class EyetrackerInterface:
     # return True if the given file has been recorded with this eyetracker
     @abstractmethod
     def isParsable(filename : str) -> bool:
+        pass
+
+    @abstractmethod
+    def isTraining(self, trial) -> bool:
         pass

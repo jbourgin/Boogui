@@ -3,6 +3,9 @@ from eyetracking.eyelink import Eyelink
 
 class Smi (EyetrackerInterface):
 
+    def __init__(self):
+        super().__init__()
+
     @staticmethod
     def getEye(lines: List[List[str]]) -> str:
         for line in lines:
@@ -125,22 +128,32 @@ class Smi (EyetrackerInterface):
 
     def parseResponse(self, line: List[str]) -> Entry:
         # case Position
-        if self.experiment.isResponse(line):
+        print(line)
+        if self.isResponse(line):
             try:
-                time = int(line[1])
+                time = int(line[0])
                 return Entry.Response(time)
             except:
                 pass
         return None
 
+    @abstractmethod
+    def isResponse(self, line : Line) -> bool:
+        pass
+
     def parseExperimentVariables(self, line: List[str]) -> Entry:
         # case Position
+        print(line)
         try:
-            time = int(line[1])
-            variables = self.experiment.parseVariables(line)
+            time = int(line[0])
+            variables = self.parseVariables(line)
             return Entry.Experiment_variables(time, variables)
         except:
             return None
+
+    @abstractmethod
+    def parseVariables(self, line: Line):
+        pass
 
     def parseEntry(self, line: List[str]) -> Entry:
         parsers = [Smi.parseStartTrial,
@@ -152,8 +165,8 @@ class Smi (EyetrackerInterface):
             Smi.parseEndBlink,
             Smi.parseStartSaccade,
             Smi.parseEndSaccade,
-            self.parseExperimentVariables,
-            self.parseResponse]
+            self.parseResponse,
+            self.parseExperimentVariables]
 
         for parser in parsers:
             res = parser(line)
