@@ -115,18 +115,17 @@ class Make_Smi(Smi):
     # Returns a dictionary of experiment variables
     def parseVariables(self, line: List[str]):
         print(line)
-        if len(line) > 15 and line[8] == "tgt_hor":
+        if len(line) > 6 and line[5] == "features:":
             try:
-                if len(line) > 15 and line[8] == "tgt_hor":
-                    target_hp = int(line[9]) + self.screen_center[0]
-                    target_vp = int(line[11]) + self.screen_center[1]
-                    num_of_dis = int(line[7])
-                    cor_resp = int(line[13])
-                    response = int(line[15])
-                    if target_hp < self.screen_center[0]:
-                        target_side = "L"
-                    else:
-                        target_side = "R"
+                target_hp = int(line[9]) + self.screen_center[0]
+                target_vp = int(line[11]) + self.screen_center[1]
+                num_of_dis = int(line[7])
+                cor_resp = int(line[13])
+                response = int(line[15])
+                if target_hp < self.screen_center[0]:
+                    target_side = "L"
+                else:
+                    target_side = "R"
                 return {
                     'target_hp' : target_hp,
                     'target_vp' : target_vp,
@@ -357,10 +356,12 @@ class Recherche_visuelle(Experiment):
         elif trial.features['num_of_dis'] == 5:
             frame_list = self.eyetracker.frame_list_5.getRegions()
 
+        axis_x = self.eyetracker.screen_center[0]*2
+        axis_y = self.eyetracker.screen_center[1]*2
         print('Creating video frames')
         for elem in range(0,len(point_list)-1):
             plt.clf()
-            plt.axis([0,1024,0,768])
+            plt.axis([0,axis_x,0,axis_y])
             plt.gca().invert_yaxis()
             plt.axis('off')
 

@@ -1,13 +1,17 @@
 from eyetracking.Recherche_visuelle import *
+from eyetracking.smi_correction import processSubject
+from eyetracking.utils import *
 
 eyetracker = Make_Smi()
 
 experiment = Recherche_visuelle(eyetracker)
 
 #subject_file = 'data/sub_28.txt'
-subject_file = 'data/results23.txt'
+subject_file = 'data/subject-23Samples.txt'
+result_file = 'result23.txt'
+processSubject(subject_file, result_file)
 
-datafile = open(subject_file,"r")
+datafile = open(joinPaths(getTmpFolder(), result_file),"r")
 
 #File conversion in list.
 data = datafile.read()

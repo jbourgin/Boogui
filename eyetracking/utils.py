@@ -17,3 +17,25 @@ def getTmpFolder() -> str:
 def clearTmpFodler() -> None:
     folder = getTmpFolder()
     shutil.rmtree('%s' % (getTmpFolder()), ignore_errors=True)
+
+def createTmpFolder() -> None:
+    if not os.path.exists(getTmpFolder()):
+        os.makedirs(getTmpFolder())
+
+from enum import Enum
+class Precision(Enum):
+    TITLE = 0
+    INPUT = 1
+    OUTPUT = 1
+    NORMAL = 3
+    DETAIL = 5
+
+precision_level = 1
+
+def print_trace(message, precision):
+    tabs = '\t'.join(['' for i in range(precision.value)])
+    print(tabs + message.replace('\n','\n' + tabs))
+
+def logTrace(message, precision):
+    if precision.value <= precision_level:
+        print_trace(message, precision)
