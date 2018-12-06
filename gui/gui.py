@@ -1,8 +1,8 @@
 import sys
 from PyQt5.QtWidgets import QMainWindow, QApplication, QAction, QActionGroup, qApp, QWidget
-from PyQt5.QtWidgets import QFileDialog, QProgressBar
+from PyQt5.QtWidgets import QFileDialog, QProgressBar, QTextEdit
 from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout, QLabel
-from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QScrollArea, QFormLayout
 
 from eyetracking.smi import *
 from eyetracking.Recherche_visuelle import *
@@ -14,7 +14,7 @@ class Main(QMainWindow):
         super().__init__()
 
         # The current experiment
-        self.experiment = Recherche_visuelle()
+        self.experiment = None
 
         # The current eyetracker
         self.eyetracker = None
@@ -27,10 +27,9 @@ class Main(QMainWindow):
 
         self.initUI()
 
-
     def initUI(self):
 
-        self.setGeometry(300, 300, 300, 220)
+        self.setGeometry(300, 300, 600, 600)
         #self.setWindowTitle('Icon')
         #self.setWindowIcon(QIcon('web.png'))
 
@@ -40,18 +39,53 @@ class Main(QMainWindow):
 
         self.show()
 
+    def make_choose_trial(self, trial):
+        def choose_trial():
+            print('choosing trial')
+            self.logOutput.clear()
+            for entry in trial.entries:
+                self.logOutput.append(str(entry))
+            sb = self.logOutput.verticalScrollBar()
+            sb.setValue(sb.minimum())
+
+        return choose_trial
+
     def set_main_widget(self):
-        self.wid = QWidget(self)
-        self.setCentralWidget(self.wid)
+        # scroll area widget contents - layout
+        self.scrollLayout = QVBoxLayout()
 
-        hbox = QHBoxLayout()
-        hbox.addStretch(1)
+        # scroll area widget contents
+        self.scrollWidget = QWidget()
+        self.scrollWidget.setLayout(self.scrollLayout)
 
-        vbox = QVBoxLayout()
-        vbox.addStretch(1)
-        vbox.addLayout(hbox)
+        # scroll area
+        self.scrollArea = QScrollArea()
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollArea.setWidget(self.scrollWidget)
+        self.scrollArea.setFixedWidth(250)
 
-        self.wid.setLayout(vbox)
+        # main layout
+        self.mainLayout = QHBoxLayout()
+
+        # text area
+        self.logOutput = QTextEdit()
+        self.logOutput.setReadOnly(True)
+        self.logOutput.setLineWrapMode(QTextEdit.NoWrap)
+
+        font = self.logOutput.font()
+        font.setFamily("Courier")
+        font.setPointSize(10)
+
+        # add all main to the main vLayout
+        self.mainLayout.addWidget(self.scrollArea)
+        self.mainLayout.addWidget(self.logOutput)
+
+        # central widget
+        self.centralWidget = QWidget()
+        self.centralWidget.setLayout(self.mainLayout)
+
+        # set central widget
+        self.setCentralWidget(self.centralWidget)
 
     def set_menu(self):
         # Quit menu item
@@ -94,19 +128,21 @@ class Main(QMainWindow):
 
     def setEyelink(self):
         print('Setting eyelink')
-        self.eyetracker = Eyelink(self.experiment)
+        self.eyetracker = Eyelink()
+        self.experiment = Recherche_visuelle(self.eyetracker)
 
     def setSMI(self):
         print('Setting SMI')
-        self.eyetracker = Smi(self.experiment)
+        self.eyetracker = Smi()
+        self.experiment = Recherche_visuelle(self.eyetracker)
 
     def file_open(self):
         filename,_ = QFileDialog.getOpenFileName(self, 'Open File')
         print('Reading subject file %s' % filename)
 
-        self.wid.progress = QProgressBar(self.wid)
-        self.wid.progress.setGeometry(200, 80, 250, 20)
-        self.wid.update()
+        #self.wid.progress = QProgressBar(self.wid)
+        #self.wid.progress.setGeometry(200, 80, 250, 20)
+        #self.wid.update()
 
         if self.eyetracker.isParsable(filename):
             datafile = open(filename,"r")
@@ -118,18 +154,24 @@ class Main(QMainWindow):
                 #We add a tabulation and space separator.
                 data = [re.split("[\t ]+",line) for line in data]
 
-                subject = Subject(self.eyetracker, data, 28, "SAS")
+                subject = Subject(self.experiment, data, 28, "SAS")
                 # TODO: Read this data from file!
-                self.setup_trial(filename)
+                self.setup_trial(subject)
         else:
             print('File not parsable by this eyetracker')
 
     # Setups the window components after opening a subject file
-    def setup_trial(self, filename):
+    def setup_trial(self, subject):
         print("setup trial")
 
-        lbl = QLabel('Subject %s' % filename, self.wid)
+        i = 0
+        for trial in subject.trials:
+            button = QPushButton('Trial %i' % i, self)
+            self.scrollLayout.addWidget(button)
+            button.clicked.connect(self.make_choose_trial(trial))
+            i += 1
 
+        self.show()
 
 if __name__ == '__main__':
 
