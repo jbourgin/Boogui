@@ -39,10 +39,15 @@ class Main(QMainWindow):
 
         self.show()
 
-    def make_choose_trial(self, trial):
+    def make_choose_trial(self, n_trial, trial):
         def choose_trial():
             print('choosing trial')
             self.logOutput.clear()
+
+            for i in range(len(self.trial_buttons)):
+                if i != n_trial:
+                    self.trial_buttons[i].setChecked(False)
+
             for entry in trial.entries:
                 self.logOutput.append(str(entry))
             sb = self.logOutput.verticalScrollBar()
@@ -165,10 +170,13 @@ class Main(QMainWindow):
         print("setup trial")
 
         i = 0
+        self.trial_buttons = []
         for trial in subject.trials:
             button = QPushButton('Trial %i' % i, self)
+            button.setCheckable(True)
+            self.trial_buttons.append(button)
             self.scrollLayout.addWidget(button)
-            button.clicked.connect(self.make_choose_trial(trial))
+            button.clicked.connect(self.make_choose_trial(i, trial))
             i += 1
 
         self.show()
