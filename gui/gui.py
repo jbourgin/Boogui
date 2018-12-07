@@ -27,6 +27,10 @@ class Main(QMainWindow):
 
         self.initUI()
 
+        # Window full screen
+        #self.showFullScreen()
+        self.showMaximized()
+
     def initUI(self):
 
         self.setGeometry(300, 300, 600, 600)
@@ -133,37 +137,36 @@ class Main(QMainWindow):
 
     def setEyelink(self):
         print('Setting eyelink')
-        self.eyetracker = Eyelink()
+        print('TO UPDATE')
+        self.eyetracker = Make_Eyelink()
         self.experiment = Recherche_visuelle(self.eyetracker)
 
     def setSMI(self):
         print('Setting SMI')
-        self.eyetracker = Smi()
+        print('TO UPDATE')
+        self.eyetracker = Make_Smi()
         self.experiment = Recherche_visuelle(self.eyetracker)
 
     def file_open(self):
         filename,_ = QFileDialog.getOpenFileName(self, 'Open File')
-        print('Reading subject file %s' % filename)
 
         #self.wid.progress = QProgressBar(self.wid)
         #self.wid.progress.setGeometry(200, 80, 250, 20)
         #self.wid.update()
 
-        if self.eyetracker.isParsable(filename):
-            datafile = open(filename,"r")
+        progress_bar = QProgressBar(self)
+        progress_bar.setGeometry(200, 80, 250, 20)
+        progress_bar.show()
 
-            with datafile:
-                data = datafile.read()
-                data = list(data.splitlines())
-
-                #We add a tabulation and space separator.
-                data = [re.split("[\t ]+",line) for line in data]
-
-                subject = Subject(self.experiment, data, 28, "SAS")
-                # TODO: Read this data from file!
-                self.setup_trial(subject)
+        if len(filename) > 0 and self.eyetracker.isParsable(filename):
+            print('Reading subject file %s' % filename)
+            subject = self.experiment.processSubject(filename, progress_bar)
+            self.setup_trial(subject)
         else:
             print('File not parsable by this eyetracker')
+
+        #closing progress bar
+        progress_bar.hide()
 
     # Setups the window components after opening a subject file
     def setup_trial(self, subject):

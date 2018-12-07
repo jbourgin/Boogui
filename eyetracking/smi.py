@@ -1,7 +1,8 @@
 from eyetracking.trial import *
 from eyetracking.eyelink import Eyelink
+from eyetracking.smi_correction import processSubject
 
-class Smi (EyetrackerInterface):
+class Smi (Eyetracker):
 
     def __init__(self):
         super().__init__()
@@ -174,3 +175,7 @@ class Smi (EyetrackerInterface):
                 return res
 
         return None
+
+    def preprocess(self, input_file: str, output_file: str) -> bool:
+        processSubject(input_file, output_file)
+        return True

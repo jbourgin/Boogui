@@ -1,7 +1,7 @@
 from eyetracking.eyetracker import *
 from eyetracking.interest_region import *
 from eyetracking.utils import *
-from eyetracking.scanpath import plot_segment
+from eyetracking.scanpath import plotSegment
 from typing import TypeVar, List
 from math import sqrt, pow
 
@@ -345,33 +345,5 @@ class Trial:
         nb_points = float(len(point_list))
 
         for i in range(0,len(point_list)-1):
-            plot_segment(point_list[i],point_list[i+1],c=color)
+            plotSegment(point_list[i],point_list[i+1],c=color)
             color = (1, color[1] - 1.0/nb_points , 0)
-
-class Subject:
-
-    def __init__(self, experiment, lines, id : int, group : str):
-        # list of training trials
-        self.training_trials = []
-        # list of trials
-        self.trials = []
-        # subject number
-        self.id = id
-        # subject group
-        self.group = group
-
-        print('Parsing trials entries')
-        while lines != []:
-            trial = Trial(experiment)
-            lines = trial.setEntries(lines)
-            if not trial.isEmpty():
-                if experiment.eyetracker.isTraining(trial):
-                    self.training_trials.append(trial)
-                else:
-                    self.trials.append(trial)
-
-    def getTrial(self, trial_number : int):
-        for trial in self.trials:
-            if trial.getTrialId() == trial_number:
-                return trial
-        return None

@@ -562,7 +562,6 @@ def processSubject(subject_file: str, result_file : str) -> None :
         fixations = []
         current_fixation = empty_fixation()
 
-
         for line in trial:
             t = get_time_line(line)
 

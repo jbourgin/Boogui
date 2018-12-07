@@ -1,5 +1,7 @@
+import re #To format data lists
 from eyetracking.eyelink import *
 from eyetracking.smi import *
+from eyetracking.experiment import *
 from eyetracking.interest_region import *
 from eyetracking.scanpath import *
 import matplotlib.pyplot as plt
@@ -149,6 +151,7 @@ class Recherche_visuelle(Experiment):
 
     def __init__(self, eyetracker):
         super().__init__(eyetracker)
+        self.n_trials = 120
 
     def processTrial(self, subject, trial):
         print('Processing trial n°%i' % trial.getTrialId())
@@ -278,7 +281,7 @@ class Recherche_visuelle(Experiment):
         print(s)
 
     @staticmethod
-    def plot_target(region: InterestRegion, cor_resp, color):
+    def plotTarget(region: InterestRegion, cor_resp, color):
     	lu_corner = [region.center[0]-region.half_width, region.center[1]+region.half_height]
     	lb_corner = [region.center[0]-region.half_width, region.center[1]-region.half_height]
     	ru_corner = [region.center[0]+region.half_width, region.center[1]+region.half_height]
@@ -287,20 +290,20 @@ class Recherche_visuelle(Experiment):
     	if cor_resp == 2:
     		hole_up = [region.center[0]+region.half_width, region.center[1]+30]
     		hole_down = [region.center[0]+region.half_width, region.center[1]-30]
-    		plot_segment(lu_corner, lb_corner, c=color)
-    		plot_segment(lb_corner, rb_corner, c=color)
-    		plot_segment(rb_corner, hole_down, c=color)
-    		plot_segment(hole_up, ru_corner, c=color)
-    		plot_segment(ru_corner, lu_corner, c=color)
+    		plotSegment(lu_corner, lb_corner, c=color)
+    		plotSegment(lb_corner, rb_corner, c=color)
+    		plotSegment(rb_corner, hole_down, c=color)
+    		plotSegment(hole_up, ru_corner, c=color)
+    		plotSegment(ru_corner, lu_corner, c=color)
 
     	elif cor_resp == 1:
     		hole_up = [region.center[0]-region.half_width, region.center[1]+30]
     		hole_down = [region.center[0]-region.half_width, region.center[1]-30]
-    		plot_segment(lb_corner, rb_corner, c=color)
-    		plot_segment(rb_corner, ru_corner, c=color)
-    		plot_segment(ru_corner, lu_corner, c=color)
-    		plot_segment(lb_corner, hole_down, c=color)
-    		plot_segment(hole_up, lu_corner, c=color)
+    		plotSegment(lb_corner, rb_corner, c=color)
+    		plotSegment(rb_corner, ru_corner, c=color)
+    		plotSegment(ru_corner, lu_corner, c=color)
+    		plotSegment(lb_corner, hole_down, c=color)
+    		plotSegment(hole_up, lu_corner, c=color)
 
     # Creates an image scanpath for one trial.
     def scanpath(self, subject_id, trial, folder):
@@ -325,18 +328,17 @@ class Recherche_visuelle(Experiment):
 
         for frame in frame_list:
             if frame.isTarget((trial.features['target_hp'], trial.features['target_vp'])):
-                Recherche_visuelle.plot_target(frame, trial.features['cor_resp'], target_color)
+                Recherche_visuelle.plotTarget(frame, trial.features['cor_resp'], target_color)
             else:
-                plot_region(frame, frame_color)
+                plotRegion(frame, frame_color)
 
         # Plotting gaze positions
         trial.plot()
         image_name = '%i_%i.png' % (subject_id, trial.getTrialId())
-        save_image(getTmpFolder(), image_name)
-        clearTmpFodler()
+        saveImage(getTmpFolder(), image_name)
 
     # Creates a video scanpath for one trial.
-    def scanpath_video(self, subject_id, trial):
+    def scanpathVideo(self, subject_id, trial):
         print('scanpath video')
         print(trial.features)
 
@@ -366,17 +368,51 @@ class Recherche_visuelle(Experiment):
             plt.axis('off')
 
             for j in range(max(0,elem-n_elem_drawn),elem+1):
-                plot_segment(point_list[j], point_list[j+1], c = point_color)
+                plotSegment(point_list[j], point_list[j+1], c = point_color)
             point_color = (1, point_color[1] - 1.0/nb_points , 0)
 
             for frame in frame_list:
                 if frame.isTarget((trial.features['target_hp'], trial.features['target_vp'])):
-                    Recherche_visuelle.plot_target(frame, trial.features['cor_resp'], target_color)
+                    Recherche_visuelle.plotTarget(frame, trial.features['cor_resp'], target_color)
                 else:
-                    plot_region(frame, frame_color)
+                    plotRegion(frame, frame_color)
 
             image_name = '%i.png' % elem
-            save_image(getTmpFolder(), image_name)
+            saveImage(getTmpFolder(), image_name)
             image_list.append(joinPaths(getTmpFolder(), image_name))
-        make_video(image_list, 'test_vid.avi', fps=100)
-        clearTmpFodler()
+        makeVideo(image_list, 'test_vid.avi', fps=100)
+
+    def getSubjectData(self, line: str) -> Union[Tuple[int,str]]:
+        try:
+            l = re.split("[\t ]+", line)
+            return (int(l[1]), l[2])
+        except:
+            return None
+
+    def processSubject(self, input_file : str, progress_bar = None) -> Subject:
+        with open(input_file) as f:
+            first_line = f.readline()
+
+        print(first_line)
+        subject_data = self.getSubjectData(first_line)
+
+        if subject_data is None:
+            return None
+
+        else:
+            result_file = "results.txt"
+            is_processed = self.eyetracker.preprocess(input_file, result_file)
+            if is_processed:
+                datafile = open(joinPaths(getTmpFolder(), result_file), "r")
+            else:
+                datafile = open(input_file, "r")
+
+            #File conversion in list.
+            data = datafile.read()
+            data = list(data.splitlines())
+
+            #We add a tabulation and space separator.
+            data = [re.split("[\t ]+",line) for line in data]
+
+            (n_subject, subject_cat) = subject_data
+            return Subject(self, data, n_subject, subject_cat, progress_bar)

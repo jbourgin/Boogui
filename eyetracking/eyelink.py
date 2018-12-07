@@ -1,9 +1,10 @@
+from eyetracking.eyetracker import *
 from eyetracking.trial import *
 
-class Eyelink (EyetrackerInterface):
+class Eyelink (Eyetracker):
 
     def __init__(self):
-        super().__init__()
+        pass
 
     @staticmethod
     def getEye(lines: List[List[str]]) -> str:
@@ -31,7 +32,7 @@ class Eyelink (EyetrackerInterface):
     # If is fails, it returns None
 
     @staticmethod
-    def parseStartTrial(line: List[str]) -> Entry:
+    def parseStartTrial(line: List[str]) -> Union[Entry, None]:
         if len(line) >= 7 and line[2] == 'start_trial':
             try:
                 time = int(line[1])
@@ -43,7 +44,7 @@ class Eyelink (EyetrackerInterface):
         return None
 
     @staticmethod
-    def parseStopTrial(line: List[str]) -> Entry:
+    def parseStopTrial(line: List[str]) -> Union[Entry, None]:
         if len(line) >= 3 and line[2] == 'stop_trial':
             try:
                 time = int(line[1])
@@ -53,7 +54,7 @@ class Eyelink (EyetrackerInterface):
         return None
 
     @staticmethod
-    def parsePosition(line: List[str]) -> Entry:
+    def parsePosition(line: List[str]) -> Union[Entry, None]:
         # case Position
         if len(line) >= 3:
             try:
@@ -66,7 +67,7 @@ class Eyelink (EyetrackerInterface):
         return None
 
     @staticmethod
-    def parseStartFixation(line: List[str]) -> Entry:
+    def parseStartFixation(line: List[str]) -> Union[Entry, None]:
         # case Position
         if len(line) >= 3 and line[0] == 'SFIX':
             try:
@@ -77,7 +78,7 @@ class Eyelink (EyetrackerInterface):
         return None
 
     @staticmethod
-    def parseEndFixation(line: List[str]) -> Entry:
+    def parseEndFixation(line: List[str]) -> Union[Entry, None]:
         # case Position
         if len(line) >= 4 and line[0] == 'EFIX':
             try:
@@ -88,7 +89,7 @@ class Eyelink (EyetrackerInterface):
         return None
 
     @staticmethod
-    def parseStartBlink(line: List[str]) -> Entry:
+    def parseStartBlink(line: List[str]) -> Union[Entry, None]:
         # case Position
         if len(line) >= 3 and line[0] == 'SBLINK':
             try:
@@ -99,7 +100,7 @@ class Eyelink (EyetrackerInterface):
         return None
 
     @staticmethod
-    def parseEndBlink(line: List[str]) -> Entry:
+    def parseEndBlink(line: List[str]) -> Union[Entry, None]:
         # case Position
         if len(line) >= 4 and line[0] == 'EBLINK':
             try:
@@ -110,7 +111,7 @@ class Eyelink (EyetrackerInterface):
         return None
 
     @staticmethod
-    def parseStartSaccade(line: List[str]) -> Entry:
+    def parseStartSaccade(line: List[str]) -> Union[Entry, None]:
         # case Position
         if len(line) >= 3 and line[0] == 'SSACC':
             try:
@@ -121,7 +122,7 @@ class Eyelink (EyetrackerInterface):
         return None
 
     @staticmethod
-    def parseEndSaccade(line: List[str]) -> Entry:
+    def parseEndSaccade(line: List[str]) -> Union[Entry, None]:
         # case Position
         if len(line) >= 4 and line[0] == 'ESACC':
             try:
@@ -131,7 +132,7 @@ class Eyelink (EyetrackerInterface):
                 pass
         return None
 
-    def parseResponse(self, line: Line) -> Entry:
+    def parseResponse(self, line: Line) -> Union[Entry, None]:
         # case Position
         if self.isResponse(line):
             try:
@@ -145,7 +146,7 @@ class Eyelink (EyetrackerInterface):
     def isResponse(self, line : Line) -> bool:
         pass
 
-    def parseExperimentVariables(self, line: List[str]) -> Entry:
+    def parseExperimentVariables(self, line: List[str]) -> Union[Entry, None]:
         # case Position
         try:
             time = int(line[1])
@@ -158,7 +159,7 @@ class Eyelink (EyetrackerInterface):
     def parseVariables(self, line: Line):
         pass
 
-    def parseEntry(self, line: List[str]) -> Entry:
+    def parseEntry(self, line: List[str]) -> Union[Entry, None]:
         parsers = [Eyelink.parseStartTrial,
             Eyelink.parseStopTrial,
             Eyelink.parsePosition,
@@ -177,3 +178,6 @@ class Eyelink (EyetrackerInterface):
                 return res
 
         return None
+
+    def preprocess(self, input_file: str, output_file: str) -> bool:
+        return False
