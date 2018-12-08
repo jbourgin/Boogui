@@ -43,6 +43,7 @@ def makeVideo(images : List[str], outvid, fps=20, size=None, format='XVID'):
     It will resize every image to this size before adding them to the video.
     '''
     print('Combining images into video')
+    output = joinPaths(getTmpFolder(), outvid)
     from cv2 import VideoWriter, VideoWriter_fourcc, imread, resize
     fourcc = VideoWriter_fourcc(*format)
     vid = None
@@ -53,7 +54,7 @@ def makeVideo(images : List[str], outvid, fps=20, size=None, format='XVID'):
         if vid is None:
             if size is None:
                 size = img.shape[1], img.shape[0]
-            vid = VideoWriter(outvid, fourcc, float(fps), size)
+            vid = VideoWriter(output, fourcc, float(fps), size)
         if size[0] != img.shape[1] and size[1] != img.shape[0]:
             img = resize(img, size)
         vid.write(img)

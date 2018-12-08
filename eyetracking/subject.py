@@ -25,7 +25,6 @@ class Subject:
                     self.trials.append(trial)
                     n_trials += 1
                     if progress_bar != None:
-                        print('adding progress')
                         progress_bar.setValue(n_trials*100/max_trials)
 
     def getTrial(self, trial_number : int):

@@ -306,7 +306,7 @@ class Recherche_visuelle(Experiment):
     		plotSegment(hole_up, lu_corner, c=color)
 
     # Creates an image scanpath for one trial.
-    def scanpath(self, subject_id, trial, folder):
+    def scanpath(self, trial):
         print('scanpath')
         print(trial.features)
 
@@ -334,11 +334,12 @@ class Recherche_visuelle(Experiment):
 
         # Plotting gaze positions
         trial.plot()
-        image_name = '%i_%i.png' % (subject_id, trial.getTrialId())
+        image_name = 'trial_%i.png' % (trial.getTrialId())
         saveImage(getTmpFolder(), image_name)
+        return image_name
 
     # Creates a video scanpath for one trial.
-    def scanpathVideo(self, subject_id, trial):
+    def scanpathVideo(self, trial):
         print('scanpath video')
         print(trial.features)
 
@@ -380,7 +381,9 @@ class Recherche_visuelle(Experiment):
             image_name = '%i.png' % elem
             saveImage(getTmpFolder(), image_name)
             image_list.append(joinPaths(getTmpFolder(), image_name))
-        makeVideo(image_list, 'test_vid.avi', fps=100)
+        vid_name = 'vid_%s.avi' % (trial.getTrialId())
+        makeVideo(image_list, vid_name, fps=100)
+        return vid_name
 
     def getSubjectData(self, line: str) -> Union[Tuple[int,str]]:
         try:

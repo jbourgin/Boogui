@@ -3,10 +3,34 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QAction, QActionGroup, qA
 from PyQt5.QtWidgets import QFileDialog, QProgressBar, QTextEdit
 from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout, QLabel
 from PyQt5.QtWidgets import QScrollArea, QFormLayout
+from PyQt5.QtMultimediaWidgets import QVideoWidget
+from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import QUrl
 
 from eyetracking.smi import *
 from eyetracking.Recherche_visuelle import *
 import re #To format data lists
+
+class TrialData:
+    def __init__(self, experiment, trial):
+        self.experiment = experiment
+        self.trial = trial
+        self.image = experiment.scanpath(trial)
+        self.video = None
+
+    def getVideo(self):
+        if self.video != None:
+            return self.video
+        else:
+            self.video = self.experiment.scanpathVideo(self.trial)
+            return self.video
+
+def clearLayout(layout):
+  while layout.count():
+    child = layout.takeAt(0)
+    if child.widget():
+      child.widget().deleteLater()
 
 class Main(QMainWindow):
 
@@ -21,6 +45,8 @@ class Main(QMainWindow):
 
         # The current opened subject
         self.subject = None
+
+        self.trial_datas = []
 
         # The main window widget
         self.main_wid = None
@@ -43,6 +69,32 @@ class Main(QMainWindow):
 
         self.show()
 
+    def set_video(self, n_trial):
+        vid_wid = QVideoWidget()
+        play_button = QPushButton("Play")
+        play_button.clicked.connect(self.play)
+        self.mediaPlayer.setMedia(
+                QMediaContent(QUrl.fromLocalFile(
+                self.trial_datas[n_trial].getVideo())))
+        self.mediaPlayer.setVideoOutput(vid_wid)
+        self.previsu_vid_layout.addWidget(vid_wid)
+        self.previsu_vid_layout.addWidget(play_button)
+
+    def make_compute_video(self, n_trial):
+        def compute_video():
+            print('computing video')
+            self.trial_datas[n_trial].getVideo()
+            clearLayout(self.previsu_vid_layout)
+            self.set_video(n_trial)
+
+        return compute_video
+
+    def play(self):
+        if self.mediaPlayer.state() == QMediaPlayer.PlayingState:
+            self.mediaPlayer.pause()
+        else:
+            self.mediaPlayer.play()
+
     def make_choose_trial(self, n_trial, trial):
         def choose_trial():
             print('choosing trial')
@@ -57,9 +109,24 @@ class Main(QMainWindow):
             sb = self.logOutput.verticalScrollBar()
             sb.setValue(sb.minimum())
 
+            image_name = joinPaths(getTmpFolder(), self.trial_datas[n_trial].image)
+            pixmap = QPixmap(image_name)
+            self.previsu_image.setPixmap(pixmap)
+            self.previsu_image.show()
+
+            vid_name = self.trial_datas[n_trial].video
+            clearLayout(self.previsu_vid_layout)
+            if vid_name is None:
+                button = QPushButton('Make video scanpath')
+                button.clicked.connect(self.make_compute_video(n_trial))
+                self.previsu_vid_layout.addWidget(button)
+            else:
+                self.set_video(n_trial)
+
+            self.previsu_vid.show()
         return choose_trial
 
-    def set_main_widget(self):
+    def set_trial_scroller(self):
         # scroll area widget contents - layout
         self.scrollLayout = QVBoxLayout()
 
@@ -73,8 +140,9 @@ class Main(QMainWindow):
         self.scrollArea.setWidget(self.scrollWidget)
         self.scrollArea.setFixedWidth(250)
 
-        # main layout
-        self.mainLayout = QHBoxLayout()
+        self.mainLayout.addWidget(self.scrollArea)
+
+    def set_text_area(self):
 
         # text area
         self.logOutput = QTextEdit()
@@ -85,9 +153,40 @@ class Main(QMainWindow):
         font.setFamily("Courier")
         font.setPointSize(10)
 
-        # add all main to the main vLayout
-        self.mainLayout.addWidget(self.scrollArea)
         self.mainLayout.addWidget(self.logOutput)
+
+    def set_previsualizer(self):
+        self.previsualizer = QWidget()
+        previsualizer_layout = QVBoxLayout()
+        self.previsualizer.setLayout(previsualizer_layout)
+
+        self.previsu_image = QLabel()
+        self.previsu_vid = QWidget()
+
+        self.previsu_vid_layout = QVBoxLayout()
+        self.previsu_vid.setLayout(self.previsu_vid_layout)
+
+        self.previsu_image.setFixedWidth(600)
+        self.previsu_vid.setFixedWidth(600)
+
+        self.previsu_image.setFixedHeight(400)
+        self.previsu_vid.setFixedHeight(400)
+
+        previsualizer_layout.addWidget(self.previsu_image)
+        previsualizer_layout.addWidget(self.previsu_vid)
+
+        self.mainLayout.addWidget(self.previsualizer)
+
+    def set_main_widget(self):
+
+        # main layout
+        self.mainLayout = QHBoxLayout()
+
+        self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
+
+        self.set_trial_scroller()
+        self.set_text_area()
+        self.set_previsualizer()
 
         # central widget
         self.centralWidget = QWidget()
@@ -172,16 +271,25 @@ class Main(QMainWindow):
     def setup_trial(self, subject):
         print("setup trial")
 
+        progress_bar = QProgressBar(self)
+        progress_bar.setGeometry(200, 80, 250, 20)
+        progress_bar.show()
         i = 0
         self.trial_buttons = []
+        self.trial_datas = []
+        len_trials = len(subject.trials)
         for trial in subject.trials:
             button = QPushButton('Trial %i' % i, self)
             button.setCheckable(True)
+            self.trial_datas.append(TrialData(self.experiment, trial))
             self.trial_buttons.append(button)
             self.scrollLayout.addWidget(button)
             button.clicked.connect(self.make_choose_trial(i, trial))
+            progress_bar.setValue(i*100/len_trials)
             i += 1
 
+        #closing progress bar
+        progress_bar.hide()
         self.show()
 
 if __name__ == '__main__':
