@@ -16,8 +16,15 @@ class TrialData:
     def __init__(self, experiment, trial):
         self.experiment = experiment
         self.trial = trial
-        self.image = experiment.scanpath(trial)
+        self.image = None
         self.video = None
+
+    def getImage(self):
+        if self.image != None:
+            return self.image
+        else:
+            self.image = self.experiment.scanpath(self.trial)
+            return self.image
 
     def getVideo(self):
         if self.video != None:
@@ -73,9 +80,12 @@ class Main(QMainWindow):
         vid_wid = QVideoWidget()
         play_button = QPushButton("Play")
         play_button.clicked.connect(self.play)
+        #url = 'http://localhost:8080/' +
+        url = joinPaths(getTmpFolder(), self.trial_datas[n_trial].getVideo())
+        print(url)
         self.mediaPlayer.setMedia(
-                QMediaContent(QUrl.fromLocalFile(
-                self.trial_datas[n_trial].getVideo())))
+            #QMediaContent(QUrl(url)))
+            QMediaContent(QUrl.fromLocalFile(url)))
         self.mediaPlayer.setVideoOutput(vid_wid)
         self.previsu_vid_layout.addWidget(vid_wid)
         self.previsu_vid_layout.addWidget(play_button)
@@ -109,7 +119,7 @@ class Main(QMainWindow):
             sb = self.logOutput.verticalScrollBar()
             sb.setValue(sb.minimum())
 
-            image_name = joinPaths(getTmpFolder(), self.trial_datas[n_trial].image)
+            image_name = joinPaths(getTmpFolder(), self.trial_datas[n_trial].getImage())
             pixmap = QPixmap(image_name)
             self.previsu_image.setPixmap(pixmap)
             self.previsu_image.show()
