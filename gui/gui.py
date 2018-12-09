@@ -14,6 +14,7 @@ from eyetracking.smi import *
 from eyetracking.Recherche_visuelle import *
 from gui.utils import *
 from gui.subject import *
+from gui.progress_widget import ProgressWidget
 
 import re #To format data lists
 
@@ -47,39 +48,6 @@ class Main(QMainWindow):
     def closeEvent(self, close_event):
         print('Closing application')
         clearTmpFolder()
-
-    def makeDialog(self):
-        self.dialog = QWidget(self)
-        self.dialog.setAutoFillBackground(True)
-
-        self.dialogLayout = QVBoxLayout()
-
-        self.progress_bar_subject = QProgressBar()
-        #self.progress_bar_subject.setTextVisible(False)
-
-        self.progress_bar_trial = QProgressBar()
-        #self.progress_bar_trial.setTextVisible(False)
-
-        self.label_subject = QLabel()
-        self.label_trial = QLabel()
-        self.dialogLayout.addWidget(self.label_subject)
-        self.dialogLayout.addWidget(self.progress_bar_subject)
-        self.dialogLayout.addWidget(self.label_trial)
-        self.dialogLayout.addWidget(self.progress_bar_trial)
-
-        height = 150
-        width = 400
-        self.dialog.setFixedHeight(height)
-        self.dialog.setFixedWidth(width)
-        self.dialog.setLayout(self.dialogLayout)
-        center = self.rect().center()
-        self.dialog.move(center.x() - width/2, center.y() - height/2)
-        self.dialog.show()
-
-        self.label_subject.setText('Loading Subjects')
-        self.progress_bar_subject.setValue(0)
-        self.label_trial.setText('Loading Trials')
-        self.progress_bar_trial.setValue(0)
 
     def initUI(self):
 
@@ -303,13 +271,13 @@ class Main(QMainWindow):
         #filedialog.setOption(QFileDialog.Option.DontUseNativeDialog,False)
         filenames,_ = filedialog.getOpenFileNames(self, 'Open File')
 
-        self.makeDialog()
+        self.progress = ProgressWidget(self)
 
-        self.progress_bar_subject.setMaximum(len(filenames))
+        self.progress.progress_bar_subject.setMaximum(len(filenames))
         i_subject = 0
         for filename in filenames:
             print('Reading subject file %s' % filename)
-            self.subject_datas.append(SubjectData(self.makeExperiment(), filename, self))
+            self.subject_datas.append(SubjectData(self.makeExperiment(), filename, self.progress))
 
             # Adding subject button
             n_subject = len(self.subject_datas) - 1
@@ -319,10 +287,10 @@ class Main(QMainWindow):
             self.subjecttrialScrollLayout.addWidget(button)
             button.clicked.connect(self.make_choose_subject(n_subject))
             i_subject += 1
-            self.progress_bar_subject.setValue(i_subject)
+            self.progress.progress_bar_subject.setValue(i_subject)
 
         #closing message box
-        self.dialog.close()
+        self.progress.close()
 
     # Setups the window components after selecting a subject
     def setup_trials(self, n_subject):
