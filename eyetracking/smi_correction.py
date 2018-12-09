@@ -586,7 +586,7 @@ def processSubject(subject_file: str, result_file : str, progress = None) -> Non
             artifact_percentage.append(0)
 
     if progress != None:
-        progress.setText(1, 'Loading Trials - preprocessing: writting file')
+        progress.setText(1, 'Loading Trials - preprocessing: writing file')
         progress.setMaximum(1, len(data_filtered2)-1)
 
     results = open(joinPaths(getTmpFolder(), get_inter_filename()), "w")
