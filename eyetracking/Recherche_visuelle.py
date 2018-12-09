@@ -146,12 +146,31 @@ class Make_Smi(Smi):
     def isTraining(self, trial) -> bool:
         return 'face' in trial.getStimulus()
 
+class ExperimentException(Exception):
+    def __init__(self, message):
+
+        # Call the base class constructor with the parameters it needs
+        super().__init__(message)
+
 
 class Recherche_visuelle(Experiment):
 
-    def __init__(self, eyetracker):
-        super().__init__(eyetracker)
+    def __init__(self):
+        super().__init__(None)
         self.n_trials = 120
+
+    def selectEyetracker(self, input_file : str) -> None:
+        eyelink = Make_Eyelink()
+        if eyelink.isParsable(input_file):
+            print('Selecting Eyelink')
+            self.eyetracker = eyelink
+        else:
+            smi = Make_Smi()
+            if smi.isParsable(input_file):
+                print('Selecting SMI')
+                self.eyetracker = smi
+            else:
+                raise ExperimentException('No suitable eyetracker found for input file %s' % input_file)
 
     def processTrial(self, subject, trial):
         print('Processing trial n°%i' % trial.getTrialId())
@@ -306,7 +325,7 @@ class Recherche_visuelle(Experiment):
     		plotSegment(hole_up, lu_corner, c=color)
 
     # Creates an image scanpath for one trial.
-    def scanpath(self, trial):
+    def scanpath(self, subject_id, trial):
         print('scanpath')
         print(trial.features)
 
@@ -314,7 +333,9 @@ class Recherche_visuelle(Experiment):
 
         frame_color = (0,0,0)
         target_color = (1,0,0)
-        plt.axis([0,1024,0,768])
+        x_axis = self.eyetracker.screen_center[0] * 2
+        y_axis = self.eyetracker.screen_center[1] * 2
+        plt.axis([0, x_axis, 0, y_axis])
         plt.gca().invert_yaxis()
         plt.axis('off')
 
@@ -334,12 +355,12 @@ class Recherche_visuelle(Experiment):
 
         # Plotting gaze positions
         trial.plot()
-        image_name = 'trial_%i.png' % (trial.getTrialId())
+        image_name = 'subject_%i_trial_%i.png' % (subject_id, trial.getTrialId())
         saveImage(getTmpFolder(), image_name)
         return image_name
 
     # Creates a video scanpath for one trial.
-    def scanpathVideo(self, trial):
+    def scanpathVideo(self, subject_id, trial):
         print('scanpath video')
         print(trial.features)
 
@@ -381,7 +402,7 @@ class Recherche_visuelle(Experiment):
             image_name = '%i.png' % elem
             saveImage(getTmpFolder(), image_name)
             image_list.append(joinPaths(getTmpFolder(), image_name))
-        vid_name = 'vid_%s.avi' % (trial.getTrialId())
+        vid_name = 'subject_%i_trial_%s.avi' % (subject_id, trial.getTrialId())
         makeVideo(image_list, vid_name, fps=100)
         return vid_name
 
@@ -393,6 +414,9 @@ class Recherche_visuelle(Experiment):
             return None
 
     def processSubject(self, input_file : str, progress_bar = None) -> Subject:
+
+        self.selectEyetracker(input_file)
+
         with open(input_file) as f:
             first_line = f.readline()
 

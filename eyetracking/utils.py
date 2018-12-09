@@ -14,7 +14,7 @@ def joinPaths(path1: str, path2: str) -> str:
 def getTmpFolder() -> str:
     return '_tmp'
 
-def clearTmpFodler() -> None:
+def clearTmpFolder() -> None:
     folder = getTmpFolder()
     shutil.rmtree('%s' % (getTmpFolder()), ignore_errors=True)
 

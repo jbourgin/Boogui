@@ -1,11 +1,12 @@
 import sys
 from PyQt5.QtWidgets import QMainWindow, QApplication, QAction, QActionGroup, qApp, QWidget
-from PyQt5.QtWidgets import QFileDialog, QProgressBar, QTextEdit
+from PyQt5.QtWidgets import QFileDialog, QProgressBar, QTextEdit, QAction
 from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout, QLabel
 from PyQt5.QtWidgets import QScrollArea, QFormLayout
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import Qt
 from PyQt5.QtCore import QUrl
 
 from eyetracking.smi import *
@@ -13,25 +14,35 @@ from eyetracking.Recherche_visuelle import *
 import re #To format data lists
 
 class TrialData:
-    def __init__(self, experiment, trial):
+    def __init__(self, experiment, subject_id, trial):
         self.experiment = experiment
         self.trial = trial
         self.image = None
         self.video = None
+        self.subject_id = subject_id
 
     def getImage(self):
         if self.image != None:
             return self.image
         else:
-            self.image = self.experiment.scanpath(self.trial)
+            self.image = self.experiment.scanpath(self.subject_id, self.trial)
             return self.image
 
     def getVideo(self):
         if self.video != None:
             return self.video
         else:
-            self.video = self.experiment.scanpathVideo(self.trial)
+            self.video = self.experiment.scanpathVideo(self.subject_id, self.trial)
             return self.video
+
+class SubjectData:
+    def __init__(self, experiment, input_file: str, progress_bar = None):
+        self.trial_datas = []
+        self.experiment = experiment
+        self.subject = self.experiment.processSubject(input_file, progress_bar)
+
+        for trial in self.subject.trials:
+            self.trial_datas.append(TrialData(self.experiment, self.subject.id, trial))
 
 def clearLayout(layout):
   while layout.count():
@@ -41,19 +52,15 @@ def clearLayout(layout):
 
 class Main(QMainWindow):
 
+    scrollLayouWidth = 125
+    previsuAreaWidth = 700
+
     def __init__(self):
         super().__init__()
 
-        # The current experiment
-        self.experiment = None
+        self.subject_datas = []
 
-        # The current eyetracker
-        self.eyetracker = None
-
-        # The current opened subject
-        self.subject = None
-
-        self.trial_datas = []
+        self.subject_buttons = []
 
         # The main window widget
         self.main_wid = None
@@ -63,6 +70,16 @@ class Main(QMainWindow):
         # Window full screen
         #self.showFullScreen()
         self.showMaximized()
+
+        quit = QAction("Quit", self)
+        quit.triggered.connect(self.close)
+
+    def makeExperiment(self):
+        return Recherche_visuelle()
+
+    def closeEvent(self, close_event):
+        print('Closing application')
+        clearTmpFolder()
 
     def initUI(self):
 
@@ -76,26 +93,24 @@ class Main(QMainWindow):
 
         self.show()
 
-    def set_video(self, n_trial):
+    def set_video(self, n_subject, n_trial):
         vid_wid = QVideoWidget()
         play_button = QPushButton("Play")
         play_button.clicked.connect(self.play)
-        #url = 'http://localhost:8080/' +
-        url = joinPaths(getTmpFolder(), self.trial_datas[n_trial].getVideo())
+        url = joinPaths(getTmpFolder(), self.getTrialData(n_subject, n_trial).getVideo())
         print(url)
         self.mediaPlayer.setMedia(
-            #QMediaContent(QUrl(url)))
             QMediaContent(QUrl.fromLocalFile(url)))
         self.mediaPlayer.setVideoOutput(vid_wid)
         self.previsu_vid_layout.addWidget(vid_wid)
         self.previsu_vid_layout.addWidget(play_button)
 
-    def make_compute_video(self, n_trial):
+    def make_compute_video(self, n_subject, n_trial):
         def compute_video():
             print('computing video')
-            self.trial_datas[n_trial].getVideo()
+            self.getTrialData(n_subject, n_trial).getVideo()
             clearLayout(self.previsu_vid_layout)
-            self.set_video(n_trial)
+            self.set_video(n_subject, n_trial)
 
         return compute_video
 
@@ -105,11 +120,30 @@ class Main(QMainWindow):
         else:
             self.mediaPlayer.play()
 
-    def make_choose_trial(self, n_trial, trial):
+    def getTrialData(self, n_subject, n_trial):
+        return self.subject_datas[n_subject].trial_datas[n_trial]
+
+    def make_choose_subject(self, n_subject):
+        def choose_subject():
+
+            for i in range(len(self.subject_datas)):
+                if i != n_subject:
+                    self.subject_buttons[i].setChecked(False)
+
+            self.setup_trials(n_subject)
+
+        return choose_subject
+
+    def clear_layouts(self):
+        self.previsu_image.clear()
+        self.logOutput.clear()
+        clearLayout(self.previsu_vid_layout)
+
+    def make_choose_trial(self, n_subject, n_trial, trial):
         def choose_trial():
             print('choosing trial')
-            self.logOutput.clear()
-
+            self.clear_layouts()
+            subject_data = self.subject_datas[n_subject]
             for i in range(len(self.trial_buttons)):
                 if i != n_trial:
                     self.trial_buttons[i].setChecked(False)
@@ -119,36 +153,55 @@ class Main(QMainWindow):
             sb = self.logOutput.verticalScrollBar()
             sb.setValue(sb.minimum())
 
-            image_name = joinPaths(getTmpFolder(), self.trial_datas[n_trial].getImage())
+            image_name = joinPaths(getTmpFolder(), self.getTrialData(n_subject, n_trial).getImage())
             pixmap = QPixmap(image_name)
             self.previsu_image.setPixmap(pixmap)
+            self.previsu_image.adjustSize()
             self.previsu_image.show()
 
-            vid_name = self.trial_datas[n_trial].video
-            clearLayout(self.previsu_vid_layout)
+            vid_name = self.getTrialData(n_subject, n_trial).video
+
             if vid_name is None:
                 button = QPushButton('Make video scanpath')
-                button.clicked.connect(self.make_compute_video(n_trial))
+                button.clicked.connect(self.make_compute_video(n_subject, n_trial))
                 self.previsu_vid_layout.addWidget(button)
             else:
-                self.set_video(n_trial)
+                self.set_video(n_subject, n_trial)
 
             self.previsu_vid.show()
         return choose_trial
 
+    def set_subject_scroller(self):
+        # scroll area widget contents - layout
+        self.subjecttrialScrollLayout = QVBoxLayout()
+        self.subjecttrialScrollLayout.setAlignment(Qt.AlignTop)
+
+        # scroll area widget contents
+        self.subjectScrollWidget = QWidget()
+        self.subjectScrollWidget.setLayout(self.subjecttrialScrollLayout)
+
+        # scroll area
+        self.subjectScrollArea = QScrollArea()
+        self.subjectScrollArea.setWidgetResizable(True)
+        self.subjectScrollArea.setWidget(self.subjectScrollWidget)
+        self.subjectScrollArea.setFixedWidth(self.scrollLayouWidth)
+
+        self.mainLayout.addWidget(self.subjectScrollArea)
+
     def set_trial_scroller(self):
         # scroll area widget contents - layout
-        self.scrollLayout = QVBoxLayout()
+        self.trialScrollLayout = QVBoxLayout()
+        self.trialScrollLayout.setAlignment(Qt.AlignTop)
 
         # scroll area widget contents
         self.scrollWidget = QWidget()
-        self.scrollWidget.setLayout(self.scrollLayout)
+        self.scrollWidget.setLayout(self.trialScrollLayout)
 
         # scroll area
         self.scrollArea = QScrollArea()
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setWidget(self.scrollWidget)
-        self.scrollArea.setFixedWidth(250)
+        self.scrollArea.setFixedWidth(self.scrollLayouWidth)
 
         self.mainLayout.addWidget(self.scrollArea)
 
@@ -176,14 +229,12 @@ class Main(QMainWindow):
         self.previsu_vid_layout = QVBoxLayout()
         self.previsu_vid.setLayout(self.previsu_vid_layout)
 
-        self.previsu_image.setFixedWidth(600)
-        self.previsu_vid.setFixedWidth(600)
-
-        self.previsu_image.setFixedHeight(400)
-        self.previsu_vid.setFixedHeight(400)
+        #self.previsu_image.setFixedWidth(self.previsuAreaWidth)
+        #self.previsu_vid.setFixedWidth(self.previsuAreaWidth)
 
         previsualizer_layout.addWidget(self.previsu_image)
         previsualizer_layout.addWidget(self.previsu_vid)
+        self.previsualizer.setFixedWidth(self.previsuAreaWidth)
 
         self.mainLayout.addWidget(self.previsualizer)
 
@@ -194,6 +245,7 @@ class Main(QMainWindow):
 
         self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
 
+        self.set_subject_scroller()
         self.set_trial_scroller()
         self.set_text_area()
         self.set_previsualizer()
@@ -224,6 +276,7 @@ class Main(QMainWindow):
         fileMenu.addAction(exitAct)
         fileMenu.addAction(browseAct)
 
+        '''
         # Eyetracker menu
         ag = QActionGroup(self, exclusive=True)
         eyeTrackerMenu = menubar.addMenu('&EyeTracker')
@@ -243,18 +296,7 @@ class Main(QMainWindow):
         # default eyetracker
         self.setEyelink()
         setEyelinkAct.setChecked(True)
-
-    def setEyelink(self):
-        print('Setting eyelink')
-        print('TO UPDATE')
-        self.eyetracker = Make_Eyelink()
-        self.experiment = Recherche_visuelle(self.eyetracker)
-
-    def setSMI(self):
-        print('Setting SMI')
-        print('TO UPDATE')
-        self.eyetracker = Make_Smi()
-        self.experiment = Recherche_visuelle(self.eyetracker)
+        '''
 
     def file_open(self):
         filename,_ = QFileDialog.getOpenFileName(self, 'Open File')
@@ -267,39 +309,44 @@ class Main(QMainWindow):
         progress_bar.setGeometry(200, 80, 250, 20)
         progress_bar.show()
 
-        if len(filename) > 0 and self.eyetracker.isParsable(filename):
+        if len(filename) > 0:
             print('Reading subject file %s' % filename)
-            subject = self.experiment.processSubject(filename, progress_bar)
-            self.setup_trial(subject)
-        else:
-            print('File not parsable by this eyetracker')
+            self.subject_datas.append(SubjectData(self.makeExperiment(), filename, progress_bar))
+
+            # Adding subject button
+            n_subject = len(self.subject_datas) - 1
+            button = QPushButton('Subject %i' % self.subject_datas[-1].subject.id)
+            self.subject_buttons.append(button)
+            button.setCheckable(True)
+            self.subjecttrialScrollLayout.addWidget(button)
+            button.clicked.connect(self.make_choose_subject(n_subject))
 
         #closing progress bar
         progress_bar.hide()
 
-    # Setups the window components after opening a subject file
-    def setup_trial(self, subject):
+    # Setups the window components after selecting a subject
+    def setup_trials(self, n_subject):
         print("setup trial")
 
-        progress_bar = QProgressBar(self)
-        progress_bar.setGeometry(200, 80, 250, 20)
-        progress_bar.show()
+        # Clearing layouts
+        self.clear_layouts()
+        clearLayout(self.trialScrollLayout)
+
         i = 0
+        subject_data = self.subject_datas[n_subject]
         self.trial_buttons = []
-        self.trial_datas = []
+
+        subject = subject_data.subject
         len_trials = len(subject.trials)
         for trial in subject.trials:
             button = QPushButton('Trial %i' % i, self)
             button.setCheckable(True)
-            self.trial_datas.append(TrialData(self.experiment, trial))
             self.trial_buttons.append(button)
-            self.scrollLayout.addWidget(button)
-            button.clicked.connect(self.make_choose_trial(i, trial))
-            progress_bar.setValue(i*100/len_trials)
+            self.trialScrollLayout.addWidget(button)
+            button.clicked.connect(self.make_choose_trial(n_subject, i, trial))
             i += 1
 
         #closing progress bar
-        progress_bar.hide()
         self.show()
 
 if __name__ == '__main__':
