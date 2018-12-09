@@ -14,7 +14,9 @@ class Subject:
         self.group = group
 
         if progress_bar != None:
-            progress_bar.setMaximum(experiment.n_trials)
+            progress_bar.label_trial.setText('Loading Trials: parsing entries')
+            progress_bar.progress_bar_trial.setMaximum(experiment.n_trials)
+            progress_bar.progress_bar_trial.setValue(0)
         n_trials = 0
         print('Parsing trials entries')
         while lines != []:
@@ -27,7 +29,7 @@ class Subject:
                     self.trials.append(trial)
                     n_trials += 1
                     if progress_bar != None:
-                        progress_bar.setValue(n_trials)
+                        progress_bar.progress_bar_trial.setValue(n_trials)
                         # To close the file dialog window:
                         QApplication.processEvents()
 

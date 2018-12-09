@@ -428,7 +428,7 @@ class Recherche_visuelle(Experiment):
 
         else:
             result_file = "results.txt"
-            is_processed = self.eyetracker.preprocess(input_file, result_file)
+            is_processed = self.eyetracker.preprocess(input_file, result_file, progress_bar)
             if is_processed:
                 datafile = open(joinPaths(getTmpFolder(), result_file), "r")
             else:

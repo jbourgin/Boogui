@@ -179,5 +179,5 @@ class Eyelink (Eyetracker):
 
         return None
 
-    def preprocess(self, input_file: str, output_file: str) -> bool:
+    def preprocess(self, input_file: str, output_file: str, progress_bar = None) -> bool:
         return False

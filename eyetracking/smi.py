@@ -184,6 +184,6 @@ class Smi (Eyetracker):
 
         return None
 
-    def preprocess(self, input_file: str, output_file: str) -> bool:
-        processSubject(input_file, output_file)
+    def preprocess(self, input_file: str, output_file: str, progress_bar = None) -> bool:
+        processSubject(input_file, output_file, progress_bar)
         return True

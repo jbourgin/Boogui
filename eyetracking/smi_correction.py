@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import re
 from math import pow,sqrt,atan2,degrees
 from string import *
+from PyQt5.QtWidgets import QApplication
 
 from eyetracking.utils import *
 
@@ -404,7 +405,7 @@ def get_unit_pre_transfo(trial):
 
     return None
 
-def processSubject(subject_file: str, result_file : str) -> None :
+def processSubject(subject_file: str, result_file : str, progress_bar = None) -> None :
     createTmpFolder()
     data = get_file_by_name(subject_file)
 
@@ -414,7 +415,19 @@ def processSubject(subject_file: str, result_file : str) -> None :
     artifact_percentage = []
 
     #We transform microseconds into milliseconds.
+
+    if progress_bar != None:
+        progress_bar.label_trial.setText('Loading Trials - preprocessing: reading file')
+        progress_bar.progress_bar_trial.setMaximum(len(data))
+
+    n_trial = 0
     for trial in data:
+        if progress_bar != None:
+            n_trial += 1
+            progress_bar.progress_bar_trial.setValue(n_trial)
+            # To close the file dialog window:
+            QApplication.processEvents()
+
         trial_1000 = []
         last_time = None
 
@@ -442,9 +455,18 @@ def processSubject(subject_file: str, result_file : str) -> None :
     #Gets unite from calculation between two lines
     unite = get_unit_pre_transfo(data_1000[0])
 
+    if progress_bar != None:
+        progress_bar.label_trial.setText('Loading Trials - preprocessing: blink removal')
+        progress_bar.progress_bar_trial.setMaximum(len(data_1000)-1)
+
     total_blinks = {}
     # Blink removal
     for n_trial in range(len(data_1000)):
+        if progress_bar != None:
+            progress_bar.progress_bar_trial.setValue(n_trial)
+            # To close the file dialog window:
+            QApplication.processEvents()
+
         trial = data_1000[n_trial]
 
         blinks = get_blink(trial,unite)
@@ -485,6 +507,10 @@ def processSubject(subject_file: str, result_file : str) -> None :
 
         data_filtered.append(trial_filtered)
 
+    if progress_bar != None:
+        progress_bar.label_trial.setText('Loading Trials - preprocessing: artifact removal')
+        progress_bar.progress_bar_trial.setMaximum(len(data_filtered))
+
     messages = []
     n_trial = 0
     #Removing artifacts
@@ -498,6 +524,11 @@ def processSubject(subject_file: str, result_file : str) -> None :
         trial_filtered = []
         point_list = []
         artifact_got = False
+
+        if progress_bar != None:
+            progress_bar.progress_bar_trial.setValue(n_trial)
+            # To close the file dialog window:
+            QApplication.processEvents()
 
         for i_line in range (0,len(trial)):
             if is_line_recording(trial[i_line]):
@@ -554,8 +585,17 @@ def processSubject(subject_file: str, result_file : str) -> None :
         else:
             artifact_percentage.append(0)
 
+    if progress_bar != None:
+        progress_bar.label_trial.setText('Loading Trials - preprocessing: writting file')
+        progress_bar.progress_bar_trial.setMaximum(len(data_filtered2)-1)
+
     results = open(joinPaths(getTmpFolder(), get_inter_filename()), "w")
     for n_trial in range(len(data_filtered2)):
+        if progress_bar != None:
+            progress_bar.progress_bar_trial.setValue(n_trial)
+            # To close the file dialog window:
+            QApplication.processEvents()
+
         trial = data_filtered2[n_trial]
         print('Trial number %i' % n_trial)
 
@@ -636,7 +676,19 @@ def processSubject(subject_file: str, result_file : str) -> None :
         else:
             results.write("\t".join(message) + "\n")
 
+    if progress_bar != None:
+        progress_bar.label_trial.setText('Loading Trials - preprocessing: putting back messages')
+        progress_bar.progress_bar_trial.setMaximum(len(data)-1)
+
+    n_line = 0
     for line in data:
+
+        if progress_bar != None:
+            n_line += 1
+            progress_bar.progress_bar_trial.setValue(n_line)
+            # To close the file dialog window:
+            QApplication.processEvents()
+
         t = get_time_line(line)
         for n in range(min_message,len(messages)):
             message = messages[n]

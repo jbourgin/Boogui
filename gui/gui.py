@@ -54,32 +54,32 @@ class Main(QMainWindow):
 
         self.dialogLayout = QVBoxLayout()
 
-        self.progress_bar = QProgressBar()
-        #self.progress_bar.setTextVisible(False)
+        self.progress_bar_subject = QProgressBar()
+        #self.progress_bar_subject.setTextVisible(False)
 
-        self.progress_bar2 = QProgressBar()
-        #self.progress_bar2.setTextVisible(False)
+        self.progress_bar_trial = QProgressBar()
+        #self.progress_bar_trial.setTextVisible(False)
 
-        self.label = QLabel()
-        self.label2 = QLabel()
-        self.dialogLayout.addWidget(self.label)
-        self.dialogLayout.addWidget(self.progress_bar)
-        self.dialogLayout.addWidget(self.label2)
-        self.dialogLayout.addWidget(self.progress_bar2)
+        self.label_subject = QLabel()
+        self.label_trial = QLabel()
+        self.dialogLayout.addWidget(self.label_subject)
+        self.dialogLayout.addWidget(self.progress_bar_subject)
+        self.dialogLayout.addWidget(self.label_trial)
+        self.dialogLayout.addWidget(self.progress_bar_trial)
 
-        #self.label.move(0,50)
-
-        self.dialog.setFixedHeight(150)
-        self.dialog.setFixedWidth(300)
+        height = 150
+        width = 400
+        self.dialog.setFixedHeight(height)
+        self.dialog.setFixedWidth(width)
         self.dialog.setLayout(self.dialogLayout)
         center = self.rect().center()
-        self.dialog.move(center.x() - 300/2, center.y() - 150/2)
+        self.dialog.move(center.x() - width/2, center.y() - height/2)
         self.dialog.show()
 
-        self.label.setText('Loading Subjects')
-        self.progress_bar.setValue(0)
-        self.label2.setText('Loading Trials')
-        self.progress_bar2.setValue(0)
+        self.label_subject.setText('Loading Subjects')
+        self.progress_bar_subject.setValue(0)
+        self.label_trial.setText('Loading Trials')
+        self.progress_bar_trial.setValue(0)
 
     def initUI(self):
 
@@ -305,12 +305,11 @@ class Main(QMainWindow):
 
         self.makeDialog()
 
-        self.progress_bar.setMaximum(len(filenames))
+        self.progress_bar_subject.setMaximum(len(filenames))
         i_subject = 0
         for filename in filenames:
             print('Reading subject file %s' % filename)
-            self.progress_bar2.setValue(0)
-            self.subject_datas.append(SubjectData(self.makeExperiment(), filename, self.progress_bar2))
+            self.subject_datas.append(SubjectData(self.makeExperiment(), filename, self))
 
             # Adding subject button
             n_subject = len(self.subject_datas) - 1
@@ -320,7 +319,7 @@ class Main(QMainWindow):
             self.subjecttrialScrollLayout.addWidget(button)
             button.clicked.connect(self.make_choose_subject(n_subject))
             i_subject += 1
-            self.progress_bar.setValue(i_subject)
+            self.progress_bar_subject.setValue(i_subject)
 
         #closing message box
         self.dialog.close()
