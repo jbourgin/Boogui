@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QApplication
 
 class Subject:
 
-    def __init__(self, experiment, lines, id : int, group : str, progress_bar = None):
+    def __init__(self, experiment, lines, id : int, group : str, progress = None):
         # list of training trials
         self.training_trials = []
         # list of trials
@@ -13,10 +13,10 @@ class Subject:
         # subject group
         self.group = group
 
-        if progress_bar != None:
-            progress_bar.label_trial.setText('Loading Trials: parsing entries')
-            progress_bar.progress_bar_trial.setMaximum(experiment.n_trials)
-            progress_bar.progress_bar_trial.setValue(0)
+        if progress != None:
+            progress.setText(1, 'Loading Trials: parsing entries')
+            progress.setMaximum(1, experiment.n_trials)
+            progress.setValue(1, 0)
         n_trials = 0
         print('Parsing trials entries')
         while lines != []:
@@ -28,8 +28,8 @@ class Subject:
                 else:
                     self.trials.append(trial)
                     n_trials += 1
-                    if progress_bar != None:
-                        progress_bar.progress_bar_trial.setValue(n_trials)
+                    if progress != None:
+                        progress.setValue(1, n_trials)
                         # To close the file dialog window:
                         QApplication.processEvents()
 

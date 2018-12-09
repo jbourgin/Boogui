@@ -1,3 +1,5 @@
+from gui.progress_widget import ProgressWidget
+
 class TrialData:
     def __init__(self, experiment, subject_id, trial):
         self.experiment = experiment
@@ -13,18 +15,20 @@ class TrialData:
             self.image = self.experiment.scanpath(self.subject_id, self.trial)
             return self.image
 
-    def getVideo(self):
+    def getVideo(self, parent):
         if self.video != None:
             return self.video
         else:
-            self.video = self.experiment.scanpathVideo(self.subject_id, self.trial)
+            progress = ProgressWidget(parent, 1)
+            self.video = self.experiment.scanpathVideo(self.subject_id, self.trial, progress)
+            progress.close()
             return self.video
 
 class SubjectData:
-    def __init__(self, experiment, input_file: str, progress_bar = None):
+    def __init__(self, experiment, input_file: str, progress = None):
         self.trial_datas = []
         self.experiment = experiment
-        self.subject = self.experiment.processSubject(input_file, progress_bar)
+        self.subject = self.experiment.processSubject(input_file, progress)
 
         for trial in self.subject.trials:
             self.trial_datas.append(TrialData(self.experiment, self.subject.id, trial))

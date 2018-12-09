@@ -405,7 +405,7 @@ def get_unit_pre_transfo(trial):
 
     return None
 
-def processSubject(subject_file: str, result_file : str, progress_bar = None) -> None :
+def processSubject(subject_file: str, result_file : str, progress = None) -> None :
     createTmpFolder()
     data = get_file_by_name(subject_file)
 
@@ -416,15 +416,15 @@ def processSubject(subject_file: str, result_file : str, progress_bar = None) ->
 
     #We transform microseconds into milliseconds.
 
-    if progress_bar != None:
-        progress_bar.label_trial.setText('Loading Trials - preprocessing: reading file')
-        progress_bar.progress_bar_trial.setMaximum(len(data))
+    if progress != None:
+        progress.setText(1, 'Loading Trials - preprocessing: reading file')
+        progress.setMaximum(1, len(data))
 
     n_trial = 0
     for trial in data:
-        if progress_bar != None:
+        if progress != None:
             n_trial += 1
-            progress_bar.progress_bar_trial.setValue(n_trial)
+            progress.setValue(1, n_trial)
             # To close the file dialog window:
             QApplication.processEvents()
 
@@ -455,15 +455,15 @@ def processSubject(subject_file: str, result_file : str, progress_bar = None) ->
     #Gets unite from calculation between two lines
     unite = get_unit_pre_transfo(data_1000[0])
 
-    if progress_bar != None:
-        progress_bar.label_trial.setText('Loading Trials - preprocessing: blink removal')
-        progress_bar.progress_bar_trial.setMaximum(len(data_1000)-1)
+    if progress != None:
+        progress.setText(1, 'Loading Trials - preprocessing: blink removal')
+        progress.setMaximum(1, len(data_1000)-1)
 
     total_blinks = {}
     # Blink removal
     for n_trial in range(len(data_1000)):
-        if progress_bar != None:
-            progress_bar.progress_bar_trial.setValue(n_trial)
+        if progress != None:
+            progress.setValue(1, n_trial)
             # To close the file dialog window:
             QApplication.processEvents()
 
@@ -507,9 +507,9 @@ def processSubject(subject_file: str, result_file : str, progress_bar = None) ->
 
         data_filtered.append(trial_filtered)
 
-    if progress_bar != None:
-        progress_bar.label_trial.setText('Loading Trials - preprocessing: artifact removal')
-        progress_bar.progress_bar_trial.setMaximum(len(data_filtered))
+    if progress != None:
+        progress.setText(1, 'Loading Trials - preprocessing: artifact removal')
+        progress.setMaximum(1, len(data_filtered))
 
     messages = []
     n_trial = 0
@@ -525,8 +525,8 @@ def processSubject(subject_file: str, result_file : str, progress_bar = None) ->
         point_list = []
         artifact_got = False
 
-        if progress_bar != None:
-            progress_bar.progress_bar_trial.setValue(n_trial)
+        if progress != None:
+            progress.setValue(1, n_trial)
             # To close the file dialog window:
             QApplication.processEvents()
 
@@ -585,14 +585,14 @@ def processSubject(subject_file: str, result_file : str, progress_bar = None) ->
         else:
             artifact_percentage.append(0)
 
-    if progress_bar != None:
-        progress_bar.label_trial.setText('Loading Trials - preprocessing: writting file')
-        progress_bar.progress_bar_trial.setMaximum(len(data_filtered2)-1)
+    if progress != None:
+        progress.setText(1, 'Loading Trials - preprocessing: writting file')
+        progress.setMaximum(1, len(data_filtered2)-1)
 
     results = open(joinPaths(getTmpFolder(), get_inter_filename()), "w")
     for n_trial in range(len(data_filtered2)):
-        if progress_bar != None:
-            progress_bar.progress_bar_trial.setValue(n_trial)
+        if progress != None:
+            progress.setValue(1, n_trial)
             # To close the file dialog window:
             QApplication.processEvents()
 
@@ -676,16 +676,16 @@ def processSubject(subject_file: str, result_file : str, progress_bar = None) ->
         else:
             results.write("\t".join(message) + "\n")
 
-    if progress_bar != None:
-        progress_bar.label_trial.setText('Loading Trials - preprocessing: putting back messages')
-        progress_bar.progress_bar_trial.setMaximum(len(data)-1)
+    if progress != None:
+        progress.setText(1, 'Loading Trials - preprocessing: putting back messages')
+        progress.setMaximum(1, len(data)-1)
 
     n_line = 0
     for line in data:
 
-        if progress_bar != None:
+        if progress != None:
             n_line += 1
-            progress_bar.progress_bar_trial.setValue(n_line)
+            progress.setValue(1, n_line)
             # To close the file dialog window:
             QApplication.processEvents()
 

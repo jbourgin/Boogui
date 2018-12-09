@@ -65,7 +65,7 @@ class Main(QMainWindow):
         vid_wid = QVideoWidget()
         play_button = QPushButton("Play")
         play_button.clicked.connect(self.play)
-        url = joinPaths(getTmpFolder(), self.getTrialData(n_subject, n_trial).getVideo())
+        url = joinPaths(getTmpFolder(), self.getTrialData(n_subject, n_trial).getVideo(self))
         print(url)
         self.mediaPlayer.setMedia(
             QMediaContent(QUrl.fromLocalFile(url)))
@@ -76,7 +76,7 @@ class Main(QMainWindow):
     def make_compute_video(self, n_subject, n_trial):
         def compute_video():
             print('computing video')
-            self.getTrialData(n_subject, n_trial).getVideo()
+            self.getTrialData(n_subject, n_trial).getVideo(self)
             clearLayout(self.previsu_vid_layout)
             self.set_video(n_subject, n_trial)
 
@@ -238,11 +238,17 @@ class Main(QMainWindow):
         browseAct.setStatusTip('Open file')
         browseAct.triggered.connect(self.file_open)
 
+        # Export menu item
+        exportAct = QAction("&Export subjects", self)
+        exportAct.setStatusTip('Export files')
+        exportAct.triggered.connect(self.exportSubjects)
+
         # Setting menu bar
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(exitAct)
         fileMenu.addAction(browseAct)
+        fileMenu.addAction(exportAct)
 
         '''
         # Eyetracker menu
@@ -271,13 +277,13 @@ class Main(QMainWindow):
         #filedialog.setOption(QFileDialog.Option.DontUseNativeDialog,False)
         filenames,_ = filedialog.getOpenFileNames(self, 'Open File')
 
-        self.progress = ProgressWidget(self)
-
-        self.progress.progress_bar_subject.setMaximum(len(filenames))
+        progress = ProgressWidget(self, 2)
+        progress.setText(0, 'Loading Subject')
+        progress.setMaximum(0, len(filenames))
         i_subject = 0
         for filename in filenames:
             print('Reading subject file %s' % filename)
-            self.subject_datas.append(SubjectData(self.makeExperiment(), filename, self.progress))
+            self.subject_datas.append(SubjectData(self.makeExperiment(), filename, progress))
 
             # Adding subject button
             n_subject = len(self.subject_datas) - 1
@@ -287,10 +293,10 @@ class Main(QMainWindow):
             self.subjecttrialScrollLayout.addWidget(button)
             button.clicked.connect(self.make_choose_subject(n_subject))
             i_subject += 1
-            self.progress.progress_bar_subject.setValue(i_subject)
+            progress.setValue(0, i_subject)
 
         #closing message box
-        self.progress.close()
+        progress.close()
 
     # Setups the window components after selecting a subject
     def setup_trials(self, n_subject):
@@ -316,3 +322,8 @@ class Main(QMainWindow):
 
         #closing progress bar
         self.show()
+
+    def exportSubjects(self):
+        for subjectData in self.subject_datas:
+            for trial in subjectData.subject.trials:
+                subjectData.experiment.processTrial(subjectData.subject, trial)

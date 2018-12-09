@@ -360,7 +360,7 @@ class Recherche_visuelle(Experiment):
         return image_name
 
     # Creates a video scanpath for one trial.
-    def scanpathVideo(self, subject_id, trial):
+    def scanpathVideo(self, subject_id, trial, progress = None):
         print('scanpath video')
         print(trial.features)
 
@@ -383,7 +383,14 @@ class Recherche_visuelle(Experiment):
         axis_x = self.eyetracker.screen_center[0]*2
         axis_y = self.eyetracker.screen_center[1]*2
         print('Creating video frames')
+
+        if progress != None:
+            progress.setText(0, 'Loading frames')
+            progress.setMaximum(0, len(point_list) - 1)
+
         for elem in range(0,len(point_list)-1):
+            if progress != None:
+                progress.setValue(0, elem)
             plt.clf()
             plt.axis([0,axis_x,0,axis_y])
             plt.gca().invert_yaxis()
@@ -403,6 +410,7 @@ class Recherche_visuelle(Experiment):
             saveImage(getTmpFolder(), image_name)
             image_list.append(joinPaths(getTmpFolder(), image_name))
         vid_name = 'subject_%i_trial_%s.avi' % (subject_id, trial.getTrialId())
+        progress.setText(0, 'Loading frames')
         makeVideo(image_list, vid_name, fps=100)
         return vid_name
 
@@ -413,7 +421,7 @@ class Recherche_visuelle(Experiment):
         except:
             return None
 
-    def processSubject(self, input_file : str, progress_bar = None) -> Subject:
+    def processSubject(self, input_file : str, progress = None) -> Subject:
 
         self.selectEyetracker(input_file)
 
@@ -428,7 +436,7 @@ class Recherche_visuelle(Experiment):
 
         else:
             result_file = "results.txt"
-            is_processed = self.eyetracker.preprocess(input_file, result_file, progress_bar)
+            is_processed = self.eyetracker.preprocess(input_file, result_file, progress)
             if is_processed:
                 datafile = open(joinPaths(getTmpFolder(), result_file), "r")
             else:
@@ -442,4 +450,4 @@ class Recherche_visuelle(Experiment):
             data = [re.split("[\t ]+",line) for line in data]
 
             (n_subject, subject_cat) = subject_data
-            return Subject(self, data, n_subject, subject_cat, progress_bar)
+            return Subject(self, data, n_subject, subject_cat, progress)

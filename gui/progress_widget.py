@@ -1,40 +1,60 @@
 from PyQt5.QtWidgets import QWidget, QProgressBar, QVBoxLayout, QLabel
 
+class ProgressException(Exception):
+    def __init__(self, message):
+
+        # Call the base class constructor with the parameters it needs
+        super().__init__(message)
+
+
 class ProgressWidget(QWidget):
 
-    # Widget dimensions
-    height = 150
-    width = 400
-
-    def __init__(self, parent):
+    def __init__(self, parent, n_bars):
+        """
+        @param n_bars number of progress bar
+        """
         super().__init__(parent)
+
+        # Widget dimensions
+        self.height = 75
+        self.width = 400
 
         self.setAutoFillBackground(True)
         self.layout = QVBoxLayout()
 
-        # Progress bars
-        self.progress_bar_subject = QProgressBar()
-        self.progress_bar_trial = QProgressBar()
+        self.progress_bars = []
+        self.labels = []
+        for i in range(n_bars):
+            self.progress_bars.append(QProgressBar())
+            self.labels.append(QLabel())
 
-        # Labels
-        self.label_subject = QLabel()
-        self.label_trial = QLabel()
+            self.layout.addWidget(self.labels[-1])
+            self.layout.addWidget(self.progress_bars[-1])
 
-        self.layout.addWidget(self.label_subject)
-        self.layout.addWidget(self.progress_bar_subject)
-        self.layout.addWidget(self.label_trial)
-        self.layout.addWidget(self.progress_bar_trial)
-
-        self.setFixedHeight(self.height)
+        self.setFixedHeight(self.height * n_bars)
         self.setFixedWidth(self.width)
 
         self.setLayout(self.layout)
 
         center = parent.rect().center()
-        self.move(center.x() - self.width/2, center.y() - self.height/2)
+        self.move(center.x() - self.width/2, center.y() - self.height * n_bars/2)
         self.show()
 
-        self.label_subject.setText('Loading Subjects')
-        self.progress_bar_subject.setValue(0)
-        self.label_trial.setText('Loading Trials')
-        self.progress_bar_trial.setValue(0)
+        for i in range(n_bars):
+            self.labels[i].setText('Loading')
+            self.progress_bars[i].setValue(0)
+
+    def setText(self, i, text):
+        if i < 0 or i > len(self.labels):
+            raise ProgressException('setText: incorrect index %i', i)
+        self.labels[i].setText(text)
+
+    def setMaximum(self, i, max):
+        if i < 0 or i > len(self.progress_bars):
+            raise ProgressException('setMaximum: incorrect index %i', i)
+        self.progress_bars[i].setMaximum(max)
+
+    def setValue(self, i, value):
+        if i < 0 or i > len(self.progress_bars):
+            raise ProgressException('setValue: incorrect index %i', i)
+        self.progress_bars[i].setValue(value)
