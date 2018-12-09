@@ -5,6 +5,7 @@ from eyetracking.experiment import *
 from eyetracking.interest_region import *
 from eyetracking.scanpath import *
 import matplotlib.pyplot as plt
+from PyQt5.QtWidgets import QApplication
 
 class Make_Eyelink(Eyelink):
     def __init__(self):
@@ -391,6 +392,7 @@ class Recherche_visuelle(Experiment):
         for elem in range(0,len(point_list)-1):
             if progress != None:
                 progress.setValue(0, elem)
+                QApplication.processEvents()
             plt.clf()
             plt.axis([0,axis_x,0,axis_y])
             plt.gca().invert_yaxis()
