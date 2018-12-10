@@ -11,6 +11,3 @@ sumtypes = "==0.1a4"
 matplotlib = "*"
 opencv-contrib-python = "*"
 pyqt5 = "*"
-
-[requires]
-python_version = "3.6"
