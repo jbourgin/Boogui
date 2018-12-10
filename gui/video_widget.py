@@ -39,8 +39,8 @@ class VideoWidget(QWidget):
 
     def setVideo(self, path: str) -> None:
         self.clear()
-        play_button = QPushButton("Play")
-        play_button.clicked.connect(self.play)
+        self.play_button = QPushButton("Play")
+        self.play_button.clicked.connect(self.play)
         url = joinPaths(getTmpFolder(), path)
 
         self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(url)))
@@ -48,7 +48,7 @@ class VideoWidget(QWidget):
 
         self.layout.addWidget(self.vid_wid)
         self.layout.addWidget(self.position_slider)
-        self.layout.addWidget(play_button)
+        self.layout.addWidget(self.play_button)
 
     def play(self):
         if self.media_player.state() == QMediaPlayer.PlayingState:
