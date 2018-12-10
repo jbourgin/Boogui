@@ -5,6 +5,7 @@ from eyetracking.experiment import *
 from eyetracking.interest_region import *
 from eyetracking.scanpath import *
 import matplotlib.pyplot as plt
+from PyQt5.QtWidgets import QApplication
 
 class Make_Eyelink(Eyelink):
     def __init__(self):
