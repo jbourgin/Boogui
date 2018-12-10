@@ -1,6 +1,6 @@
 import sys
 import time
-from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QSlider
+from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QSlider, QStyle
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtCore import QUrl, Qt
