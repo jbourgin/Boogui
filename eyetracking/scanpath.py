@@ -42,7 +42,7 @@ def makeVideo(images : List[str], outvid, fps=20, size=None, format='XVID'):
     By default, the video will have the size of the first image.
     It will resize every image to this size before adding them to the video.
     '''
-    print('Combining images into video')
+    logTrace ('Combining images into video', Precision.NORMAL)
     output = joinPaths(getTmpFolder(), outvid)
     from cv2 import VideoWriter, VideoWriter_fourcc, imread, resize
     fourcc = VideoWriter_fourcc(*format)

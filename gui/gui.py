@@ -176,7 +176,7 @@ class Main(QMainWindow):
     # Called when the application stops
     # Clears the temporary folder
     def closeEvent(self, close_event):
-        print('Closing application')
+        logTrace ('Closing application', Precision.TITLE)
         clearTmpFolder()
 
     def clear_layouts(self):
@@ -214,7 +214,7 @@ class Main(QMainWindow):
             progress.setText(0, 'Loading Subjects')
             progress.setMaximum(0, len(filenames))
             for filename in filenames:
-                print('Reading subject file %s' % filename)
+                logTrace ('Reading subject file %s' % filename, Precision.INPUT)
                 selected_experiment = self.getExperiment()
 
                 try:
@@ -268,7 +268,7 @@ class Main(QMainWindow):
     ###########################
     def make_compute_video(self, n_subject, n_trial):
         def compute_video():
-            print('computing video')
+            logTrace ('computing video', Precision.NORMAL)
             vid_path = self.getTrialData(n_subject, n_trial).getVideo(self)
             self.video_widget.setVideo(vid_path)
 
@@ -287,8 +287,6 @@ class Main(QMainWindow):
 
     # Setups the Trial scroller components after selecting a subject
     def setup_trials(self, n_subject):
-        print("setup trial")
-
         # Clearing layouts
         self.clear_layouts()
         clearLayout(self.trialScrollLayout)
@@ -309,7 +307,7 @@ class Main(QMainWindow):
 
     def make_choose_trial(self, n_subject, n_trial, trial):
         def choose_trial():
-            print('choosing trial')
+            logTrace ('choosing trial', Precision.NORMAL)
             self.clear_layouts()
             subject_data = self.subject_datas[n_subject]
             for i in range(len(self.trial_buttons)):

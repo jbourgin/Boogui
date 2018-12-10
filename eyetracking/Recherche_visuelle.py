@@ -162,22 +162,23 @@ class Recherche_visuelle(Experiment):
     def selectEyetracker(self, input_file : str) -> None:
         eyelink = Make_Eyelink()
         if eyelink.isParsable(input_file):
-            print('Selecting Eyelink')
+            logTrace ('Selecting Eyelink', Precision.NORMAL)
             self.eyetracker = eyelink
         else:
             smi = Make_Smi()
             if smi.isParsable(input_file):
-                print('Selecting SMI')
+                logTrace ('Selecting SMI', Precision.NORMAL)
                 self.eyetracker = smi
             else:
+                logTrace ('No suitable eyetracker found for input file %s' % input_file, Precision.ERROR)
                 raise ExperimentException('No suitable eyetracker found for input file %s' % input_file)
 
     def processTrial(self, subject, trial, filename = None):
-        print('Processing trial n°%i' % trial.getTrialId())
+        logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
         trial_number = trial.getTrialId()
 
         if trial.saccades == []:
-            print(subject.subject_number,trial_number,"Subject has no saccades!")
+            logTrace (subject.subject_number,trial_number,"Subject has no saccades!", Precision.DETAIL)
 
         if trial.features['num_of_dis'] == 1:
             frame_list = self.eyetracker.frame_list_1
@@ -370,9 +371,6 @@ class Recherche_visuelle(Experiment):
 
     # Creates an image scanpath for one trial.
     def scanpath(self, subject_id, trial):
-        print('scanpath')
-        print(trial.features)
-
         plt.clf()
 
         frame_color = (0,0,0)
@@ -405,9 +403,6 @@ class Recherche_visuelle(Experiment):
 
     # Creates a video scanpath for one trial.
     def scanpathVideo(self, subject_id, trial, progress = None):
-        print('scanpath video')
-        print(trial.features)
-
         n_elem_drawn = 20
         point_list = trial.getGazePoints()
         nb_points = len(point_list)
@@ -426,7 +421,8 @@ class Recherche_visuelle(Experiment):
 
         axis_x = self.eyetracker.screen_center[0]*2
         axis_y = self.eyetracker.screen_center[1]*2
-        print('Creating video frames')
+
+        logTrace ('Creating video frames', Precision.NORMAL)
 
         if progress != None:
             progress.setText(0, 'Loading frames')

@@ -36,8 +36,9 @@ class Precision(Enum):
     OUTPUT = 1
     NORMAL = 3
     DETAIL = 5
+    ERROR = 0
 
-precision_level = 1
+precision_level = -1
 
 def print_trace(message, precision):
     tabs = '\t'.join(['' for i in range(precision.value)])

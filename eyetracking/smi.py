@@ -58,7 +58,6 @@ class Smi (Eyetracker):
 
     @staticmethod
     def parsePosition(line: List[str]) -> Entry:
-        # case Position
         if len(line) >= 5:
             try:
                 time = int(line[0])
@@ -71,7 +70,6 @@ class Smi (Eyetracker):
 
     @staticmethod
     def parseStartFixation(line: List[str]) -> Entry:
-        # case Position
         if len(line) >= 3 and line[0] == 'SFIX':
             try:
                 time = int(line[2])
@@ -82,7 +80,6 @@ class Smi (Eyetracker):
 
     @staticmethod
     def parseEndFixation(line: List[str]) -> Entry:
-        # case Position
         if len(line) >= 4 and line[0] == 'EFIX':
             try:
                 time = int(line[3])
@@ -93,7 +90,6 @@ class Smi (Eyetracker):
 
     @staticmethod
     def parseStartBlink(line: List[str]) -> Entry:
-        # case Position
         if len(line) >= 3 and line[0] == 'SBLINK':
             try:
                 time = int(line[2])
@@ -104,7 +100,6 @@ class Smi (Eyetracker):
 
     @staticmethod
     def parseEndBlink(line: List[str]) -> Entry:
-        # case Position
         if len(line) >= 4 and line[0] == 'EBLINK':
             try:
                 time = int(line[3])
@@ -115,7 +110,6 @@ class Smi (Eyetracker):
 
     @staticmethod
     def parseStartSaccade(line: List[str]) -> Entry:
-        # case Position
         if len(line) >= 3 and line[0] == 'SSACC':
             try:
                 time = int(line[2])
@@ -126,7 +120,6 @@ class Smi (Eyetracker):
 
     @staticmethod
     def parseEndSaccade(line: List[str]) -> Entry:
-        # case Position
         if len(line) >= 4 and line[0] == 'ESACC':
             try:
                 time = int(line[3])
@@ -136,8 +129,6 @@ class Smi (Eyetracker):
         return None
 
     def parseResponse(self, line: List[str]) -> Entry:
-        # case Position
-        print(line)
         if self.isResponse(line):
             try:
                 time = int(line[0])
@@ -151,8 +142,6 @@ class Smi (Eyetracker):
         pass
 
     def parseExperimentVariables(self, line: List[str]) -> Entry:
-        # case Position
-        print(line)
         try:
             time = int(line[0])
             variables = self.parseVariables(line)

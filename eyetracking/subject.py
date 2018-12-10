@@ -1,4 +1,5 @@
 from eyetracking.trial import *
+from eyetracking.utils import *
 
 class Subject:
 
@@ -16,7 +17,7 @@ class Subject:
             progress.setText(1, 'Loading Trials: parsing entries')
             progress.setMaximum(1, experiment.n_trials)
 
-        print('Parsing trials entries')
+        logTrace ('Parsing trials entries', Precision.TITLE)
         while lines != []:
             trial = Trial(experiment)
             lines = trial.setEntries(lines)

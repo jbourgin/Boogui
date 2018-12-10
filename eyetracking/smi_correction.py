@@ -50,10 +50,8 @@ def convert_px_to_degrees(size_in_px):
     # Calculate the number of degrees that correspond to a single pixel. This will
     # generally be a very small value, something like 0.03.
     deg_per_px = degrees(atan2(.5*size_screen, distance_ppt)) / (.5*monitor_resolution)
-    #print ('%s degrees correspond to a single pixel' % deg_per_px)
     # Calculate the size of the stimulus in degrees
     size_in_deg = size_in_px * deg_per_px
-    #print ('The size of the stimulus is %s pixels and %s visual degrees' % (size_in_px, size_in_deg))
     return size_in_deg
 
 #Returns X and Y coordinates of gaze position on a line
@@ -289,7 +287,7 @@ def get_blink(trial,unite):
 
             #If both positions are under zero, it may be due to a calibration issue rather than to a blink. This remains to be verified but should be very rare.
             if "-" in str(line[3]) and "-" in str(line[4]):
-                print(line," is this negativity odd ?")
+                logTrace(line + " is this negativity odd ?", Precision.ERROR)
 
             if blink_beginning == None :
                 velocity_stabilized_before = 0
@@ -586,7 +584,6 @@ def processSubject(subject_file: str, result_file : str, progress = None) -> Non
             progress.increment(1)
 
         trial = data_filtered2[n_trial]
-        print('Trial number %i' % n_trial)
 
         fixations = []
         current_fixation = empty_fixation()
