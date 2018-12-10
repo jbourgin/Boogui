@@ -1,7 +1,7 @@
 import sys
 import time
 from PyQt5.QtWidgets import QMainWindow, QAction, QActionGroup, qApp, QWidget
-from PyQt5.QtWidgets import QFileDialog, QTextEdit, QScrollArea, QErrorMessage
+from PyQt5.QtWidgets import QFileDialog, QTextEdit, QScrollArea, QMessageBox
 from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout, QLabel
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
@@ -230,8 +230,8 @@ class Main(QMainWindow):
                     progress.increment(0)
 
                 except ExperimentException as e:
-                    error_dialog = QErrorMessage(self)
-                    error_dialog.showMessage('File %s could not be read: %s' % (filename, str(e)))
+                    error_dialog = QMessageBox()
+                    error_dialog.warning(self, 'Error', 'File %s could not be read:\n%s' % (filename, str(e)))
 
             #closing message box
             progress.close()

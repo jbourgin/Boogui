@@ -57,7 +57,7 @@ class Entry:
 
 @match(Entry)
 class entry_to_string(object):
-    def Position(time, x, y): return '%i %f %f' % (time, x, y)
+    def Position(time, x, y): return '%i\t%f\t%f' % (time, x, y)
     def Start_fixation(time): return 'Start Fixation at %i' % time
     def End_fixation(time): return 'End Fixation at %i' % time
 
