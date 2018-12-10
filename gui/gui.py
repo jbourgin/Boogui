@@ -1,7 +1,7 @@
 import sys
 import time
 from PyQt5.QtWidgets import QMainWindow, QAction, QActionGroup, qApp, QWidget
-from PyQt5.QtWidgets import QFileDialog, QTextEdit, QScrollArea
+from PyQt5.QtWidgets import QFileDialog, QTextEdit, QScrollArea, QErrorMessage
 from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout, QLabel
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
@@ -42,15 +42,6 @@ class Main(QMainWindow):
     ###########################
     ######### UI INIT #########
     ###########################
-
-    def makeExperiment(self):
-        return Recherche_visuelle()
-
-    # Called when the application stops
-    # Clears the temporary folder
-    def closeEvent(self, close_event):
-        print('Closing application')
-        clearTmpFolder()
 
     def initUI(self):
         self.setGeometry(300, 300, 600, 600)
@@ -169,32 +160,40 @@ class Main(QMainWindow):
         fileMenu.addAction(browseAct)
         fileMenu.addAction(self.exportAct)
 
-        '''
-        # Eyetracker menu
+        # Experiment menu
         ag = QActionGroup(self, exclusive=True)
-        eyeTrackerMenu = menubar.addMenu('&EyeTracker')
-        # Eyelink
-        setEyelinkAct = QAction("&Eyelink", self,  checkable=True)
-        setEyelinkAct.setStatusTip('Eyelink')
-        setEyelinkAct.triggered.connect(self.setEyelink)
-        a = ag.addAction(setEyelinkAct)
-        eyeTrackerMenu.addAction(a)
-        # SMI
-        setSMIAct = QAction("&SMI", self, checkable=True)
-        setSMIAct.setStatusTip('SMI')
-        setSMIAct.triggered.connect(self.setSMI)
-        b = ag.addAction(setSMIAct)
-        eyeTrackerMenu.addAction(b)
+        experiment_menu = menubar.addMenu('&Experiment')
+        # Recherche visuelle
+        setRechercheVisuelle = QAction('&Recherche visuelle', self, checkable = True)
+        setRechercheVisuelle.triggered.connect(self.setRechercheVisuelle)
+        a = ag.addAction(setRechercheVisuelle)
+        experiment_menu.addAction(a)
 
-        # default eyetracker
-        self.setEyelink()
-        setEyelinkAct.setChecked(True)
-        '''
+        #Default experiment
+        setRechercheVisuelle.setChecked(True)
+        self.setRechercheVisuelle()
+
+    # Called when the application stops
+    # Clears the temporary folder
+    def closeEvent(self, close_event):
+        print('Closing application')
+        clearTmpFolder()
 
     def clear_layouts(self):
         self.previsu_image.clear()
         self.video_widget.clear()
         self.logOutput.clear()
+
+    ###########################
+    ####### Experiments #######
+    ###########################
+    def getExperiment(self):
+        return self.make_experiment
+
+    def setRechercheVisuelle(self):
+        def set():
+            return Recherche_visuelle()
+        self.make_experiment = set
 
     ###########################
     ###### I/O functions ######
@@ -214,7 +213,8 @@ class Main(QMainWindow):
             progress.setMaximum(0, len(filenames))
             for filename in filenames:
                 print('Reading subject file %s' % filename)
-                self.subject_datas.append(SubjectData(self.makeExperiment(), filename, progress))
+                selected_experiment = self.getExperiment()
+                self.subject_datas.append(SubjectData(selected_experiment(), filename, progress))
 
                 # Adding subject button
                 n_subject = len(self.subject_datas) - 1

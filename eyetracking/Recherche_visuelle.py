@@ -116,7 +116,6 @@ class Make_Smi(Smi):
 
     # Returns a dictionary of experiment variables
     def parseVariables(self, line: List[str]):
-        print(line)
         if len(line) > 6 and line[5] == "features:":
             try:
                 target_hp = int(line[9]) + self.screen_center[0]
@@ -471,12 +470,9 @@ class Recherche_visuelle(Experiment):
 
         with open(input_file) as f:
             first_line = f.readline()
-            print(first_line)
             if first_line[-1] == '\n':
                 first_line = first_line[:-1]
-            print(first_line)
 
-        print(first_line)
         subject_data = self.getSubjectData(first_line)
 
         if subject_data is None:
