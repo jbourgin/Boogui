@@ -476,7 +476,7 @@ class Recherche_visuelle(Experiment):
         subject_data = self.getSubjectData(first_line)
 
         if subject_data is None:
-            return None
+            raise ExperimentException('Subject number and category could not be found')
 
         else:
             result_file = "results.txt"

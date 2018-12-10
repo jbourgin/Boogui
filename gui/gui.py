@@ -162,12 +162,12 @@ class Main(QMainWindow):
 
         # Experiment menu
         ag = QActionGroup(self, exclusive=True)
-        experiment_menu = menubar.addMenu('&Experiment')
+        self.experiment_menu = menubar.addMenu('&Experiment')
         # Recherche visuelle
         setRechercheVisuelle = QAction('&Recherche visuelle', self, checkable = True)
         setRechercheVisuelle.triggered.connect(self.setRechercheVisuelle)
         a = ag.addAction(setRechercheVisuelle)
-        experiment_menu.addAction(a)
+        self.experiment_menu.addAction(a)
 
         #Default experiment
         setRechercheVisuelle.setChecked(True)
@@ -207,6 +207,8 @@ class Main(QMainWindow):
         if len(filenames) > 0:
             # Enabling Save menu action
             self.exportAct.setEnabled(True)
+            # Disabling change of experiment
+            self.experiment_menu.setEnabled(False)
 
             progress = ProgressWidget(self, 2)
             progress.setText(0, 'Loading Subjects')
@@ -214,16 +216,22 @@ class Main(QMainWindow):
             for filename in filenames:
                 print('Reading subject file %s' % filename)
                 selected_experiment = self.getExperiment()
-                self.subject_datas.append(SubjectData(selected_experiment(), filename, progress))
 
-                # Adding subject button
-                n_subject = len(self.subject_datas) - 1
-                button = QPushButton('Subject %i' % self.subject_datas[-1].subject.id)
-                self.subject_buttons.append(button)
-                button.setCheckable(True)
-                self.subjecttrialScrollLayout.addWidget(button)
-                button.clicked.connect(self.make_choose_subject(n_subject))
-                progress.increment(0)
+                try:
+                    self.subject_datas.append(SubjectData(selected_experiment(), filename, progress))
+
+                    # Adding subject button
+                    n_subject = len(self.subject_datas) - 1
+                    button = QPushButton('Subject %i' % self.subject_datas[-1].subject.id)
+                    self.subject_buttons.append(button)
+                    button.setCheckable(True)
+                    self.subjecttrialScrollLayout.addWidget(button)
+                    button.clicked.connect(self.make_choose_subject(n_subject))
+                    progress.increment(0)
+
+                except ExperimentException as e:
+                    error_dialog = QErrorMessage(self)
+                    error_dialog.showMessage('File %s could not be read: %s' % (filename, str(e)))
 
             #closing message box
             progress.close()

@@ -1,4 +1,5 @@
 from gui.progress_widget import ProgressWidget
+from eyetracking.Recherche_visuelle import ExperimentException
 
 class TrialData:
     def __init__(self, experiment, subject_id, trial):
