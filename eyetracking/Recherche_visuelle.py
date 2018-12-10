@@ -172,7 +172,7 @@ class Recherche_visuelle(Experiment):
             else:
                 raise ExperimentException('No suitable eyetracker found for input file %s' % input_file)
 
-    def processTrial(self, subject, trial):
+    def processTrial(self, subject, trial, filename = None):
         print('Processing trial n°%i' % trial.getTrialId())
         trial_number = trial.getTrialId()
 
@@ -297,7 +297,51 @@ class Recherche_visuelle(Experiment):
             total_distractor_fixation_time,
             blink_category]
 
-        print(s)
+        if filename is None:
+            f = open(getResultsFile(), 'a')
+        else:
+            f = open(filename, 'a')
+        f.write(';'.join([str(x) for x in s]))
+        f.write('\n')
+        f.close()
+
+    @staticmethod
+    def getDefaultResultsFile():
+        return joinPaths(getResultsFolder(), 'recherche_visuelle.csv')
+
+    @staticmethod
+    def makeResultFile() -> None:
+        createResultsFolder()
+        Recherche_visuelle.makeResultFile(getDefaultResultsFile)
+
+    @staticmethod
+    def makeResultFile(filename: str) -> None:
+        f = open(filename, 'w')
+        f.write(';'.join([
+            'Subject',
+            'Group',
+            'TrialID',
+            'Block',
+            'Eye',
+            'Emotion',
+            'TargetName',
+            'Number of Distractors',
+            'Target X position',
+            'Target Y position',
+            'Target side',
+            'Congruency',
+            'Correct response',
+            'Response',
+            'Errors',
+            'Response time',
+            'First localization time',
+            'Response delay from last fixation',
+            'Total fixation time on target',
+            'Total fixation time on distractors',
+            'First blink type'
+        ]))
+        f.write('\n')
+        f.close()
 
     @staticmethod
     def plotTarget(region: InterestRegion, cor_resp, color):
@@ -390,7 +434,7 @@ class Recherche_visuelle(Experiment):
 
         for elem in range(0,len(point_list)-1):
             if progress != None:
-                progress.setValue(0, elem)
+                progress.increment(0)
             plt.clf()
             plt.axis([0,axis_x,0,axis_y])
             plt.gca().invert_yaxis()
@@ -427,6 +471,10 @@ class Recherche_visuelle(Experiment):
 
         with open(input_file) as f:
             first_line = f.readline()
+            print(first_line)
+            if first_line[-1] == '\n':
+                first_line = first_line[:-1]
+            print(first_line)
 
         print(first_line)
         subject_data = self.getSubjectData(first_line)

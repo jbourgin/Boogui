@@ -22,6 +22,13 @@ def createTmpFolder() -> None:
     if not os.path.exists(getTmpFolder()):
         os.makedirs(getTmpFolder())
 
+def getResultsFolder() -> str:
+    return '_results'
+
+def createResultsFolder() -> None:
+    if not os.path.exists(getResultsFolder()):
+        os.makedirs(getResultsFolder())
+
 from enum import Enum
 class Precision(Enum):
     TITLE = 0

@@ -1,3 +1,4 @@
+from PyQt5.QtWidgets import QApplication
 from gui.gui import *
 
 if __name__ == '__main__':

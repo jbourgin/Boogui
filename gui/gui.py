@@ -1,20 +1,17 @@
 import sys
 import time
-from PyQt5.QtWidgets import QMainWindow, QApplication, QAction, QActionGroup, qApp, QWidget
-from PyQt5.QtWidgets import QFileDialog, QProgressBar, QTextEdit, QAction, QMessageBox
+from PyQt5.QtWidgets import QMainWindow, QAction, QActionGroup, qApp, QWidget
+from PyQt5.QtWidgets import QFileDialog, QTextEdit, QScrollArea
 from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout, QLabel
-from PyQt5.QtWidgets import QScrollArea, QFormLayout, QDialog
-from PyQt5.QtMultimediaWidgets import QVideoWidget
-from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
-from PyQt5.QtCore import QUrl
 
 from eyetracking.smi import *
 from eyetracking.Recherche_visuelle import *
 from gui.utils import *
 from gui.subject import *
 from gui.progress_widget import ProgressWidget
+from gui.video_widget import VideoWidget
 
 import re #To format data lists
 
@@ -42,102 +39,30 @@ class Main(QMainWindow):
         quit = QAction("Quit", self)
         quit.triggered.connect(self.close)
 
+    ###########################
+    ######### UI INIT #########
+    ###########################
+
     def makeExperiment(self):
         return Recherche_visuelle()
 
+    # Called when the application stops
+    # Clears the temporary folder
     def closeEvent(self, close_event):
         print('Closing application')
         clearTmpFolder()
 
     def initUI(self):
-
         self.setGeometry(300, 300, 600, 600)
-        #self.setWindowTitle('Icon')
+        self.setWindowTitle('Eyetracking analysis')
         #self.setWindowIcon(QIcon('web.png'))
 
         self.set_menu()
-
         self.set_main_widget()
-
         self.show()
-
-    def set_video(self, n_subject, n_trial):
-        vid_wid = QVideoWidget()
-        play_button = QPushButton("Play")
-        play_button.clicked.connect(self.play)
-        url = joinPaths(getTmpFolder(), self.getTrialData(n_subject, n_trial).getVideo(self))
-        print(url)
-        self.mediaPlayer.setMedia(
-            QMediaContent(QUrl.fromLocalFile(url)))
-        self.mediaPlayer.setVideoOutput(vid_wid)
-        self.previsu_vid_layout.addWidget(vid_wid)
-        self.previsu_vid_layout.addWidget(play_button)
-
-    def make_compute_video(self, n_subject, n_trial):
-        def compute_video():
-            print('computing video')
-            self.getTrialData(n_subject, n_trial).getVideo(self)
-            clearLayout(self.previsu_vid_layout)
-            self.set_video(n_subject, n_trial)
-
-        return compute_video
-
-    def play(self):
-        if self.mediaPlayer.state() == QMediaPlayer.PlayingState:
-            self.mediaPlayer.pause()
-        else:
-            self.mediaPlayer.play()
 
     def getTrialData(self, n_subject, n_trial):
         return self.subject_datas[n_subject].trial_datas[n_trial]
-
-    def make_choose_subject(self, n_subject):
-        def choose_subject():
-
-            for i in range(len(self.subject_datas)):
-                if i != n_subject:
-                    self.subject_buttons[i].setChecked(False)
-
-            self.setup_trials(n_subject)
-
-        return choose_subject
-
-    def clear_layouts(self):
-        self.previsu_image.clear()
-        self.logOutput.clear()
-        clearLayout(self.previsu_vid_layout)
-
-    def make_choose_trial(self, n_subject, n_trial, trial):
-        def choose_trial():
-            print('choosing trial')
-            self.clear_layouts()
-            subject_data = self.subject_datas[n_subject]
-            for i in range(len(self.trial_buttons)):
-                if i != n_trial:
-                    self.trial_buttons[i].setChecked(False)
-
-            for entry in trial.entries:
-                self.logOutput.append(str(entry))
-            sb = self.logOutput.verticalScrollBar()
-            sb.setValue(sb.minimum())
-
-            image_name = joinPaths(getTmpFolder(), self.getTrialData(n_subject, n_trial).getImage())
-            pixmap = QPixmap(image_name)
-            self.previsu_image.setPixmap(pixmap)
-            self.previsu_image.adjustSize()
-            self.previsu_image.show()
-
-            vid_name = self.getTrialData(n_subject, n_trial).video
-
-            if vid_name is None:
-                button = QPushButton('Make video scanpath')
-                button.clicked.connect(self.make_compute_video(n_subject, n_trial))
-                self.previsu_vid_layout.addWidget(button)
-            else:
-                self.set_video(n_subject, n_trial)
-
-            self.previsu_vid.show()
-        return choose_trial
 
     def set_subject_scroller(self):
         # scroll area widget contents - layout
@@ -192,16 +117,10 @@ class Main(QMainWindow):
         self.previsualizer.setLayout(previsualizer_layout)
 
         self.previsu_image = QLabel()
-        self.previsu_vid = QWidget()
-
-        self.previsu_vid_layout = QVBoxLayout()
-        self.previsu_vid.setLayout(self.previsu_vid_layout)
-
-        #self.previsu_image.setFixedWidth(self.previsuAreaWidth)
-        #self.previsu_vid.setFixedWidth(self.previsuAreaWidth)
+        self.video_widget = VideoWidget(self)
 
         previsualizer_layout.addWidget(self.previsu_image)
-        previsualizer_layout.addWidget(self.previsu_vid)
+        previsualizer_layout.addWidget(self.video_widget)
         self.previsualizer.setFixedWidth(self.previsuAreaWidth)
 
         self.mainLayout.addWidget(self.previsualizer)
@@ -210,8 +129,6 @@ class Main(QMainWindow):
 
         # main layout
         self.mainLayout = QHBoxLayout()
-
-        self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
 
         self.set_subject_scroller()
         self.set_trial_scroller()
@@ -239,16 +156,18 @@ class Main(QMainWindow):
         browseAct.triggered.connect(self.file_open)
 
         # Export menu item
-        exportAct = QAction("&Export subjects", self)
-        exportAct.setStatusTip('Export files')
-        exportAct.triggered.connect(self.exportSubjects)
+        self.exportAct = QAction("&Export subjects", self)
+        self.exportAct.setShortcut('Ctrl+S')
+        self.exportAct.setStatusTip('Export files')
+        self.exportAct.setEnabled(False)
+        self.exportAct.triggered.connect(self.exportSubjects)
 
         # Setting menu bar
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(exitAct)
         fileMenu.addAction(browseAct)
-        fileMenu.addAction(exportAct)
+        fileMenu.addAction(self.exportAct)
 
         '''
         # Eyetracker menu
@@ -272,33 +191,93 @@ class Main(QMainWindow):
         setEyelinkAct.setChecked(True)
         '''
 
+    def clear_layouts(self):
+        self.previsu_image.clear()
+        self.video_widget.clear()
+        self.logOutput.clear()
+
+    ###########################
+    ###### I/O functions ######
+    ###########################
     def file_open(self):
         filedialog = QFileDialog()
+        filedialog.setDirectory('data')
         #filedialog.setOption(QFileDialog.Option.DontUseNativeDialog,False)
         filenames,_ = filedialog.getOpenFileNames(self, 'Open File')
 
-        progress = ProgressWidget(self, 2)
-        progress.setText(0, 'Loading Subject')
-        progress.setMaximum(0, len(filenames))
-        i_subject = 0
-        for filename in filenames:
-            print('Reading subject file %s' % filename)
-            self.subject_datas.append(SubjectData(self.makeExperiment(), filename, progress))
+        if len(filenames) > 0:
+            # Enabling Save menu action
+            self.exportAct.setEnabled(True)
 
-            # Adding subject button
-            n_subject = len(self.subject_datas) - 1
-            button = QPushButton('Subject %i' % self.subject_datas[-1].subject.id)
-            self.subject_buttons.append(button)
-            button.setCheckable(True)
-            self.subjecttrialScrollLayout.addWidget(button)
-            button.clicked.connect(self.make_choose_subject(n_subject))
-            i_subject += 1
-            progress.setValue(0, i_subject)
+            progress = ProgressWidget(self, 2)
+            progress.setText(0, 'Loading Subjects')
+            progress.setMaximum(0, len(filenames))
+            for filename in filenames:
+                print('Reading subject file %s' % filename)
+                self.subject_datas.append(SubjectData(self.makeExperiment(), filename, progress))
 
-        #closing message box
-        progress.close()
+                # Adding subject button
+                n_subject = len(self.subject_datas) - 1
+                button = QPushButton('Subject %i' % self.subject_datas[-1].subject.id)
+                self.subject_buttons.append(button)
+                button.setCheckable(True)
+                self.subjecttrialScrollLayout.addWidget(button)
+                button.clicked.connect(self.make_choose_subject(n_subject))
+                progress.increment(0)
 
-    # Setups the window components after selecting a subject
+            #closing message box
+            progress.close()
+
+    def exportSubjects(self):
+        """
+        hyp: len(subject_datas) > 0
+        """
+        createResultsFolder()
+        filedialog = QFileDialog()
+        filedialog.setDirectory(getResultsFolder())
+        filename,_ = filedialog.getSaveFileName(self, 'Save File')
+        # Creation of results file
+        if len(filename) > 0:
+            # Progress bar
+            progress = ProgressWidget(self, 2)
+            progress.setText(0, 'Exporting Subjects')
+            progress.setMaximum(0, len(self.subject_datas))
+
+            Recherche_visuelle.makeResultFile(filename)
+            for subjectData in self.subject_datas:
+                progress.increment(0)
+                progress.setText(1, 'Exporting Trials')
+                progress.setMaximum(1, len(subjectData.subject.trials))
+                for trial in subjectData.subject.trials:
+                    progress.increment(1)
+                    subjectData.experiment.processTrial(subjectData.subject, trial, filename = filename)
+
+            # Closing progress bar
+            progress.close()
+
+    ###########################
+    ######## CALLBACKS ########
+    ###########################
+    def make_compute_video(self, n_subject, n_trial):
+        def compute_video():
+            print('computing video')
+            vid_path = self.getTrialData(n_subject, n_trial).getVideo(self)
+            self.video_widget.setVideo(vid_path)
+
+        return compute_video
+
+    def make_choose_subject(self, n_subject):
+        def choose_subject():
+
+            for i in range(len(self.subject_datas)):
+                if i != n_subject:
+                    self.subject_buttons[i].setChecked(False)
+
+            self.setup_trials(n_subject)
+
+        return choose_subject
+
+    # Setups the Trial scroller components after selecting a subject
     def setup_trials(self, n_subject):
         print("setup trial")
 
@@ -320,10 +299,32 @@ class Main(QMainWindow):
             button.clicked.connect(self.make_choose_trial(n_subject, i, trial))
             i += 1
 
-        #closing progress bar
-        self.show()
+    def make_choose_trial(self, n_subject, n_trial, trial):
+        def choose_trial():
+            print('choosing trial')
+            self.clear_layouts()
+            subject_data = self.subject_datas[n_subject]
+            for i in range(len(self.trial_buttons)):
+                if i != n_trial:
+                    self.trial_buttons[i].setChecked(False)
 
-    def exportSubjects(self):
-        for subjectData in self.subject_datas:
-            for trial in subjectData.subject.trials:
-                subjectData.experiment.processTrial(subjectData.subject, trial)
+            for entry in trial.entries:
+                self.logOutput.append(str(entry))
+            sb = self.logOutput.verticalScrollBar()
+            sb.setValue(sb.minimum())
+
+            image_name = joinPaths(getTmpFolder(), self.getTrialData(n_subject, n_trial).getImage())
+            pixmap = QPixmap(image_name)
+            self.previsu_image.setPixmap(pixmap)
+            self.previsu_image.adjustSize()
+            self.previsu_image.show()
+
+            vid_name = self.getTrialData(n_subject, n_trial).video
+
+            if vid_name is None:
+                self.video_widget.setButton(self.make_compute_video(n_subject, n_trial))
+            else:
+                self.video_widget.setVideo(self.getTrialData(n_subject, n_trial).getVideo(self))
+
+            self.video_widget.show()
+        return choose_trial

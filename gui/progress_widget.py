@@ -1,4 +1,5 @@
 from PyQt5.QtWidgets import QWidget, QProgressBar, QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QApplication
 
 class ProgressException(Exception):
     def __init__(self, message):
@@ -24,9 +25,11 @@ class ProgressWidget(QWidget):
 
         self.progress_bars = []
         self.labels = []
+        self.counters = []
         for i in range(n_bars):
             self.progress_bars.append(QProgressBar())
             self.labels.append(QLabel())
+            self.counters.append(0)
 
             self.layout.addWidget(self.labels[-1])
             self.layout.addWidget(self.progress_bars[-1])
@@ -53,8 +56,20 @@ class ProgressWidget(QWidget):
         if i < 0 or i > len(self.progress_bars):
             raise ProgressException('setMaximum: incorrect index %i', i)
         self.progress_bars[i].setMaximum(max)
+        self.resetValue(i)
 
-    def setValue(self, i, value):
+    def resetValue(self, i):
+        if i < 0 or i > len(self.progress_bars):
+            raise ProgressException('resetValue: incorrect index %i', i)
+        self.counters[i] = 0
+        self.progress_bars[i].setValue(0)
+        # To be sure that progress bars are updated
+        QApplication.processEvents()
+
+    def increment(self, i):
         if i < 0 or i > len(self.progress_bars):
             raise ProgressException('setValue: incorrect index %i', i)
-        self.progress_bars[i].setValue(value)
+        self.counters[i] += 1
+        self.progress_bars[i].setValue(self.counters[i])
+        # To be sure that progress bars are updated
+        QApplication.processEvents()

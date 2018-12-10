@@ -11,9 +11,9 @@ class Smi (Eyetracker):
     def getEye(lines: List[List[str]]) -> str:
         for line in lines:
             if len(line) > 1 and line[1] == "L":
-                return "LEFT"
+                return "L"
             elif len(line) > 1 and line[1] == "R":
-                return "RIGHT"
+                return "R"
         return None
 
     @staticmethod
@@ -40,7 +40,7 @@ class Smi (Eyetracker):
             try:
                 time = int(line[0])
                 trial_number = int(line[6])
-                stimulus = line[7]
+                stimulus = line[7] + line[8]
                 return Entry.Start_trial(time, trial_number, stimulus)
             except:
                 pass

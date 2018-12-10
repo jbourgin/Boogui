@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import re
 from math import pow,sqrt,atan2,degrees
 from string import *
-from PyQt5.QtWidgets import QApplication
 
 from eyetracking.utils import *
 
@@ -420,13 +419,9 @@ def processSubject(subject_file: str, result_file : str, progress = None) -> Non
         progress.setText(1, 'Loading Trials - preprocessing: reading file')
         progress.setMaximum(1, len(data))
 
-    n_trial = 0
     for trial in data:
         if progress != None:
-            n_trial += 1
-            progress.setValue(1, n_trial)
-            # To close the file dialog window:
-            QApplication.processEvents()
+            progress.increment(1)
 
         trial_1000 = []
         last_time = None
@@ -463,9 +458,7 @@ def processSubject(subject_file: str, result_file : str, progress = None) -> Non
     # Blink removal
     for n_trial in range(len(data_1000)):
         if progress != None:
-            progress.setValue(1, n_trial)
-            # To close the file dialog window:
-            QApplication.processEvents()
+            progress.increment(1)
 
         trial = data_1000[n_trial]
 
@@ -526,9 +519,7 @@ def processSubject(subject_file: str, result_file : str, progress = None) -> Non
         artifact_got = False
 
         if progress != None:
-            progress.setValue(1, n_trial)
-            # To close the file dialog window:
-            QApplication.processEvents()
+            progress.increment(1)
 
         for i_line in range (0,len(trial)):
             if is_line_recording(trial[i_line]):
@@ -592,9 +583,7 @@ def processSubject(subject_file: str, result_file : str, progress = None) -> Non
     results = open(joinPaths(getTmpFolder(), get_inter_filename()), "w")
     for n_trial in range(len(data_filtered2)):
         if progress != None:
-            progress.setValue(1, n_trial)
-            # To close the file dialog window:
-            QApplication.processEvents()
+            progress.increment(1)
 
         trial = data_filtered2[n_trial]
         print('Trial number %i' % n_trial)
@@ -680,14 +669,10 @@ def processSubject(subject_file: str, result_file : str, progress = None) -> Non
         progress.setText(1, 'Loading Trials - preprocessing: putting back messages')
         progress.setMaximum(1, len(data)-1)
 
-    n_line = 0
     for line in data:
 
         if progress != None:
-            n_line += 1
-            progress.setValue(1, n_line)
-            # To close the file dialog window:
-            QApplication.processEvents()
+            progress.increment(1)
 
         t = get_time_line(line)
         for n in range(min_message,len(messages)):

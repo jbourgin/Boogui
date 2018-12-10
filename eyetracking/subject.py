@@ -1,5 +1,4 @@
 from eyetracking.trial import *
-from PyQt5.QtWidgets import QApplication
 
 class Subject:
 
@@ -16,8 +15,7 @@ class Subject:
         if progress != None:
             progress.setText(1, 'Loading Trials: parsing entries')
             progress.setMaximum(1, experiment.n_trials)
-            progress.setValue(1, 0)
-        n_trials = 0
+
         print('Parsing trials entries')
         while lines != []:
             trial = Trial(experiment)
@@ -27,11 +25,8 @@ class Subject:
                     self.training_trials.append(trial)
                 else:
                     self.trials.append(trial)
-                    n_trials += 1
                     if progress != None:
-                        progress.setValue(1, n_trials)
-                        # To close the file dialog window:
-                        QApplication.processEvents()
+                        progress.increment(1)
 
     def getTrial(self, trial_number : int):
         for trial in self.trials:
