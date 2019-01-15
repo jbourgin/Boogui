@@ -8,6 +8,7 @@ from PyQt5.QtCore import Qt
 
 from eyetracking.smi import *
 from eyetracking.Recherche_visuelle import *
+from eyetracking.Gaze_contingent import *
 from gui.utils import *
 from gui.subject import *
 from gui.progress_widget import ProgressWidget
@@ -153,12 +154,18 @@ class Main(QMainWindow):
         self.exportAct.setEnabled(False)
         self.exportAct.triggered.connect(self.exportSubjects)
 
+        # Export menu item
+        self.clear = QAction("&Clear subjects", self)
+        self.clear.setEnabled(False)
+        self.clear.triggered.connect(self.clear_subjects)
+
         # Setting menu bar
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(exitAct)
         fileMenu.addAction(browseAct)
         fileMenu.addAction(self.exportAct)
+        fileMenu.addAction(self.clear)
 
         # Experiment menu
         ag = QActionGroup(self, exclusive=True)
@@ -168,6 +175,12 @@ class Main(QMainWindow):
         setRechercheVisuelle.triggered.connect(self.setRechercheVisuelle)
         a = ag.addAction(setRechercheVisuelle)
         self.experiment_menu.addAction(a)
+
+        # GazeContingent
+        setGazeContingent = QAction('&Gaze Contingent', self, checkable = True)
+        setGazeContingent.triggered.connect(self.setGazeContingent)
+        b = ag.addAction(setGazeContingent)
+        self.experiment_menu.addAction(b)
 
         #Default experiment
         setRechercheVisuelle.setChecked(True)
@@ -184,6 +197,26 @@ class Main(QMainWindow):
         self.video_widget.clear()
         self.logOutput.clear()
 
+    def clear_subjects(self):
+        self.subject_datas = []
+        self.subject_buttons = []
+        # Disabling Save menu action
+        self.exportAct.setEnabled(False)
+        # Enabling change of experiment
+        self.experiment_menu.setEnabled(True)
+        # Disbaling clear menu action
+        self.clear.setEnabled(False)
+
+        # Deleting subject buttons
+        for i in reversed(range(self.subjecttrialScrollLayout.count())):
+            self.subjecttrialScrollLayout.itemAt(i).widget().setParent(None)
+
+        # Deleting trial buttons
+        for i in reversed(range(self.trialScrollLayout.count())):
+            self.trialScrollLayout.itemAt(i).widget().setParent(None)
+
+        self.clear_layouts()
+
     ###########################
     ####### Experiments #######
     ###########################
@@ -193,6 +226,11 @@ class Main(QMainWindow):
     def setRechercheVisuelle(self):
         def set():
             return Recherche_visuelle()
+        self.make_experiment = set
+
+    def setGazeContingent(self):
+        def set():
+            return Gaze_contingent()
         self.make_experiment = set
 
     ###########################
@@ -209,6 +247,8 @@ class Main(QMainWindow):
             self.exportAct.setEnabled(True)
             # Disabling change of experiment
             self.experiment_menu.setEnabled(False)
+            # Enabling clear menu action
+            self.clear.setEnabled(True)
 
             progress = ProgressWidget(self, 2)
             progress.setText(0, 'Loading Subjects')
@@ -251,7 +291,8 @@ class Main(QMainWindow):
             progress.setText(0, 'Exporting Subjects')
             progress.setMaximum(0, len(self.subject_datas))
 
-            Recherche_visuelle.makeResultFile(filename)
+            selected_experiment = self.getExperiment()
+            selected_experiment().makeResultFile(filename)
             for subjectData in self.subject_datas:
                 progress.increment(0)
                 progress.setText(1, 'Exporting Trials')

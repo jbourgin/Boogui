@@ -4,26 +4,24 @@
 
 ## Requirements
 
-1. __[Python 3](https://www.python.org/downloads/)__
+### On Debian
 
-    This program requires Python3. It was tested on versions 3.6.5 and 3.6.7.
+1. __[Python 3.6](https://www.python.org/downloads/)__
 
-2. __[Pipenv](https://pypi.org/project/pipenv/)__
+    This program requires Python 3.6. It was tested on versions 3.6.5 and 3.6.7.
 
-    The library dependencies are handeld by `pipenv`.
-    It is based on the `pip` package manager, which is installed by default with most Python distributions.
-    To install `pipenv` form `pip`, type
+2. __[PIP](https://pypi.org/project/pip/)__
+
+    Further dependencies will be handled by the PIP package manager of Python.
+    To install pip:
+```
+apt install pip
+```
+
+3. __Packages__
 
 ```
-pip install pipenv
-```
 
-## Installation
-
-Download the program folder and type
-
-```
-pipenv install
 ```
 
 1. For ubuntu: see https://github.com/pypa/packaging-problems/issues/211

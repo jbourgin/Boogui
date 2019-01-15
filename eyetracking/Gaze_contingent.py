@@ -77,243 +77,28 @@ class Make_Eyelink(Eyelink):
     def isTraining(self, trial) -> bool:
         return 'face' in trial.getStimulus()
 
-class Make_Smi(Smi):
-    def __init__(self):
-        super().__init__()
-        # Center of the screen.
-        self.screen_center = (683,384)
-        # Minimal distance at which we consider the subject is looking at the
-        # fixation cross at the trial beginning
-        self.valid_distance_center = 130 #3 degres of visual angle 95 (+ marge)
-
-        # Initializing regions of interest
-        self.half_width = 163
-        self.half_height = 115
-
-        # frames
-        self.frame_list_1 = InterestRegionList([
-            InterestRegion((312, 384), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((1054, 384), self.half_width, self.half_height, 'RECTANGLE')
-        ])
-
-        self.frame_list_3 = InterestRegionList([
-            InterestRegion((421, 646), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((945, 646), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((945, 122), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((421, 122), self.half_width, self.half_height, 'RECTANGLE')
-        ])
-
-        self.frame_list_5 = InterestRegionList([
-            InterestRegion((312, 384), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((1054, 384), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((421, 646), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((945, 646), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((945, 122), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((421, 122), self.half_width, self.half_height, 'RECTANGLE')
-        ])
-
-        # Patients with inhibition difficulties
-        self.list_patients_cong = [45, 50, 51, 53]
-
-    # Returns a dictionary of experiment variables
-    def parseVariables(self, line: List[str]):
-        if len(line) > 6 and line[5] == "features:":
-            try:
-                target_hp = int(line[9]) + self.screen_center[0]
-                target_vp = int(line[11]) + self.screen_center[1]
-                num_of_dis = int(line[7])
-                cor_resp = int(line[13])
-                response = int(line[15])
-                if target_hp < self.screen_center[0]:
-                    target_side = "L"
-                else:
-                    target_side = "R"
-                return {
-                    'target_hp' : target_hp,
-                    'target_vp' : target_vp,
-                    'num_of_dis' : num_of_dis,
-                    'cor_resp' : cor_resp,
-                    'response' : response,
-                    'target_side' : target_side
-                }
-            except:
-                pass
-        return None
-
-    def isResponse(self, line: Line) -> bool :
-        return len(line) >= 8 and 'sujet' in line[6]
-
-    def isTraining(self, trial) -> bool:
-        return 'face' in trial.getStimulus()
-
-class ExperimentException(Exception):
-    def __init__(self, message):
-
-        # Call the base class constructor with the parameters it needs
-        super().__init__(message)
-
-
-class Recherche_visuelle(Experiment):
+class Gaze_contingent(Experiment):
 
     def __init__(self):
         super().__init__(None)
         self.n_trials = 120
 
     def selectEyetracker(self, input_file : str) -> None:
-        eyelink = Make_Eyelink()
-        if eyelink.isParsable(input_file):
-            logTrace ('Selecting Eyelink', Precision.NORMAL)
-            self.eyetracker = eyelink
-        else:
-            smi = Make_Smi()
-            if smi.isParsable(input_file):
-                logTrace ('Selecting SMI', Precision.NORMAL)
-                self.eyetracker = smi
-            else:
-                logTrace ('No suitable eyetracker found for input file %s' % input_file, Precision.ERROR)
-                raise ExperimentException('No suitable eyetracker found for input file %s' % input_file)
+        logTrace ('Selecting Eyelink', Precision.NORMAL)
+        self.eyetracker = Make_Eyelink()
 
     def processTrial(self, subject, trial, filename = None):
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
         trial_number = trial.getTrialId()
 
-        if trial.saccades == []:
-            logTrace (subject.subject_number,trial_number,"Subject has no saccades!", Precision.DETAIL)
-
-        if trial.features['num_of_dis'] == 1:
-            frame_list = self.eyetracker.frame_list_1
-        elif trial.features['num_of_dis'] == 3:
-            frame_list = self.eyetracker.frame_list_3
-        elif trial.features['num_of_dis'] == 5:
-            frame_list = self.eyetracker.frame_list_5
-
-        start_trial_time = trial.getStartTrial().getTime()
-
-        targetname = trial.getStimulus()
-
-        response_entry = trial.getResponse()
-
-        response_time = response_entry.getTime() - trial.getStartTrial().getTime()
-
-        target_region_position = (trial.features["target_hp"], trial.features["target_vp"])
-
-        region_fixations = trial.getFixationTime(frame_list, frame_list.point_inside(target_region_position))
-
-        total_target_fixation_time = sum(x['time'] for x in region_fixations if x['target'])
-        if total_target_fixation_time == 0:
-            total_target_fixation_time = None
-
-        if "mtemo" in targetname:
-            target_cat = "EMO"
-        elif "mtneu" in targetname:
-            target_cat = "NEU"
-        elif "face" in targetname:
-            target_cat = "VISAGE"
-        else:
-            target_cat = None
-
-        #We determine in which block occurred each trial
-        block = None
-        if int(trial_number) < 60 and target_cat != "VISAGE":
-            block = 1
-        elif int(trial_number) >= 60:
-            block = 2
-
-        #We determine congruency between target side and frame break side.
-        congruency = None
-        if ((trial.features['target_hp'] < self.eyetracker.screen_center[0] and trial.features['cor_resp'] == 1)
-        or (trial.features['target_hp'] > self.eyetracker.screen_center[0] and trial.features['cor_resp'] == 2)):
-            congruency = "YES"
-        else:
-            congruency = "NO"
-
-        # First and last good fixations
-        try:
-            first_good_fixation = next(fixation for fixation in region_fixations if fixation['target'])
-            last_good_fixation = next(fixation for fixation in reversed(region_fixations) if fixation['target'])
-            response_delay_last = response_time - (last_good_fixation['begin'].getTime() - start_trial_time)
-            # Delay of capture to the first good fixation
-            capture_delay_first = first_good_fixation['begin'].getTime() - start_trial_time
-        except:
-            first_good_fixation = None
-            last_good_fixation = None
-            response_delay_last = None
-            capture_delay_first = None
-
-        # Time on target and distractors
-        total_target_fixation_time = sum(x['time'] for x in region_fixations if x['target'])
-        if total_target_fixation_time == 0:
-            total_target_fixation_time = None
-        total_distractor_fixation_time = sum(x['time'] for x in region_fixations if not x['target'])
-        if total_distractor_fixation_time == 0:
-            total_distractor_fixation_time = None
-
-        # Determining blink category
-        if trial.blinks == []:
-            blink_category = "No blink"
-        else:
-            if trial.blinks[0].getStartTime() < first_good_fixation['begin'].getTime():
-                blink_category = "early capture"
-            else:
-                blink_category = "late"
-
-        # Error :
-        if (not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)
-            or first_good_fixation == None
-            or trial.features['response'] == 'None'
-            or blink_category == 'early capture'
-            or capture_delay_first < 100):
-            error = '#N/A'
-        elif (subject.group == 'MA'
-            and subject in list_patients_cong
-            and congruency == "NO"
-            and trial.features['cor_resp'] != trial.features['response']):
-            error = 'CONG'
-        else:
-            if trial.features['cor_resp'] != trial.features['response']:
-                error = '1'
-            else:
-                error = '0'
-
-        # Writing data in result csv file
-        s = [str(subject.id) + "-E", # Subject name
-            subject.group,
-            trial_number,
-            block,
-            trial.eye,
-            target_cat,
-            targetname,
-            trial.features['num_of_dis'],
-            trial.features['target_hp'],
-            trial.features['target_vp'],
-            trial.features['target_side'],
-            congruency,
-            trial.features['cor_resp'],
-            trial.features['response'],
-            error,
-            response_time,
-            capture_delay_first,
-            response_delay_last,
-            total_target_fixation_time,
-            total_distractor_fixation_time,
-            blink_category]
-
-        if filename is None:
-            f = open(getResultsFile(), 'a')
-        else:
-            f = open(filename, 'a')
-        f.write(';'.join([str(x) for x in s]))
-        f.write('\n')
-        f.close()
-
     @staticmethod
     def getDefaultResultsFile():
-        return joinPaths(getResultsFolder(), 'recherche_visuelle.csv')
+        return joinPaths(getResultsFolder(), 'gaze_contingent.csv')
 
     @staticmethod
     def makeResultFile() -> None:
         createResultsFolder()
-        Recherche_visuelle.makeResultFile(getDefaultResultsFile)
+        Gaze_contingent.makeResultFile(getDefaultResultsFile)
 
     @staticmethod
     def makeResultFile(filename: str) -> None:
@@ -391,7 +176,7 @@ class Recherche_visuelle(Experiment):
 
         for frame in frame_list:
             if frame.isTarget((trial.features['target_hp'], trial.features['target_vp'])):
-                Recherche_visuelle.plotTarget(frame, trial.features['cor_resp'], target_color)
+                Gaze_contingent.plotTarget(frame, trial.features['cor_resp'], target_color)
             else:
                 plotRegion(frame, frame_color)
 

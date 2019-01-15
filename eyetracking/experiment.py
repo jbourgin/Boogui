@@ -4,6 +4,12 @@ from typing import List, Dict, Union
 
 from eyetracking.subject import *
 
+class ExperimentException(Exception):
+    def __init__(self, message):
+
+        # Call the base class constructor with the parameters it needs
+        super().__init__(message)
+
 class Experiment (ABC):
 
     def __init__(self, eyetracker):
@@ -28,4 +34,8 @@ class Experiment (ABC):
 
     @abstractmethod
     def processSubject(self, input_file: str, progress_bar = None) -> Subject:
+        pass
+
+    @abstractmethod
+    def makeResultFile() -> None:
         pass
