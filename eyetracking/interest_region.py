@@ -22,14 +22,14 @@ class InterestRegion:
 
     def point_inside(self, p: Point) -> bool :
         (x,y) = p
+        (cx,cy) = self.center
         if self.type == 'RECTANGLE':
-            return (x >= self.center[0] - self.half_width
-                and x <= self.center[0] + self.half_width
-                and y >= self.center[1] - self.half_height
-                and y <= self.center[1] + self.half_height)
+            return (x >= cx - self.half_width
+                and x <= cx + self.half_width
+                and y >= cy - self.half_height
+                and y <= cy + self.half_height)
         elif self.type == 'ELLIPSE':
-            return false
-            # TODO !
+            return (x - cx)**2 / self.half_width**2 + (y - cy)**2 / self.half_height**2 <= 1
 
     def isTarget(self, target_center : Point) -> bool :
         return target_center == self.center
