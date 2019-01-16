@@ -178,7 +178,7 @@ class Recherche_visuelle(Experiment):
         trial_number = trial.getTrialId()
 
         if trial.saccades == []:
-            logTrace (subject.subject_number,trial_number,"Subject has no saccades!", Precision.DETAIL)
+            logTrace ("Subject %i has no saccades at trial %i !" %(subject.id,trial_number), Precision.DETAIL)
 
         if trial.features['num_of_dis'] == 1:
             frame_list = self.eyetracker.frame_list_1
@@ -198,10 +198,6 @@ class Recherche_visuelle(Experiment):
         target_region_position = (trial.features["target_hp"], trial.features["target_vp"])
 
         region_fixations = trial.getFixationTime(frame_list, frame_list.point_inside(target_region_position))
-
-        total_target_fixation_time = sum(x['time'] for x in region_fixations if x['target'])
-        if total_target_fixation_time == 0:
-            total_target_fixation_time = None
 
         if "mtemo" in targetname:
             target_cat = "EMO"
@@ -252,7 +248,7 @@ class Recherche_visuelle(Experiment):
         if trial.blinks == []:
             blink_category = "No blink"
         else:
-            if trial.blinks[0].getStartTime() < first_good_fixation['begin'].getTime():
+            if first_good_fixation != None and trial.blinks[0].getStartTime() < first_good_fixation['begin'].getTime():
                 blink_category = "early capture"
             else:
                 blink_category = "late"

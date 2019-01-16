@@ -24,8 +24,10 @@ class Make_Eyelink(Eyelink):
         # frames
         self.right_gaze = RectangleRegion((self.screen_center[0]*1.5, self.screen_center[1]+10), self.half_width, self.half_height_eye)
         self.left_gaze = RectangleRegion((self.screen_center[0]/2.0, self.screen_center[1]+10), self.half_width, self.half_height_eye)
-        self.right_face = EllipseRegion((self.screen_center[0]*1.5, self.screen_center[1]), self.half_width, self.half_height_face)
-        self.left_face = EllipseRegion((self.screen_center[0]/2.0, self.screen_center[1]), self.half_width, self.half_height_face)
+        self.right_ellipse = EllipseRegion((self.screen_center[0]*1.5, self.screen_center[1]), self.half_width, self.half_height_face)
+        self.left_ellipse = EllipseRegion((self.screen_center[0]/2.0, self.screen_center[1]), self.half_width, self.half_height_face)
+        self.right_face = DifferenceRegion(self.right_ellipse, self.right_gaze)
+        self.left_face = DifferenceRegion(self.left_ellipse, self.left_gaze)
 
     # Returns a dictionary of experiment variables
     # REAL ONE :
@@ -112,7 +114,7 @@ class Gaze_contingent(Experiment):
         trial_number = trial.getTrialId()
 
         if trial.saccades == []:
-            logTrace (subject.subject_number,trial_number,"Subject has no saccades!", Precision.DETAIL)
+            logTrace ("Subject %i has no saccades at trial %i !" %(subject.id,trial_number), Precision.DETAIL)
 
         if trial.features['target_side'] == 'Left':
             gaze_position = self.eyetracker.left_gaze
@@ -120,6 +122,7 @@ class Gaze_contingent(Experiment):
         elif trial.features['target_side'] == 'Right':
             gaze_position = self.eyetracker.right_gaze
             face_position = self.eyetracker.right_face
+        regions = InterestRegionList([gaze_position, face_position])
 
         start_trial_time = trial.getStartTrial().getTime()
 
@@ -127,78 +130,42 @@ class Gaze_contingent(Experiment):
 
         response_entry = trial.getResponse()
 
-        region_fixations = trial.getFixationTime(frame_list, frame_list.point_inside(target_region_position))
-
-        total_target_fixation_time = sum(x['time'] for x in region_fixations if x['target'])
-        if total_target_fixation_time == 0:
-            total_target_fixation_time = None
-
-        if "mtemo" in targetname:
-            target_cat = "EMO"
-        elif "mtneu" in targetname:
-            target_cat = "NEU"
-        elif "face" in targetname:
-            target_cat = "VISAGE"
-        else:
-            target_cat = None
-
-        #We determine in which block occurred each trial
-        block = None
-        if int(trial_number) < 60 and target_cat != "VISAGE":
-            block = 1
-        elif int(trial_number) >= 60:
-            block = 2
-
-        #We determine congruency between target side and frame break side.
-        congruency = None
-        if ((trial.features['target_hp'] < self.eyetracker.screen_center[0] and trial.features['cor_resp'] == 1)
-        or (trial.features['target_hp'] > self.eyetracker.screen_center[0] and trial.features['cor_resp'] == 2)):
-            congruency = "YES"
-        else:
-            congruency = "NO"
+        region_fixations = trial.getFixationTime(regions, gaze_position)
 
         # First and last good fixations
         try:
             first_good_fixation = next(fixation for fixation in region_fixations if fixation['target'])
-            last_good_fixation = next(fixation for fixation in reversed(region_fixations) if fixation['target'])
-            response_delay_last = response_time - (last_good_fixation['begin'].getTime() - start_trial_time)
-            # Delay of capture to the first good fixation
             capture_delay_first = first_good_fixation['begin'].getTime() - start_trial_time
         except:
             first_good_fixation = None
-            last_good_fixation = None
-            response_delay_last = None
             capture_delay_first = None
 
         # Time on target and distractors
-        total_target_fixation_time = sum(x['time'] for x in region_fixations if x['target'])
-        if total_target_fixation_time == 0:
-            total_target_fixation_time = None
-        total_distractor_fixation_time = sum(x['time'] for x in region_fixations if not x['target'])
-        if total_distractor_fixation_time == 0:
-            total_distractor_fixation_time = None
+        total_eye_fixation_time = sum(x['time'] for x in region_fixations if x['target'])
+        if total_eye_fixation_time == 0:
+            total_eye_fixation_time = None
+        total_faceNotEye_fixation_time = sum(x['time'] for x in region_fixations if not x['target'])
+        if total_faceNotEye_fixation_time == 0:
+            total_faceNotEye_fixation_time = None
 
         # Determining blink category
         if trial.blinks == []:
             blink_category = "No blink"
         else:
-            if trial.blinks[0].getStartTime() < first_good_fixation['begin'].getTime():
-                blink_category = "early capture"
+            if first_good_fixation != None:
+                if trial.blinks[0].getStartTime() < first_good_fixation['begin'].getTime():
+                    blink_category = "early capture"
+                else:
+                    blink_category = "late"
             else:
-                blink_category = "late"
+                blink_category = None
 
         # Error :
         if (not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)
-            or first_good_fixation == None
             or trial.features['response'] == 'None'
-            or blink_category == 'early capture'
-            or capture_delay_first < 100):
+            or blink_category == 'early capture'):
+            #or capture_delay_first < 100):
             error = '#N/A'
-        elif (subject.group == 'MA'
-            and subject in list_patients_cong
-            and congruency == "NO"
-            and trial.features['cor_resp'] != trial.features['response']):
-            error = 'CONG'
         else:
             if trial.features['cor_resp'] != trial.features['response']:
                 error = '1'
@@ -209,23 +176,21 @@ class Gaze_contingent(Experiment):
         s = [str(subject.id) + "-E", # Subject name
             subject.group,
             trial_number,
-            block,
+            #trial.features['session'],
+            trial.features['training'],
+            trial.features['global_task'],
             trial.eye,
-            target_cat,
+            trial.features['emotion'],
+            trial.features['gender'],
             targetname,
-            trial.features['num_of_dis'],
-            trial.features['target_hp'],
-            trial.features['target_vp'],
             trial.features['target_side'],
-            congruency,
             trial.features['cor_resp'],
             trial.features['response'],
             error,
-            response_time,
+            trial.features['response_time'],
             capture_delay_first,
-            response_delay_last,
-            total_target_fixation_time,
-            total_distractor_fixation_time,
+            total_eye_fixation_time,
+            total_faceNotEye_fixation_time,
             blink_category]
 
         if filename is None:
@@ -252,13 +217,14 @@ class Gaze_contingent(Experiment):
             'Subject',
             'Group',
             'TrialID',
+            #'Session',
+            'Training',
             'Task',
-            'Session',
             'Eye',
             'Emotion',
+            'Gender',
             'TargetName',
-            'Genre',
-            'Target Side',
+            'TargetSide',
             'Correct response',
             'Response',
             'Errors',
@@ -285,10 +251,10 @@ class Gaze_contingent(Experiment):
 
         # Plotting frames
         if trial.features['target_side'] == 'Left':
-            plotRegion(self.eyetracker.left_face, frame_color)
+            plotRegion(self.eyetracker.left_ellipse, frame_color)
             plotRegion(self.eyetracker.left_gaze, frame_color)
         elif trial.features['target_side'] == 'Right':
-            plotRegion(self.eyetracker.right_face, frame_color)
+            plotRegion(self.eyetracker.right_ellipse, frame_color)
             plotRegion(self.eyetracker.right_gaze, frame_color)
 
         # Plotting gaze positions

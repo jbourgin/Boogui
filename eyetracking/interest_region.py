@@ -13,7 +13,25 @@ class InterestRegion:
     def isTarget(self, target_center : Point) -> bool :
         pass
 
-class EllipseRegion:
+class DifferenceRegion(InterestRegion):
+    def __init__(self, regionIn: InterestRegion, regionOut: InterestRegion):
+        self.type = 'DIFFERENCE'
+        self.regionIn = regionIn
+        self.regionOut = regionOut
+        self.center = regionIn.center
+        self.half_width = regionIn.half_width
+        self.half_height = regionIn.half_height
+
+    def __str__(self) -> str :
+        return 'Difference between %s and %s' % (self.regionIn, self.regionOut)
+
+    def point_inside(self, p: Point) -> bool:
+        return self.regionIn.point_inside(p) and not self.regionOut.point_inside(p)
+
+    def isTarget(self, target_center : Point) -> bool :
+        return self.regionIn.isTarget(target_center)
+
+class EllipseRegion(InterestRegion):
 
     def __init__(self, p : Point, hw : int, hh : int):
         self.type = 'ELLIPSE'

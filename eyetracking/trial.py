@@ -125,7 +125,16 @@ class Trial:
                     entry.check()
                     n_entries += 1
                     self.entries.append(entry)
-                    if stop(entry): return lines[i_line + 1:]
+                    #We are looking for entries with the same time as the stop trial entry
+                    if stop(entry):
+                        for line in lines[i_line + 1:]:
+                            entry2 = self.experiment.eyetracker.parseEntry(line)
+                            if entry2 != None and entry2.getTime() == entry.getTime():
+                                self.entries.insert(len(self.entries)-1, entry2)
+                            else:
+                                break
+                            i_line += 1
+                        return lines[i_line + 1:]
 
                     if isBeginning(entry):
                         begin = n_entries - 1
@@ -285,7 +294,7 @@ class Trial:
                     break
 
             # If we find no corresponding frame, we determine the closer one. If its distance to the fixation is shorter enough, we take this frame.
-            if closest_region == None:
+            if watched_region == None:
                 closest_region = regions.find_minimal_distance(barycentre)
                 # maximum distance allowed between a point and a region
                 max_dist = sqrt(pow(closest_region.half_width, 2) + pow(closest_region.half_height,2) + 30)
