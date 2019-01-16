@@ -22,24 +22,24 @@ class Make_Eyelink(Eyelink):
 
         # frames
         self.frame_list_1 = InterestRegionList([
-            InterestRegion((164, 384), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((860, 384), self.half_width, self.half_height, 'RECTANGLE')
+            RectangleRegion((164, 384), self.half_width, self.half_height),
+            RectangleRegion((860, 384), self.half_width, self.half_height)
         ])
 
         self.frame_list_3 = InterestRegionList([
-            InterestRegion((266, 630), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((758, 630), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((266, 138), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((758, 138), self.half_width, self.half_height, 'RECTANGLE')
+            RectangleRegion((266, 630), self.half_width, self.half_height),
+            RectangleRegion((758, 630), self.half_width, self.half_height),
+            RectangleRegion((266, 138), self.half_width, self.half_height),
+            RectangleRegion((758, 138), self.half_width, self.half_height)
         ])
 
         self.frame_list_5 = InterestRegionList([
-            InterestRegion((164, 384), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((860, 384), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((266, 630), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((758, 630), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((266, 138), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((758, 138), self.half_width, self.half_height, 'RECTANGLE')
+            RectangleRegion((164, 384), self.half_width, self.half_height),
+            RectangleRegion((860, 384), self.half_width, self.half_height),
+            RectangleRegion((266, 630), self.half_width, self.half_height),
+            RectangleRegion((758, 630), self.half_width, self.half_height),
+            RectangleRegion((266, 138), self.half_width, self.half_height),
+            RectangleRegion((758, 138), self.half_width, self.half_height)
         ])
 
         # Patients with inhibition difficulties
@@ -92,24 +92,24 @@ class Make_Smi(Smi):
 
         # frames
         self.frame_list_1 = InterestRegionList([
-            InterestRegion((312, 384), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((1054, 384), self.half_width, self.half_height, 'RECTANGLE')
+            RectangleRegion((312, 384), self.half_width, self.half_height),
+            RectangleRegion((1054, 384), self.half_width, self.half_height)
         ])
 
         self.frame_list_3 = InterestRegionList([
-            InterestRegion((421, 646), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((945, 646), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((945, 122), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((421, 122), self.half_width, self.half_height, 'RECTANGLE')
+            RectangleRegion((421, 646), self.half_width, self.half_height),
+            RectangleRegion((945, 646), self.half_width, self.half_height),
+            RectangleRegion((945, 122), self.half_width, self.half_height),
+            RectangleRegion((421, 122), self.half_width, self.half_height)
         ])
 
         self.frame_list_5 = InterestRegionList([
-            InterestRegion((312, 384), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((1054, 384), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((421, 646), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((945, 646), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((945, 122), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((421, 122), self.half_width, self.half_height, 'RECTANGLE')
+            RectangleRegion((312, 384), self.half_width, self.half_height),
+            RectangleRegion((1054, 384), self.half_width, self.half_height),
+            RectangleRegion((421, 646), self.half_width, self.half_height),
+            RectangleRegion((945, 646), self.half_width, self.half_height),
+            RectangleRegion((945, 122), self.half_width, self.half_height),
+            RectangleRegion((421, 122), self.half_width, self.half_height)
         ])
 
         # Patients with inhibition difficulties
@@ -345,7 +345,7 @@ class Recherche_visuelle(Experiment):
         f.close()
 
     @staticmethod
-    def plotTarget(region: InterestRegion, cor_resp, color):
+    def plotTarget(region: RectangleRegion, cor_resp, color):
     	lu_corner = [region.center[0]-region.half_width, region.center[1]+region.half_height]
     	lb_corner = [region.center[0]-region.half_width, region.center[1]-region.half_height]
     	ru_corner = [region.center[0]+region.half_width, region.center[1]+region.half_height]

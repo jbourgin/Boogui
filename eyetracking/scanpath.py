@@ -24,7 +24,7 @@ def plotRectangle(center : Point, color, half_width, half_height) -> None:
 
 def plotEllipse(region, color) -> None:
     (x,y) = region.center
-    big_ellipse = InterestRegion(region.center, region.half_width+1, region.half_height+1, 'ELLIPSE')
+    big_ellipse = EllipseRegion(region.center, region.half_width+1, region.half_height+1)
     for m in range(x-big_ellipse.half_width, x+big_ellipse.half_width):
         for n in range(y-big_ellipse.half_height, y+big_ellipse.half_height):
             if big_ellipse.point_inside((m,n)) and not region.point_inside((m,n)):

@@ -7,32 +7,49 @@ InterestRegion = TypeVar('Region')
 InterestRegionList = TypeVar('RegionList')
 #define a rectangular region of interest
 class InterestRegion:
+    def point_inside(self, p: Point) -> bool:
+        pass
 
-    def __init__(self, p : Point, hw : int, hh : int, type : str):
-        if type != 'RECTANGLE' and type != 'ELLIPSE':
-            print('Expected type RECTANGLE or ELLIPSE, got %s', type)
-        else:
-            self.type = type
-            self.center = (int(p[0]), int(p[1]))
-            self.half_width = int(hw)
-            self.half_height = int(hh)
+    def isTarget(self, target_center : Point) -> bool :
+        pass
+
+class EllipseRegion:
+
+    def __init__(self, p : Point, hw : int, hh : int):
+        self.type = 'ELLIPSE'
+        self.center = (int(p[0]), int(p[1]))
+        self.half_width = int(hw)
+        self.half_height = int(hh)
 
     def __str__(self) -> str :
-        if self.type == 'RECTANGLE':
-            return 'Rectangular region centered at (%i,%i), half-width = %i and half_height = %i' % (self.center[0], self.center[1], self.half_width, self.half_height)
-        elif self.type == 'ELLIPSE':
-            return 'Ellipse region centered at (%i,%i), half-width = %i and half_height = %i' % (self.center[0], self.center[1], self.half_width, self.half_height)
+        return 'Ellipse region centered at (%i,%i), half-width = %i and half_height = %i' % (self.center[0], self.center[1], self.half_width, self.half_height)
 
     def point_inside(self, p: Point) -> bool :
         (x,y) = p
         (cx,cy) = self.center
-        if self.type == 'RECTANGLE':
-            return (x >= cx - self.half_width
-                and x <= cx + self.half_width
-                and y >= cy - self.half_height
-                and y <= cy + self.half_height)
-        elif self.type == 'ELLIPSE':
-            return (x - cx)**2 / self.half_width**2 + (y - cy)**2 / self.half_height**2 <= 1
+        return (x - cx)**2 / self.half_width**2 + (y - cy)**2 / self.half_height**2 <= 1
+
+    def isTarget(self, target_center : Point) -> bool :
+        return target_center == self.center
+
+class RectangleRegion(InterestRegion):
+
+    def __init__(self, p : Point, hw : int, hh : int):
+        self.type = 'RECTANGLE'
+        self.center = (int(p[0]), int(p[1]))
+        self.half_width = int(hw)
+        self.half_height = int(hh)
+
+    def __str__(self) -> str :
+        return 'Rectangular region centered at (%i,%i), half-width = %i and half_height = %i' % (self.center[0], self.center[1], self.half_width, self.half_height)
+
+    def point_inside(self, p: Point) -> bool :
+        (x,y) = p
+        (cx,cy) = self.center
+        return (x >= cx - self.half_width
+            and x <= cx + self.half_width
+            and y >= cy - self.half_height
+            and y <= cy + self.half_height)
 
     def isTarget(self, target_center : Point) -> bool :
         return target_center == self.center
