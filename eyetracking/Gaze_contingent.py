@@ -11,77 +11,97 @@ class Make_Eyelink(Eyelink):
     def __init__(self):
         super().__init__()
         # Center of the screen.
-        self.screen_center = (512,384)
+        self.screen_center = (960,540)
         # Minimal distance at which we consider the subject is looking at the
         # fixation cross at the trial beginning
-        self.valid_distance_center = 125 #3 degres of visual angle 95 (+ marge)
+        self.valid_distance_center = 140 #3 degres of visual angle 95 (+ marge)
 
         # Initializing regions of interest
-        self.half_width = 153
-        self.half_height = 108
+        self.half_width = 182
+        self.half_height_face = 232
+        self.half_height_eye = 45
 
         # frames
-        self.frame_list_1 = InterestRegionList([
-            InterestRegion((164, 384), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((860, 384), self.half_width, self.half_height, 'RECTANGLE')
-        ])
-
-        self.frame_list_3 = InterestRegionList([
-            InterestRegion((266, 630), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((758, 630), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((266, 138), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((758, 138), self.half_width, self.half_height, 'RECTANGLE')
-        ])
-
-        self.frame_list_5 = InterestRegionList([
-            InterestRegion((164, 384), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((860, 384), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((266, 630), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((758, 630), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((266, 138), self.half_width, self.half_height, 'RECTANGLE'),
-            InterestRegion((758, 138), self.half_width, self.half_height, 'RECTANGLE')
-        ])
-
-        # Patients with inhibition difficulties
-        self.list_patients_cong = [13,14]
+        self.right_gaze = InterestRegion((self.screen_center[0]*1.5, self.screen_center[1]+10), self.half_width, self.half_height_eye, 'RECTANGLE')
+        self.left_gaze = InterestRegion((self.screen_center[0]/2.0, self.screen_center[1]+10), self.half_width, self.half_height_eye, 'RECTANGLE')
+        self.right_face = InterestRegion((self.screen_center[0]*1.5, self.screen_center[1]), self.half_width, self.half_height_face, 'ELLIPSE')
+        self.left_face = InterestRegion((self.screen_center[0]/2.0, self.screen_center[1]), self.half_width, self.half_height_face, 'ELLIPSE')
 
     # Returns a dictionary of experiment variables
+    # REAL ONE :
+    '''
     def parseVariables(self, line: List[str]):
-        if len(line) > 24 and line[8] == "tgt_hor":
+        if len(line) > 5 and line[2] == "Variable" and line[3] == "values:":
             try:
-                if len(line) > 24 and line[8] == "tgt_hor":
-                    target_hp = int(line[10]) + self.screen_center[0]
-                    target_vp = int(line[15]) + self.screen_center[1]
-                    num_of_dis = int(line[5])
-                    cor_resp = int(line[20])
-                    response = int(line[24])
-                    if target_hp < self.screen_center[0]:
-                        target_side = "L"
-                    else:
-                        target_side = "R"
+                if len(line) > 5 and line[2] == "Variable" and line[3] == "values:":
+                    training = line[4]
+                    session = line[5]
+                    global_task = line[6]
+                    emotion = line[7]
+                    gender = line[8]
+                    target_side = line[9]
+                    response = line[10]
+                    cor_resp = int(line[11])
+                    response_time = float(line[12])
+
                 return {
-                    'target_hp' : target_hp,
-                    'target_vp' : target_vp,
-                    'num_of_dis' : num_of_dis,
-                    'cor_resp' : cor_resp,
+                    'training' : training,
+                    'session' : session,
+                    'global_task' : global_task,
+                    'emotion' : emotion,
+                    'gender' : gender,
+                    'target_side' : target_side,
                     'response' : response,
-                    'target_side' : target_side
+                    'cor_resp' : cor_resp,
+                    'response_time' : response_time
+                }
+            except:
+                pass
+        return None
+    '''
+
+    # FAKE NEWS
+    def parseVariables(self, line: List[str]):
+        if len(line) > 5 and line[2] == "Main":
+            line = [x.replace(',','') for x in line]
+            try:
+                training = 'MONZBI'
+                global_task = line[4]
+                emotion = line[5]
+                gender = line[6]
+                target_side = line[7]
+                response = line[8]
+                cor_resp = line[9]
+                response_time = line[10]
+
+                return {
+                    'training' : training,
+                    'global_task' : global_task,
+                    'emotion' : emotion,
+                    'gender' : gender,
+                    'target_side' : target_side,
+                    'response' : response,
+                    'cor_resp' : cor_resp,
+                    'response_time' : response_time
                 }
             except:
                 pass
         return None
 
     def isResponse(self, line: Line) -> bool :
-        return len(line) >= 6 and 'repondu' in line[5]
+        return len(line) >= 5 and 'showing' in line[4]
 
     def isTraining(self, trial) -> bool:
-        return 'face' in trial.getStimulus()
+        logTrace('isTraining to fix!', Precision.TITLE)
+        return False
+    #    return 'Training' in trial.features['training']
 
 class Gaze_contingent(Experiment):
 
     def __init__(self):
         super().__init__(None)
-        self.n_trials = 120
+        logTrace('Attention: nombre d''essais à changer', Precision.TITLE)
+        self.n_trials = 96
 
     def selectEyetracker(self, input_file : str) -> None:
         logTrace ('Selecting Eyelink', Precision.NORMAL)
@@ -90,6 +110,8 @@ class Gaze_contingent(Experiment):
     def processTrial(self, subject, trial, filename = None):
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
         trial_number = trial.getTrialId()
+
+        ####################
 
     @staticmethod
     def getDefaultResultsFile():
@@ -107,59 +129,31 @@ class Gaze_contingent(Experiment):
             'Subject',
             'Group',
             'TrialID',
-            'Block',
+            'Task',
+            'Session',
             'Eye',
             'Emotion',
             'TargetName',
-            'Number of Distractors',
-            'Target X position',
-            'Target Y position',
-            'Target side',
-            'Congruency',
+            'Genre',
+            'Target Side',
             'Correct response',
             'Response',
             'Errors',
             'Response time',
-            'First localization time',
-            'Response delay from last fixation',
-            'Total fixation time on target',
-            'Total fixation time on distractors',
+            'First time on eyes',
+            'Total fixation time on eyes',
+            'Total fixation time on face (other than eyes)',
             'First blink type'
         ]))
         f.write('\n')
         f.close()
 
-    @staticmethod
-    def plotTarget(region: InterestRegion, cor_resp, color):
-    	lu_corner = [region.center[0]-region.half_width, region.center[1]+region.half_height]
-    	lb_corner = [region.center[0]-region.half_width, region.center[1]-region.half_height]
-    	ru_corner = [region.center[0]+region.half_width, region.center[1]+region.half_height]
-    	rb_corner = [region.center[0]+region.half_width, region.center[1]-region.half_height]
-
-    	if cor_resp == 2:
-    		hole_up = [region.center[0]+region.half_width, region.center[1]+30]
-    		hole_down = [region.center[0]+region.half_width, region.center[1]-30]
-    		plotSegment(lu_corner, lb_corner, c=color)
-    		plotSegment(lb_corner, rb_corner, c=color)
-    		plotSegment(rb_corner, hole_down, c=color)
-    		plotSegment(hole_up, ru_corner, c=color)
-    		plotSegment(ru_corner, lu_corner, c=color)
-
-    	elif cor_resp == 1:
-    		hole_up = [region.center[0]-region.half_width, region.center[1]+30]
-    		hole_down = [region.center[0]-region.half_width, region.center[1]-30]
-    		plotSegment(lb_corner, rb_corner, c=color)
-    		plotSegment(rb_corner, ru_corner, c=color)
-    		plotSegment(ru_corner, lu_corner, c=color)
-    		plotSegment(lb_corner, hole_down, c=color)
-    		plotSegment(hole_up, lu_corner, c=color)
 
     # Creates an image scanpath for one trial.
     def scanpath(self, subject_id, trial):
         plt.clf()
 
         frame_color = (0,0,0)
-        target_color = (1,0,0)
         x_axis = self.eyetracker.screen_center[0] * 2
         y_axis = self.eyetracker.screen_center[1] * 2
         plt.axis([0, x_axis, 0, y_axis])
@@ -167,18 +161,12 @@ class Gaze_contingent(Experiment):
         plt.axis('off')
 
         # Plotting frames
-        if trial.features['num_of_dis'] == 1:
-            frame_list = self.eyetracker.frame_list_1.getRegions()
-        elif trial.features['num_of_dis'] == 3:
-            frame_list = self.eyetracker.frame_list_3.getRegions()
-        elif trial.features['num_of_dis'] == 5:
-            frame_list = self.eyetracker.frame_list_5.getRegions()
-
-        for frame in frame_list:
-            if frame.isTarget((trial.features['target_hp'], trial.features['target_vp'])):
-                Gaze_contingent.plotTarget(frame, trial.features['cor_resp'], target_color)
-            else:
-                plotRegion(frame, frame_color)
+        if trial.features['target_side'] == 'Left':
+            plotRegion(self.eyetracker.left_face, frame_color)
+            plotRegion(self.eyetracker.left_gaze, frame_color)
+        elif trial.features['target_side'] == 'Right':
+            plotRegion(self.eyetracker.right_face, frame_color)
+            plotRegion(self.eyetracker.right_gaze, frame_color)
 
         # Plotting gaze positions
         trial.plot()
@@ -192,17 +180,9 @@ class Gaze_contingent(Experiment):
         point_list = trial.getGazePoints()
         nb_points = len(point_list)
         frame_color = (0,0,0)
-        target_color = (1,0,0)
         point_color = (1,1,0)
 
         image_list = []
-        # Plotting frames
-        if trial.features['num_of_dis'] == 1:
-            frame_list = self.eyetracker.frame_list_1.getRegions()
-        elif trial.features['num_of_dis'] == 3:
-            frame_list = self.eyetracker.frame_list_3.getRegions()
-        elif trial.features['num_of_dis'] == 5:
-            frame_list = self.eyetracker.frame_list_5.getRegions()
 
         axis_x = self.eyetracker.screen_center[0]*2
         axis_y = self.eyetracker.screen_center[1]*2
@@ -225,11 +205,12 @@ class Gaze_contingent(Experiment):
                 plotSegment(point_list[j], point_list[j+1], c = point_color)
             point_color = (1, point_color[1] - 1.0/nb_points , 0)
 
-            for frame in frame_list:
-                if frame.isTarget((trial.features['target_hp'], trial.features['target_vp'])):
-                    Recherche_visuelle.plotTarget(frame, trial.features['cor_resp'], target_color)
-                else:
-                    plotRegion(frame, frame_color)
+            if trial.features['target_side'] == 'Left':
+                plotRegion(self.eyetracker.left_face, frame_color)
+                plotRegion(self.eyetracker.left_gaze, frame_color)
+            elif trial.features['target_side'] == 'Right':
+                plotRegion(self.eyetracker.right_face, frame_color)
+                plotRegion(self.eyetracker.right_gaze, frame_color)
 
             image_name = '%i.png' % elem
             saveImage(getTmpFolder(), image_name)

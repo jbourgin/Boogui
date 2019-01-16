@@ -40,10 +40,14 @@ class Trial:
             print(entry)
 
     def setEntries(self, lines: List[Line]) -> List[Line]:
+        logTrace ('Parsing entries', Precision.NORMAL)
         rest_lines = self.parseEntries(lines)
         if not self.isEmpty():
+            logTrace ('Checking trial validity', Precision.NORMAL)
             self.checkValid()
+            logTrace ('Setting trial features', Precision.NORMAL)
             self.setFeatures()
+            logTrace ('Setting eye', Precision.NORMAL)
             self.eye = self.experiment.eyetracker.getEye(lines)
         return rest_lines
 

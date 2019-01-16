@@ -19,10 +19,6 @@ class Experiment (ABC):
     def processTrial(self, subject : Subject, trial : Trial) -> None:
         pass
 
-    @abstractmethod
-    def plotTarget(region: InterestRegion, cor_resp, color) -> None:
-        pass
-
     # Creates an image scanpath for one trial.
     @abstractmethod
     def scanpath(self, trial : Trial) -> str:

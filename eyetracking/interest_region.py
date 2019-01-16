@@ -13,12 +13,15 @@ class InterestRegion:
             print('Expected type RECTANGLE or ELLIPSE, got %s', type)
         else:
             self.type = type
-            self.center = p
-            self.half_width = hw
-            self.half_height = hh
+            self.center = (int(p[0]), int(p[1]))
+            self.half_width = int(hw)
+            self.half_height = int(hh)
 
     def __str__(self) -> str :
-        return 'Rectangular region centered at (%i,%i), half-width = %i and half_height = %i' % (self.center[0], self.center[1], self.half_width, self.half_height)
+        if self.type == 'RECTANGLE':
+            return 'Rectangular region centered at (%i,%i), half-width = %i and half_height = %i' % (self.center[0], self.center[1], self.half_width, self.half_height)
+        elif self.type == 'ELLIPSE':
+            return 'Ellipse region centered at (%i,%i), half-width = %i and half_height = %i' % (self.center[0], self.center[1], self.half_width, self.half_height)
 
     def point_inside(self, p: Point) -> bool :
         (x,y) = p

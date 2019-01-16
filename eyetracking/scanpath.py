@@ -9,6 +9,9 @@ def plotSegment(point1 : Point, point2 : Point, c = 'black', alpha = 1.0) -> Non
 	else:
 		plt.plot([point1[0],point2[0]],[point1[1],point2[1]],c=c, alpha = alpha)
 
+def plotPoint(point : Point, color) -> None:
+		plotSegment(point, point, c = color)
+
 def plotRectangle(center : Point, color, half_width, half_height) -> None:
 	lu_corner = [center[0]-half_width,center[1]+half_height]
 	lb_corner = [center[0]-half_width,center[1]-half_height]
@@ -19,8 +22,19 @@ def plotRectangle(center : Point, color, half_width, half_height) -> None:
 	plotSegment(rb_corner, ru_corner, c=color)
 	plotSegment(ru_corner, lu_corner, c=color)
 
+def plotEllipse(region, color) -> None:
+    (x,y) = region.center
+    big_ellipse = InterestRegion(region.center, region.half_width+1, region.half_height+1, 'ELLIPSE')
+    for m in range(x-big_ellipse.half_width, x+big_ellipse.half_width):
+        for n in range(y-big_ellipse.half_height, y+big_ellipse.half_height):
+            if big_ellipse.point_inside((m,n)) and not region.point_inside((m,n)):
+                plotPoint((m,n), color)
+
 def plotRegion(region : InterestRegion, color) -> None:
-    plotRectangle(region.center, color, region.half_width, region.half_height)
+    if region.type == 'RECTANGLE':
+        plotRectangle(region.center, color, region.half_width, region.half_height)
+    elif region.type == 'ELLIPSE':
+        plotEllipse(region, color)
 
 def saveImage(folder : str, image_name: str) -> None:
     if not os.path.exists(folder):

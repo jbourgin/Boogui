@@ -33,7 +33,7 @@ class Eyelink (Eyetracker):
 
     @staticmethod
     def parseStartTrial(line: List[str]) -> Union[Entry, None]:
-        if len(line) >= 7 and line[2] == 'start_trial':
+        if len(line) >= 5 and line[2] == 'start_trial':
             try:
                 time = int(line[1])
                 trial_number = int(line[3])
@@ -151,7 +151,10 @@ class Eyelink (Eyetracker):
         try:
             time = int(line[1])
             variables = self.parseVariables(line)
-            return Entry.Experiment_variables(time, variables)
+            if variables != None:
+                return Entry.Experiment_variables(time, variables)
+            else:
+                return None
         except:
             return None
 
