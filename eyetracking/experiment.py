@@ -21,11 +21,11 @@ class Experiment (ABC):
 
     # Creates an image scanpath for one trial.
     @abstractmethod
-    def scanpath(self, trial : Trial) -> str:
+    def scanpath(self, subject_id : int, trial : Trial, frequency : int) -> str:
         pass
 
     @abstractmethod
-    def scanpathVideo(self, trial : Trial):
+    def scanpathVideo(self, subject_id : int, trial : Trial):
         pass
 
     @abstractmethod

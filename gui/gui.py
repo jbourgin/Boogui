@@ -30,6 +30,7 @@ class Main(QMainWindow):
 
         # The main window widget
         self.main_wid = None
+        self.frequency = 10
 
         self.initUI()
 
@@ -186,6 +187,28 @@ class Main(QMainWindow):
         setRechercheVisuelle.setChecked(True)
         self.setRechercheVisuelle()
 
+        # Frequency menu
+        ag = QActionGroup(self, exclusive=True)
+        self.frequency_menu = menubar.addMenu('&Frequency')
+        # Recherche visuelle
+        setFrequency1 = QAction('&1', self, checkable = True)
+        setFrequency2 = QAction('&2', self, checkable = True)
+        setFrequency5 = QAction('&5', self, checkable = True)
+        setFrequency10 = QAction('&10', self, checkable = True)
+        setFrequency1.triggered.connect(self.setFrequency(1))
+        setFrequency2.triggered.connect(self.setFrequency(2))
+        setFrequency5.triggered.connect(self.setFrequency(5))
+        setFrequency10.triggered.connect(self.setFrequency(10))
+        a = ag.addAction(setFrequency1)
+        self.frequency_menu.addAction(a)
+        a = ag.addAction(setFrequency2)
+        self.frequency_menu.addAction(a)
+        a = ag.addAction(setFrequency5)
+        self.frequency_menu.addAction(a)
+        a = ag.addAction(setFrequency10)
+        self.frequency_menu.addAction(a)
+        setFrequency10.setChecked(True)
+
     # Called when the application stops
     # Clears the temporary folder
     def closeEvent(self, close_event):
@@ -233,6 +256,13 @@ class Main(QMainWindow):
             return Gaze_contingent()
         self.make_experiment = set
 
+    def setFrequency(self, frequency : int):
+        def set():
+            self.frequency = frequency
+            for subject in self.subject_datas:
+                subject.setFrequency(frequency)
+        return set
+
     ###########################
     ###### I/O functions ######
     ###########################
@@ -258,7 +288,7 @@ class Main(QMainWindow):
                 selected_experiment = self.getExperiment()
 
                 try:
-                    self.subject_datas.append(SubjectData(selected_experiment(), filename, progress))
+                    self.subject_datas.append(SubjectData(selected_experiment(), filename, self.frequency, progress))
 
                     # Adding subject button
                     n_subject = len(self.subject_datas) - 1

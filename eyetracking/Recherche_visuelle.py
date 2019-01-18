@@ -366,7 +366,7 @@ class Recherche_visuelle(Experiment):
     		plotSegment(hole_up, lu_corner, c=color)
 
     # Creates an image scanpath for one trial.
-    def scanpath(self, subject_id, trial):
+    def scanpath(self, subject_id, trial, frequency : int):
         plt.clf()
 
         frame_color = (0,0,0)
@@ -392,7 +392,7 @@ class Recherche_visuelle(Experiment):
                 plotRegion(frame, frame_color)
 
         # Plotting gaze positions
-        trial.plot()
+        trial.plot(frequency)
         image_name = 'subject_%i_trial_%i.png' % (subject_id, trial.getTrialId())
         saveImage(getTmpFolder(), image_name)
         return image_name

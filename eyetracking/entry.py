@@ -177,11 +177,11 @@ class EntryList:
 
         # The first line must give the time of the second one
         if self.getEntry(self.begin).getTime() != self.getEntry(self.begin+1).getTime():
-             raise EntryListException('Incorrect time for the first line %s' % str(self.getEntry(self.begin)))
+            raise EntryListException('Incorrect time for the first line %s' % str(self.getEntry(self.begin)))
 
         # The last line must give the time of the prevous one
         if self.getEntry(self.end).getTime() != self.getEntry(self.end-1).getTime():
-             raise EntryListException('Incorrect time for the last line %s' % str(self.getEntry(self.end)))
+            logTrace ('Incorrect time for the last line %s' % str(self.getEntry(self.end)), Precision.ERROR)
 
     def check(self) -> None:
         pass

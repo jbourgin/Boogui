@@ -11,7 +11,7 @@ class Make_Eyelink(Eyelink):
     def __init__(self):
         super().__init__()
         # Center of the screen.
-        self.screen_center = (960,540)
+        self.screen_center = (960,600)
         # Minimal distance at which we consider the subject is looking at the
         # fixation cross at the trial beginning
         self.valid_distance_center = 140 #3 degres of visual angle 95 (+ marge)
@@ -30,8 +30,6 @@ class Make_Eyelink(Eyelink):
         self.left_face = DifferenceRegion(self.left_ellipse, self.left_gaze)
 
     # Returns a dictionary of experiment variables
-    # REAL ONE :
-    '''
     def parseVariables(self, line: List[str]):
         if len(line) > 5 and line[2] == "Variable" and line[3] == "values:":
             try:
@@ -44,40 +42,11 @@ class Make_Eyelink(Eyelink):
                     target_side = line[9]
                     response = line[10]
                     cor_resp = int(line[11])
-                    response_time = float(line[12])
+                    response_time = line[12]
 
                 return {
                     'training' : training,
                     'session' : session,
-                    'global_task' : global_task,
-                    'emotion' : emotion,
-                    'gender' : gender,
-                    'target_side' : target_side,
-                    'response' : response,
-                    'cor_resp' : cor_resp,
-                    'response_time' : response_time
-                }
-            except:
-                pass
-        return None
-    '''
-
-    # FAKE NEWS
-    def parseVariables(self, line: List[str]):
-        if len(line) > 5 and line[2] == "Main":
-            line = [x.replace(',','') for x in line]
-            try:
-                training = 'MONZBI'
-                global_task = line[4]
-                emotion = line[5]
-                gender = line[6]
-                target_side = line[7]
-                response = line[8]
-                cor_resp = line[9]
-                response_time = line[10]
-
-                return {
-                    'training' : training,
                     'global_task' : global_task,
                     'emotion' : emotion,
                     'gender' : gender,
@@ -94,15 +63,12 @@ class Make_Eyelink(Eyelink):
         return len(line) >= 5 and 'showing' in line[4]
 
     def isTraining(self, trial) -> bool:
-        logTrace('isTraining to fix!', Precision.TITLE)
-        return False
-    #    return 'Training' in trial.features['training']
+        return 'Training' in trial.features['training']
 
 class Gaze_contingent(Experiment):
 
     def __init__(self):
         super().__init__(None)
-        logTrace('Attention: nombre d''essais à changer', Precision.TITLE)
         self.n_trials = 96
 
     def selectEyetracker(self, input_file : str) -> None:
@@ -239,7 +205,7 @@ class Gaze_contingent(Experiment):
 
 
     # Creates an image scanpath for one trial.
-    def scanpath(self, subject_id, trial):
+    def scanpath(self, subject_id, trial, frequency : int):
         plt.clf()
 
         frame_color = (0,0,0)
@@ -258,7 +224,7 @@ class Gaze_contingent(Experiment):
             plotRegion(self.eyetracker.right_gaze, frame_color)
 
         # Plotting gaze positions
-        trial.plot()
+        trial.plot(frequency)
         image_name = 'subject_%i_trial_%i.png' % (subject_id, trial.getTrialId())
         saveImage(getTmpFolder(), image_name)
         return image_name

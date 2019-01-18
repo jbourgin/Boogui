@@ -349,7 +349,7 @@ class Trial:
         return point_list
 
     # Plot the trial on the current image
-    def plot(self):
+    def plot(self, frequency: int):
 
         nb_points = 0
         color = (1,1,0)
@@ -357,6 +357,6 @@ class Trial:
         point_list = self.getGazePoints()
         nb_points = float(len(point_list))
 
-        for i in range(0,len(point_list)-1):
-            plotSegment(point_list[i],point_list[i+1],c=color)
-            color = (1, color[1] - 1.0/nb_points , 0)
+        for i in range(0,len(point_list)-frequency,frequency):
+            plotSegment(point_list[i],point_list[i+frequency],c=color)
+            color = (1, color[1] - float(frequency)/nb_points , 0)
