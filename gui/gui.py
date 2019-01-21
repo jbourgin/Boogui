@@ -399,7 +399,7 @@ class Main(QMainWindow):
             button.setCheckable(True)
             self.trial_buttons.append(button)
             self.trialScrollLayout.addWidget(button)
-            button.clicked.connect(self.make_choose_trial(n_subject, i, trial, True))
+            button.clicked.connect(self.make_choose_trial(n_subject, i, trial))
             i += 1
 
         n_trainings = i
@@ -408,10 +408,10 @@ class Main(QMainWindow):
             button.setCheckable(True)
             self.trial_buttons.append(button)
             self.trialScrollLayout.addWidget(button)
-            button.clicked.connect(self.make_choose_trial(n_subject, i, trial, False))
+            button.clicked.connect(self.make_choose_trial(n_subject, i, trial))
             i += 1
 
-    def make_choose_trial(self, n_subject, n_trial, trial, is_training):
+    def make_choose_trial(self, n_subject, n_trial, trial):
         def choose_trial():
             logTrace ('choosing trial', Precision.NORMAL)
             self.clear_layouts()
@@ -427,18 +427,18 @@ class Main(QMainWindow):
             sb = self.logOutput.verticalScrollBar()
             sb.setValue(sb.minimum())
 
-            image_name = joinPaths(getTmpFolder(), self.getTrialData(n_subject, n_trial, is_training).getImage())
+            image_name = joinPaths(getTmpFolder(), self.getTrialData(n_subject, n_trial, trial.isTraining()).getImage())
             pixmap = QPixmap(image_name)
             self.previsu_image.setPixmap(pixmap)
             self.previsu_image.adjustSize()
             self.previsu_image.show()
 
-            vid_name = self.getTrialData(n_subject, n_trial, is_training).video
+            vid_name = self.getTrialData(n_subject, n_trial, trial.isTraining()).video
 
             if vid_name is None:
-                self.video_widget.setButton(self.make_compute_video(n_subject, n_trial, is_training))
+                self.video_widget.setButton(self.make_compute_video(n_subject, n_trial, trial.isTraining()))
             else:
-                self.video_widget.setVideo(self.getTrialData(n_subject, n_trial, is_training).getVideo(self))
+                self.video_widget.setVideo(self.getTrialData(n_subject, n_trial, trial.isTraining()).getVideo(self))
 
             self.video_widget.show()
         return choose_trial
