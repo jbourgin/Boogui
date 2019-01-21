@@ -25,7 +25,7 @@ class Experiment (ABC):
         pass
 
     @abstractmethod
-    def scanpathVideo(self, subject_id : int, trial : Trial):
+    def scanpathVideo(self, subject_id : int, trial : Trial, frequency : int, progress = None) -> str:
         pass
 
     @abstractmethod
