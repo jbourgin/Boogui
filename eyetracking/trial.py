@@ -168,11 +168,13 @@ class Trial:
             def Experiment_variables(_,variables): return variables
             def _(_): return None
 
+        self.features = {}
         for entry in self.entries:
             variables = getExperimentVariables(entry)
             if variables != None:
-                self.features = variables
-                break
+                for (key,value) in variables.items():
+                    self.features[key] = value
+        print(self.features)
 
     # Returns the Start_trial entry of the trial.
     # The trial is assumed to be valid (see checkValid()).
