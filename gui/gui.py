@@ -394,6 +394,9 @@ class Main(QMainWindow):
             for i in range(len(self.trial_buttons)):
                 if i != n_trial:
                     self.trial_buttons[i].setChecked(False)
+                else:
+                    self.trial_buttons[i].setChecked(True)
+
 
             for entry in trial.entries:
                 self.logOutput.append(str(entry))

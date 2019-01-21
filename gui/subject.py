@@ -22,13 +22,15 @@ class TrialData:
             return self.video
         else:
             progress = ProgressWidget(parent, 1)
-            self.video = self.experiment.scanpathVideo(self.subject_id, self.trial, progress)
+            self.video = self.experiment.scanpathVideo(self.subject_id, self.trial, self.frequency, progress)
             progress.close()
             return self.video
 
     def setFrequency(self, frequency : int):
-        self.frequency = frequency
-        self.image = None
+        if self.frequency != frequency:
+            self.image = None
+            self.video = None
+            self.frequency = frequency
 
 class SubjectData:
     def __init__(self, experiment, input_file: str, frequency, progress = None):

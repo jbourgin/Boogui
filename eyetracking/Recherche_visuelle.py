@@ -398,13 +398,18 @@ class Recherche_visuelle(Experiment):
         return image_name
 
     # Creates a video scanpath for one trial.
-    def scanpathVideo(self, subject_id, trial, progress = None):
+    def scanpathVideo(self, subject_id, trial, frequency : int, progress = None):
         n_elem_drawn = 20
         point_list = trial.getGazePoints()
         nb_points = len(point_list)
         frame_color = (0,0,0)
         target_color = (1,0,0)
         point_color = (1,1,0)
+
+        # Taking frequency into account
+        point_list_f = []
+        for i in range(0,len(point_list)-frequency,frequency):
+            point_list_f.append(point_list[i])
 
         image_list = []
         # Plotting frames
@@ -422,9 +427,9 @@ class Recherche_visuelle(Experiment):
 
         if progress != None:
             progress.setText(0, 'Loading frames')
-            progress.setMaximum(0, len(point_list) - 1)
+            progress.setMaximum(0, len(point_list_f) - 1)
 
-        for elem in range(0,len(point_list)-1):
+        for elem in range(0,len(point_list_f)-1):
             if progress != None:
                 progress.increment(0)
             plt.clf()
@@ -433,7 +438,7 @@ class Recherche_visuelle(Experiment):
             plt.axis('off')
 
             for j in range(max(0,elem-n_elem_drawn),elem+1):
-                plotSegment(point_list[j], point_list[j+1], c = point_color)
+                plotSegment(point_list_f[j], point_list_f[j+1], c = point_color)
             point_color = (1, point_color[1] - 1.0/nb_points , 0)
 
             for frame in frame_list:
@@ -447,7 +452,7 @@ class Recherche_visuelle(Experiment):
             image_list.append(joinPaths(getTmpFolder(), image_name))
         vid_name = 'subject_%i_trial_%s.avi' % (subject_id, trial.getTrialId())
         progress.setText(0, 'Loading frames')
-        makeVideo(image_list, vid_name, fps=100)
+        makeVideo(image_list, vid_name, fps=100/frequency)
         return vid_name
 
     def getSubjectData(self, line: str) -> Union[Tuple[int,str]]:
