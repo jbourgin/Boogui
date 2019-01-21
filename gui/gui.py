@@ -9,6 +9,8 @@ from PyQt5.QtCore import Qt
 from eyetracking.smi import *
 from eyetracking.Recherche_visuelle import *
 from eyetracking.Gaze_contingent import *
+from eyetracking.Visual_selection import *
+#from eyetracking.PS_AS import *
 from gui.utils import *
 from gui.subject import *
 from gui.progress_widget import ProgressWidget
@@ -186,6 +188,18 @@ class Main(QMainWindow):
         b = ag.addAction(setGazeContingent)
         self.experiment_menu.addAction(b)
 
+        # Visual selection
+        setVisualSelection = QAction('&Visual selection', self, checkable = True)
+        setVisualSelection.triggered.connect(self.setVisualSelection)
+        c = ag.addAction(setVisualSelection)
+        self.experiment_menu.addAction(c)
+
+        # PS-AS
+        '''setPSAS = QAction('PS AS', self, checkable = True)
+        setPSAS.triggered.connect(self.setPSAS)
+        d = ag.addAction(setPSAS)
+        self.experiment_menu.addAction(d)'''
+
         #Default experiment
         setRechercheVisuelle.setChecked(True)
         self.setRechercheVisuelle()
@@ -258,6 +272,16 @@ class Main(QMainWindow):
         def set():
             return Gaze_contingent()
         self.make_experiment = set
+
+    def setVisualSelection(self):
+        def set():
+            return Visual_selection()
+        self.make_experiment = set
+
+    '''def setPSAS(self):
+        def set():
+            return PS_AS()
+        self.make_experiment = set'''
 
     def setFrequency(self, frequency : int):
         def set():
