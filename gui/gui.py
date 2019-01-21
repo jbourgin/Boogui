@@ -402,9 +402,9 @@ class Main(QMainWindow):
             button.clicked.connect(self.make_choose_trial(n_subject, i, trial, True))
             i += 1
 
-        i = 0
+        n_trainings = i
         for trial in subject.trials:
-            button = QPushButton('Trial %i' % i, self)
+            button = QPushButton('Trial %i' % (i - n_trainings), self)
             button.setCheckable(True)
             self.trial_buttons.append(button)
             self.trialScrollLayout.addWidget(button)
