@@ -393,7 +393,10 @@ class Recherche_visuelle(Experiment):
 
         # Plotting gaze positions
         trial.plot(frequency)
-        image_name = 'subject_%i_trial_%i.png' % (subject_id, trial.getTrialId())
+        if trial.isTraining():
+            image_name = 'subject_%i_training_%i.png' % (subject_id, trial.getTrialId())
+        else:
+            image_name = 'subject_%i_trial_%i.png' % (subject_id, trial.getTrialId())
         saveImage(getTmpFolder(), image_name)
         return image_name
 
@@ -450,7 +453,11 @@ class Recherche_visuelle(Experiment):
             image_name = '%i.png' % elem
             saveImage(getTmpFolder(), image_name)
             image_list.append(joinPaths(getTmpFolder(), image_name))
-        vid_name = 'subject_%i_trial_%s.avi' % (subject_id, trial.getTrialId())
+        if trial.isTraining():
+            vid_name = 'subject_%i_training_%s.avi' % (subject_id, trial.getTrialId())
+        else:
+            vid_name = 'subject_%i_trial_%s.avi' % (subject_id, trial.getTrialId())
+            
         progress.setText(0, 'Loading frames')
         makeVideo(image_list, vid_name, fps=100/frequency)
         return vid_name
