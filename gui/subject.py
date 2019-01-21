@@ -32,13 +32,20 @@ class TrialData:
 
 class SubjectData:
     def __init__(self, experiment, input_file: str, frequency, progress = None):
+        self.training_trial_datas = []
         self.trial_datas = []
         self.experiment = experiment
         self.subject = self.experiment.processSubject(input_file, progress)
+
+        for trial in self.subject.training_trials:
+            self.training_trial_datas.append(TrialData(self.experiment, self.subject.id, trial, frequency))
 
         for trial in self.subject.trials:
             self.trial_datas.append(TrialData(self.experiment, self.subject.id, trial, frequency))
 
     def setFrequency(self, frequency : int):
+        for trial in self.training_trial_datas:
+            trial.setFrequency(frequency)
+
         for trial in self.trial_datas:
             trial.setFrequency(frequency)

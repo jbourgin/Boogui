@@ -54,8 +54,11 @@ class Main(QMainWindow):
         self.set_main_widget()
         self.show()
 
-    def getTrialData(self, n_subject, n_trial):
-        return self.subject_datas[n_subject].trial_datas[n_trial]
+    def getTrialData(self, n_subject, n_trial, is_training):
+        if is_training:
+            return self.subject_datas[n_subject].training_trial_datas[n_trial]
+        else:
+            return self.subject_datas[n_subject].trial_datas[n_trial]
 
     def set_subject_scroller(self):
         # scroll area widget contents - layout
@@ -337,10 +340,10 @@ class Main(QMainWindow):
     ###########################
     ######## CALLBACKS ########
     ###########################
-    def make_compute_video(self, n_subject, n_trial):
+    def make_compute_video(self, n_subject, n_trial, is_training):
         def compute_video():
             logTrace ('computing video', Precision.NORMAL)
-            vid_path = self.getTrialData(n_subject, n_trial).getVideo(self)
+            vid_path = self.getTrialData(n_subject, n_trial, is_training).getVideo(self)
             self.video_widget.setVideo(vid_path)
 
         return compute_video
@@ -362,25 +365,32 @@ class Main(QMainWindow):
         self.clear_layouts()
         clearLayout(self.trialScrollLayout)
 
-        i = 0
         subject_data = self.subject_datas[n_subject]
-        self.trial_buttons = []
-
         subject = subject_data.subject
-        len_trials = len(subject.trials)
+
+        self.trial_buttons = []
+        i = 0
+        for trial in subject.training_trials:
+            button = QPushButton('Training %i' % i, self)
+            button.setCheckable(True)
+            self.trial_buttons.append(button)
+            self.trialScrollLayout.addWidget(button)
+            button.clicked.connect(self.make_choose_trial(n_subject, i, trial, True))
+            i += 1
+
+        i = 0
         for trial in subject.trials:
             button = QPushButton('Trial %i' % i, self)
             button.setCheckable(True)
             self.trial_buttons.append(button)
             self.trialScrollLayout.addWidget(button)
-            button.clicked.connect(self.make_choose_trial(n_subject, i, trial))
+            button.clicked.connect(self.make_choose_trial(n_subject, i, trial, False))
             i += 1
 
-    def make_choose_trial(self, n_subject, n_trial, trial):
+    def make_choose_trial(self, n_subject, n_trial, trial, is_training):
         def choose_trial():
             logTrace ('choosing trial', Precision.NORMAL)
             self.clear_layouts()
-            subject_data = self.subject_datas[n_subject]
             for i in range(len(self.trial_buttons)):
                 if i != n_trial:
                     self.trial_buttons[i].setChecked(False)
@@ -390,18 +400,18 @@ class Main(QMainWindow):
             sb = self.logOutput.verticalScrollBar()
             sb.setValue(sb.minimum())
 
-            image_name = joinPaths(getTmpFolder(), self.getTrialData(n_subject, n_trial).getImage())
+            image_name = joinPaths(getTmpFolder(), self.getTrialData(n_subject, n_trial, is_training).getImage())
             pixmap = QPixmap(image_name)
             self.previsu_image.setPixmap(pixmap)
             self.previsu_image.adjustSize()
             self.previsu_image.show()
 
-            vid_name = self.getTrialData(n_subject, n_trial).video
+            vid_name = self.getTrialData(n_subject, n_trial, is_training).video
 
             if vid_name is None:
-                self.video_widget.setButton(self.make_compute_video(n_subject, n_trial))
+                self.video_widget.setButton(self.make_compute_video(n_subject, n_trial, is_training))
             else:
-                self.video_widget.setVideo(self.getTrialData(n_subject, n_trial).getVideo(self))
+                self.video_widget.setVideo(self.getTrialData(n_subject, n_trial, is_training).getVideo(self))
 
             self.video_widget.show()
         return choose_trial
