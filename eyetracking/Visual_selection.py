@@ -26,7 +26,6 @@ class Make_Eyelink(Eyelink):
 
     # Returns a dictionary of experiment variables
     def parseVariables(self, line: List[str]):
-        logTrace ('Two lines for parsevariables ok?', Precision.TITLE)
         if len(line) > 3 and line[3] == "stim1":
             try:
                 if len(line) > 3 and line[3] == "stim1":
@@ -60,7 +59,6 @@ class Make_Eyelink(Eyelink):
         return None
 
     def isResponse(self, line: Line) -> bool :
-        logTrace ('Stop_trial for response line ok?', Precision.TITLE)
         return len(line) >= 2 and 'END' in line[0] and 'SAMPLES' in line[2]
 
     def isTraining(self, trial) -> bool:
@@ -84,12 +82,16 @@ class Visual_selection(Experiment):
         if trial.saccades == []:
             logTrace ("Subject %i has no saccades at trial %i !" %(subject.id,trial_number), Precision.DETAIL)
 
-        if 'left' in trial.features['target_side']:
+        if trial.isTraining():
             emo_position = self.eyetracker.left
             neu_position = self.eyetracker.right
-        elif 'right' in trial.features['target_side']:
-            emo_position = self.eyetracker.right
-            neu_position = self.eyetracker.left
+        else:
+            if 'left' in trial.features['target_side']:
+                emo_position = self.eyetracker.left
+                neu_position = self.eyetracker.right
+            elif 'right' in trial.features['target_side']:
+                emo_position = self.eyetracker.right
+                neu_position = self.eyetracker.left
         regions = InterestRegionList([emo_position, neu_position])
 
         start_trial_time = trial.getStartTrial().getTime()
@@ -146,11 +148,14 @@ class Visual_selection(Experiment):
             #or capture_delay_first < 100):
             error = '#N/A'
         else:
-            if ((first_fixation['target'] and trial.features['arrow'] == trial.features['target_side'])
-                or (not first_fixation['target'] and trial.features['arrow'] != trial.features['target_side'])):
+            if trial.isTraining():
                 error = '0'
             else:
-                error = '1'
+                if ((first_fixation['target'] and trial.features['arrow'] == trial.features['target_side'])
+                    or (not first_fixation['target'] and trial.features['arrow'] != trial.features['target_side'])):
+                    error = '0'
+                else:
+                    error = '1'
 
         # Writing data in result csv file
         s = [str(subject.id) + "-E", # Subject name
@@ -230,12 +235,16 @@ class Visual_selection(Experiment):
         plt.axis('off')
 
         # Plotting frames
-        if 'left' in trial.features['target_side']:
-            plotRegion(self.eyetracker.left, emo_color)
-            plotRegion(self.eyetracker.right, frame_color)
-        elif 'right' in trial.features['target_side']:
+        if trial.isTraining():
             plotRegion(self.eyetracker.left, frame_color)
-            plotRegion(self.eyetracker.right, emo_color)
+            plotRegion(self.eyetracker.right, frame_color)
+        else:
+            if 'left' in trial.features['target_side']:
+                plotRegion(self.eyetracker.left, emo_color)
+                plotRegion(self.eyetracker.right, frame_color)
+            elif 'right' in trial.features['target_side']:
+                plotRegion(self.eyetracker.left, frame_color)
+                plotRegion(self.eyetracker.right, emo_color)
 
         if 'left' in trial.features['arrow']:
             plt.arrow(self.eyetracker.screen_center[0]+10, self.eyetracker.screen_center[1]-2, -20, 4)
@@ -287,12 +296,16 @@ class Visual_selection(Experiment):
                 plotSegment(point_list_f[j], point_list_f[j+1], c = point_color)
             point_color = (1, point_color[1] - 1.0/nb_points , 0)
 
-            if 'left' in trial.features['target_side']:
-                plotRegion(self.eyetracker.left, emo_color)
-                plotRegion(self.eyetracker.right, frame_color)
-            elif 'right' in trial.features['target_side']:
+            if trial.isTraining():
                 plotRegion(self.eyetracker.left, frame_color)
-                plotRegion(self.eyetracker.right, emo_color)
+                plotRegion(self.eyetracker.right, frame_color)
+            else:
+                if 'left' in trial.features['target_side']:
+                    plotRegion(self.eyetracker.left, emo_color)
+                    plotRegion(self.eyetracker.right, frame_color)
+                elif 'right' in trial.features['target_side']:
+                    plotRegion(self.eyetracker.left, frame_color)
+                    plotRegion(self.eyetracker.right, emo_color)
 
             if 'left' in trial.features['arrow']:
                 plt.arrow(self.eyetracker.screen_center[0]+10, self.eyetracker.screen_center[1]-2, -20, 4)
