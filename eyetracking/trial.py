@@ -32,6 +32,8 @@ class Trial:
             # Either "Left" or "Right"
         self.eye = None
 
+        self.is_training = False
+
     def __str__(self):
         return 'Trial %s\n' % str(self.features)
 
@@ -49,10 +51,15 @@ class Trial:
             self.setFeatures()
             logTrace ('Setting eye', Precision.NORMAL)
             self.eye = self.experiment.eyetracker.getEye(lines)
+            logTrace ('Setting if trial is training', Precision.NORMAL)
+            self.is_training = self.experiment.eyetracker.isTraining(self)
         return rest_lines
 
     def isEmpty(self) -> bool:
         return self.entries == []
+
+    def isTraining(self) -> bool:
+        return self.is_training
 
     # Raises an exception if one of the condition is not fulfilled.
     def checkValid(self) -> None:

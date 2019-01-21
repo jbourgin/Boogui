@@ -22,7 +22,7 @@ class Subject:
             trial = Trial(experiment)
             lines = trial.setEntries(lines)
             if not trial.isEmpty():
-                if experiment.eyetracker.isTraining(trial):
+                if trial.isTraining():
                     self.training_trials.append(trial)
                 else:
                     self.trials.append(trial)
