@@ -402,9 +402,9 @@ class Main(QMainWindow):
             button.clicked.connect(self.make_choose_trial(n_subject, i, trial))
             i += 1
 
-        n_trainings = i
+        i = 0
         for trial in subject.trials:
-            button = QPushButton('Trial %i' % (i - n_trainings), self)
+            button = QPushButton('Trial %i' % i, self)
             button.setCheckable(True)
             self.trial_buttons.append(button)
             self.trialScrollLayout.addWidget(button)
@@ -415,12 +415,23 @@ class Main(QMainWindow):
         def choose_trial():
             logTrace ('choosing trial', Precision.NORMAL)
             self.clear_layouts()
-            for i in range(len(self.trial_buttons)):
-                if i != n_trial:
-                    self.trial_buttons[i].setChecked(False)
-                else:
-                    self.trial_buttons[i].setChecked(True)
-
+            n_trainings = self.subject_datas[n_subject].getNTrainings()
+            if trial.isTraining():
+                for i in range(n_trainings):
+                    if i != n_trial:
+                        self.trial_buttons[i].setChecked(False)
+                    else:
+                        self.trial_buttons[i].setChecked(True)
+                for button in self.trial_buttons[n_trainings:]:
+                    button.setChecked(False)
+            else:
+                for button in self.trial_buttons[:n_trainings]:
+                    button.setChecked(False)
+                for i in range(n_trainings, len(self.trial_buttons)):
+                    if i - n_trainings != n_trial:
+                        self.trial_buttons[i].setChecked(False)
+                    else:
+                        self.trial_buttons[i].setChecked(True)
 
             for entry in trial.entries:
                 self.logOutput.append(str(entry))
