@@ -23,6 +23,8 @@ class Make_Eyelink(Eyelink):
         # frames
         self.right = RectangleRegion((self.screen_center[0]+300, self.screen_center[1]), self.half_width, self.half_height)
         self.left = RectangleRegion((self.screen_center[0]-300, self.screen_center[1]), self.half_width, self.half_height)
+        self.right_wide = RectangleRegion((self.screen_center[0]+300, self.screen_center[1]), self.half_width+10, self.half_height+10)
+        self.left_wide = RectangleRegion((self.screen_center[0]-300, self.screen_center[1]), self.half_width+10, self.half_height+10)
 
     # Returns a dictionary of experiment variables
     def parseVariables(self, line: List[str]):
@@ -228,6 +230,7 @@ class Visual_selection(Experiment):
 
         frame_color = (0,0,0)
         emo_color = (1,0,0)
+        target_color = (0,1,0)
         x_axis = self.eyetracker.screen_center[0] * 2
         y_axis = self.eyetracker.screen_center[1] * 2
         plt.axis([0, x_axis, 0, y_axis])
@@ -247,9 +250,9 @@ class Visual_selection(Experiment):
                 plotRegion(self.eyetracker.right, emo_color)
 
         if 'left' in trial.features['arrow']:
-            plt.arrow(self.eyetracker.screen_center[0]+10, self.eyetracker.screen_center[1]-2, -20, 4)
+            plotRegion(self.eyetracker.left_wide, target_color)
         elif 'right' in trial.features['arrow']:
-            plt.arrow(self.eyetracker.screen_center[0]-10, self.eyetracker.screen_center[1]-2, 20, 4)
+            plotRegion(self.eyetracker.right_wide, target_color)
 
         # Plotting gaze positions
         trial.plot(frequency)
@@ -267,6 +270,8 @@ class Visual_selection(Experiment):
         nb_points = len(point_list)
         frame_color = (0,0,0)
         point_color = (1,1,0)
+        target_color = (0,1,0)
+        emo_color = (1,0,0)
 
         # Taking frequency into account
         point_list_f = []
@@ -288,7 +293,7 @@ class Visual_selection(Experiment):
             if progress != None:
                 progress.increment(0)
             plt.clf()
-            plt.axis([0,axis_x,0,axis_y])
+            ax = plt.axis([0,axis_x,0,axis_y])
             plt.gca().invert_yaxis()
             plt.axis('off')
 
@@ -308,9 +313,9 @@ class Visual_selection(Experiment):
                     plotRegion(self.eyetracker.right, emo_color)
 
             if 'left' in trial.features['arrow']:
-                plt.arrow(self.eyetracker.screen_center[0]+10, self.eyetracker.screen_center[1]-2, -20, 4)
+                plotRegion(self.eyetracker.left_wide, target_color)
             elif 'right' in trial.features['arrow']:
-                plt.arrow(self.eyetracker.screen_center[0]-10, self.eyetracker.screen_center[1]-2, 20, 4)
+                plotRegion(self.eyetracker.right_wide, target_color)
 
             image_name = '%i.png' % elem
             saveImage(getTmpFolder(), image_name)

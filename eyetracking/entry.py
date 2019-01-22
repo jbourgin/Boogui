@@ -1,5 +1,5 @@
 from sumtypes import sumtype, match, constructor
-from typing import Tuple, TypeVar
+from typing import Tuple, TypeVar, Union
 from eyetracking.utils import *
 
 class EntryException(Exception):
