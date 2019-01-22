@@ -10,7 +10,8 @@ from eyetracking.smi import *
 from eyetracking.Recherche_visuelle import *
 from eyetracking.Gaze_contingent import *
 from eyetracking.Visual_selection import *
-#from eyetracking.PS_AS import *
+from eyetracking.Prosaccade import *
+from eyetracking.Antisaccade import *
 from gui.utils import *
 from gui.subject import *
 from gui.progress_widget import ProgressWidget
@@ -194,11 +195,17 @@ class Main(QMainWindow):
         c = ag.addAction(setVisualSelection)
         self.experiment_menu.addAction(c)
 
-        # PS-AS
-        '''setPSAS = QAction('PS AS', self, checkable = True)
-        setPSAS.triggered.connect(self.setPSAS)
-        d = ag.addAction(setPSAS)
-        self.experiment_menu.addAction(d)'''
+        # Prosaccade
+        setProsaccade = QAction('Prosaccade', self, checkable = True)
+        setProsaccade.triggered.connect(self.setProsaccade)
+        d = ag.addAction(setProsaccade)
+        self.experiment_menu.addAction(d)
+
+        # Antisaccade
+        setAntisaccade = QAction('Antisaccade', self, checkable = True)
+        setAntisaccade.triggered.connect(self.setAntisaccade)
+        e = ag.addAction(setAntisaccade)
+        self.experiment_menu.addAction(e)
 
         #Default experiment
         setRechercheVisuelle.setChecked(True)
@@ -278,10 +285,15 @@ class Main(QMainWindow):
             return Visual_selection()
         self.make_experiment = set
 
-    '''def setPSAS(self):
+    def setProsaccade(self):
         def set():
-            return PS_AS()
-        self.make_experiment = set'''
+            return Prosaccade()
+        self.make_experiment = set
+
+    def setAntisaccade(self):
+        def set():
+            return Antisaccade()
+        self.make_experiment = set
 
     def setFrequency(self, frequency : int):
         def set():
