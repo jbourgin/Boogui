@@ -164,6 +164,20 @@ class EntryList:
         else:
             raise EntryListException('Index %i out of bound' % line)
 
+    def getFirstGazePosition(self) -> Union[Point, None]:
+        for i in range(self.begin + 1, self.end - 1):
+            p = getGazePosition(self.getEntry(i))
+            if p != None:
+                return p
+        return None
+
+    def getLastGazePosition(self) -> Union[Point, None]:
+        for i in reversed(range(self.begin + 1, self.end - 1)):
+            p = getGazePosition(self.getEntry(i))
+            if p != None:
+                return p
+        return None
+
     def duration(self) -> int:
         if self.begin == None or self.end == None:
             return 0
