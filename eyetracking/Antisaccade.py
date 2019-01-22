@@ -56,18 +56,39 @@ class Make_Eyelink(Eyelink):
         return None
 
     def isResponse(self, line: Line) -> bool :
-        logTrace ('Stop_trial for response line ok?', Precision.TITLE)
         return len(line) >= 2 and 'stop_trial' in line[2]
 
     def isTraining(self, trial) -> bool:
-        return 'Dis' in trial.features['stim1']
+        return 'App' in trial.features['adresseStim']
 
-class Visual_selection(Experiment):
+    def parseStartTrial(line: List[str]) -> Union[Entry, None]:
+        if len(line) >= 4 and line[2] == 'BEGIN' and line[3] == 'SEQUENCE':
+            try:
+                time = int(line[1])
+                trial_number = int(line[4])
+                if 'Gauche' in line[5]:
+                    stimulus = 'Left'
+                elif 'Droite' in line[5]:
+                    stimulus = 'Right'
+                return Entry.Start_trial(time, trial_number, stimulus)
+            except:
+                pass
+        return None
+
+    def parseStopTrial(line: List[str]) -> Union[Entry, None]:
+        if len(line) >= 4 and line[2] == 'END' and line[3] == 'SEQUENCE':
+            try:
+                time = int(line[1])
+                return Entry.Stop_trial(time)
+            except:
+                pass
+        return None
+
+class Antisaccade(Experiment):
 
     def __init__(self):
         super().__init__(None)
-        logTrace ('Number of trials to change', Precision.TITLE)
-        self.n_trials = 9 #80
+        self.n_trials = 96
 
     def selectEyetracker(self, input_file : str) -> None:
         logTrace ('Selecting Eyelink', Precision.NORMAL)
@@ -80,13 +101,13 @@ class Visual_selection(Experiment):
         if trial.saccades == []:
             logTrace ("Subject %i has no saccades at trial %i !" %(subject.id,trial_number), Precision.DETAIL)
 
-        if trial.features['position_emo'] == '-300':
-            emo_position = self.eyetracker.left
-            neu_position = self.eyetracker.right
-        elif trial.features['position_emo'] == '300':
-            emo_position = self.eyetracker.right
-            neu_position = self.eyetracker.left
-        regions = InterestRegionList([emo_position, neu_position])
+        if trial.getStimulus() == 'Left':
+            correct_position = 'Right'
+            target_position = self.eyetracker.left
+        elif trial.getStimulus() == 'Right':
+            correct_position = 'Left'
+            target_position = self.eyetracker.right
+        regions = InterestRegionList(target_position)
 
         start_trial_time = trial.getStartTrial().getTime()
 
@@ -218,7 +239,6 @@ class Visual_selection(Experiment):
         plt.clf()
 
         frame_color = (0,0,0)
-        emo_color = (1,0,0)
         x_axis = self.eyetracker.screen_center[0] * 2
         y_axis = self.eyetracker.screen_center[1] * 2
         plt.axis([0, x_axis, 0, y_axis])
