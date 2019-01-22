@@ -9,6 +9,8 @@ from PyQt5.QtCore import Qt
 from eyetracking.smi import *
 from eyetracking.Recherche_visuelle import *
 from eyetracking.Gaze_contingent import *
+from eyetracking.Visual_selection import *
+#from eyetracking.PS_AS import *
 from gui.utils import *
 from gui.subject import *
 from gui.progress_widget import ProgressWidget
@@ -186,6 +188,18 @@ class Main(QMainWindow):
         b = ag.addAction(setGazeContingent)
         self.experiment_menu.addAction(b)
 
+        # Visual selection
+        setVisualSelection = QAction('&Visual selection', self, checkable = True)
+        setVisualSelection.triggered.connect(self.setVisualSelection)
+        c = ag.addAction(setVisualSelection)
+        self.experiment_menu.addAction(c)
+
+        # PS-AS
+        '''setPSAS = QAction('PS AS', self, checkable = True)
+        setPSAS.triggered.connect(self.setPSAS)
+        d = ag.addAction(setPSAS)
+        self.experiment_menu.addAction(d)'''
+
         #Default experiment
         setRechercheVisuelle.setChecked(True)
         self.setRechercheVisuelle()
@@ -258,6 +272,16 @@ class Main(QMainWindow):
         def set():
             return Gaze_contingent()
         self.make_experiment = set
+
+    def setVisualSelection(self):
+        def set():
+            return Visual_selection()
+        self.make_experiment = set
+
+    '''def setPSAS(self):
+        def set():
+            return PS_AS()
+        self.make_experiment = set'''
 
     def setFrequency(self, frequency : int):
         def set():
@@ -375,7 +399,7 @@ class Main(QMainWindow):
             button.setCheckable(True)
             self.trial_buttons.append(button)
             self.trialScrollLayout.addWidget(button)
-            button.clicked.connect(self.make_choose_trial(n_subject, i, trial, True))
+            button.clicked.connect(self.make_choose_trial(n_subject, i, trial))
             i += 1
 
         i = 0
@@ -384,37 +408,48 @@ class Main(QMainWindow):
             button.setCheckable(True)
             self.trial_buttons.append(button)
             self.trialScrollLayout.addWidget(button)
-            button.clicked.connect(self.make_choose_trial(n_subject, i, trial, False))
+            button.clicked.connect(self.make_choose_trial(n_subject, i, trial))
             i += 1
 
-    def make_choose_trial(self, n_subject, n_trial, trial, is_training):
+    def make_choose_trial(self, n_subject, n_trial, trial):
         def choose_trial():
             logTrace ('choosing trial', Precision.NORMAL)
             self.clear_layouts()
-            for i in range(len(self.trial_buttons)):
-                if i != n_trial:
-                    self.trial_buttons[i].setChecked(False)
-                else:
-                    self.trial_buttons[i].setChecked(True)
-
+            n_trainings = self.subject_datas[n_subject].getNTrainings()
+            if trial.isTraining():
+                for i in range(n_trainings):
+                    if i != n_trial:
+                        self.trial_buttons[i].setChecked(False)
+                    else:
+                        self.trial_buttons[i].setChecked(True)
+                for button in self.trial_buttons[n_trainings:]:
+                    button.setChecked(False)
+            else:
+                for button in self.trial_buttons[:n_trainings]:
+                    button.setChecked(False)
+                for i in range(n_trainings, len(self.trial_buttons)):
+                    if i - n_trainings != n_trial:
+                        self.trial_buttons[i].setChecked(False)
+                    else:
+                        self.trial_buttons[i].setChecked(True)
 
             for entry in trial.entries:
                 self.logOutput.append(str(entry))
             sb = self.logOutput.verticalScrollBar()
             sb.setValue(sb.minimum())
 
-            image_name = joinPaths(getTmpFolder(), self.getTrialData(n_subject, n_trial, is_training).getImage())
+            image_name = joinPaths(getTmpFolder(), self.getTrialData(n_subject, n_trial, trial.isTraining()).getImage())
             pixmap = QPixmap(image_name)
             self.previsu_image.setPixmap(pixmap)
             self.previsu_image.adjustSize()
             self.previsu_image.show()
 
-            vid_name = self.getTrialData(n_subject, n_trial, is_training).video
+            vid_name = self.getTrialData(n_subject, n_trial, trial.isTraining()).video
 
             if vid_name is None:
-                self.video_widget.setButton(self.make_compute_video(n_subject, n_trial, is_training))
+                self.video_widget.setButton(self.make_compute_video(n_subject, n_trial, trial.isTraining()))
             else:
-                self.video_widget.setVideo(self.getTrialData(n_subject, n_trial, is_training).getVideo(self))
+                self.video_widget.setVideo(self.getTrialData(n_subject, n_trial, trial.isTraining()).getVideo(self))
 
             self.video_widget.show()
         return choose_trial

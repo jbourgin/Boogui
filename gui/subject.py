@@ -51,3 +51,6 @@ class SubjectData:
 
         for trial in self.trial_datas:
             trial.setFrequency(frequency)
+
+    def getNTrainings(self):
+        return len(self.training_trial_datas)

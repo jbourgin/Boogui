@@ -11,65 +11,67 @@ class Make_Eyelink(Eyelink):
     def __init__(self):
         super().__init__()
         # Center of the screen.
-        self.screen_center = (960,600)
+        self.screen_center = (683,384)
         # Minimal distance at which we consider the subject is looking at the
         # fixation cross at the trial beginning
-        self.valid_distance_center = 140 #3 degres of visual angle 95 (+ marge)
+        self.valid_distance_center = 100 #3 degres of visual angle 95 (+ marge)
 
         # Initializing regions of interest
-        self.half_width = 182
-        self.half_height_face = 232
-        self.half_height_eye = 45
+        self.half_width = 200
+        self.half_height = 150
 
         # frames
-        self.right_gaze = RectangleRegion((self.screen_center[0]*1.5, self.screen_center[1]+10), self.half_width, self.half_height_eye)
-        self.left_gaze = RectangleRegion((self.screen_center[0]/2.0, self.screen_center[1]+10), self.half_width, self.half_height_eye)
-        self.right_ellipse = EllipseRegion((self.screen_center[0]*1.5, self.screen_center[1]), self.half_width, self.half_height_face)
-        self.left_ellipse = EllipseRegion((self.screen_center[0]/2.0, self.screen_center[1]), self.half_width, self.half_height_face)
-        self.right_face = DifferenceRegion(self.right_ellipse, self.right_gaze)
-        self.left_face = DifferenceRegion(self.left_ellipse, self.left_gaze)
+        self.right = RectangleRegion((self.screen_center[0]+300, self.screen_center[1]), self.half_width, self.half_height)
+        self.left = RectangleRegion((self.screen_center[0]-300, self.screen_center[1]), self.half_width, self.half_height)
+        self.right_wide = RectangleRegion((self.screen_center[0]+300, self.screen_center[1]), self.half_width+10, self.half_height+10)
+        self.left_wide = RectangleRegion((self.screen_center[0]-300, self.screen_center[1]), self.half_width+10, self.half_height+10)
 
     # Returns a dictionary of experiment variables
     def parseVariables(self, line: List[str]):
-        if len(line) > 5 and line[2] == "Variable" and line[3] == "values:":
+        if len(line) > 3 and line[3] == "stim1":
             try:
-                if len(line) > 5 and line[2] == "Variable" and line[3] == "values:":
-                    training = line[4]
-                    session = line[5]
-                    global_task = line[6]
-                    emotion = line[7]
-                    gender = line[8]
-                    target_side = line[9]
-                    response = line[10]
-                    cor_resp = int(line[11])
-                    response_time = line[12]
-
+                if len(line) > 3 and line[3] == "stim1":
+                    stim1 = line[5]
+                    stim2 = line[10]
+                    arrow = line[15]
+                    emotion = line[20]
                 return {
-                    'training' : training,
-                    'session' : session,
-                    'global_task' : global_task,
-                    'emotion' : emotion,
-                    'gender' : gender,
+                    'stim1' : stim1,
+                    'stim2' : stim2,
+                    'arrow' : arrow,
+                    'emotion' : emotion
+                    }
+
+            except:
+                pass
+        elif len(line) > 3 and line[3] == "target_side":
+            try:
+                if len(line) > 3 and line[3] == "target_side":
+                    target_side = line[5]
+                    position_emo = line[10]
+                    position_neu = line[15]
+                return {
                     'target_side' : target_side,
-                    'response' : response,
-                    'cor_resp' : cor_resp,
-                    'response_time' : response_time
-                }
+                    'position_emo' : position_emo,
+                    'position_neu' : position_neu,
+                    }
+
             except:
                 pass
         return None
 
     def isResponse(self, line: Line) -> bool :
-        return len(line) >= 5 and 'showing' in line[4]
+        return len(line) >= 2 and 'END' in line[0] and 'SAMPLES' in line[2]
 
     def isTraining(self, trial) -> bool:
-        return 'Training' in trial.features['training']
+        return 'Dis' in trial.features['stim1']
 
-class Gaze_contingent(Experiment):
+class Visual_selection(Experiment):
 
     def __init__(self):
         super().__init__(None)
-        self.n_trials = 96
+        logTrace ('Number of trials to change', Precision.TITLE)
+        self.n_trials = 9 #80
 
     def selectEyetracker(self, input_file : str) -> None:
         logTrace ('Selecting Eyelink', Precision.NORMAL)
@@ -82,44 +84,60 @@ class Gaze_contingent(Experiment):
         if trial.saccades == []:
             logTrace ("Subject %i has no saccades at trial %i !" %(subject.id,trial_number), Precision.DETAIL)
 
-        if trial.features['target_side'] == 'Left':
-            gaze_position = self.eyetracker.left_gaze
-            face_position = self.eyetracker.left_face
-        elif trial.features['target_side'] == 'Right':
-            gaze_position = self.eyetracker.right_gaze
-            face_position = self.eyetracker.right_face
-        regions = InterestRegionList([gaze_position, face_position])
+        if trial.isTraining():
+            emo_position = self.eyetracker.left
+            neu_position = self.eyetracker.right
+        else:
+            if 'left' in trial.features['target_side']:
+                emo_position = self.eyetracker.left
+                neu_position = self.eyetracker.right
+            elif 'right' in trial.features['target_side']:
+                emo_position = self.eyetracker.right
+                neu_position = self.eyetracker.left
+        regions = InterestRegionList([emo_position, neu_position])
 
         start_trial_time = trial.getStartTrial().getTime()
 
-        targetname = trial.getStimulus()
+        targetname = trial.features['stim1']
 
         response_entry = trial.getResponse()
 
-        region_fixations = trial.getFixationTime(regions, gaze_position)
+        region_fixations = trial.getFixationTime(regions, emo_position)
 
-        # First and last good fixations
+        # First fixations
         try:
-            first_good_fixation = next(fixation for fixation in region_fixations if fixation['target'])
-            capture_delay_first = first_good_fixation['begin'].getTime() - start_trial_time
+            first_fixation = next(fixation for fixation in regions_fixations)
         except:
-            first_good_fixation = None
-            capture_delay_first = None
+            first_fixation = None
+
+        try:
+            first_emo_fixation = next(fixation for fixation in region_fixations if fixation['target'])
+            capture_delay_emo_first = first_good_fixation['begin'].getTime() - start_trial_time
+        except:
+            first_emo_fixation = None
+            capture_delay_emo_first = None
+
+        try:
+            first_neu_fixation = next(fixation for fixation in region_fixations if not fixation['target'])
+            capture_delay_neu_first = first_neu_fixation['begin'].getTime() - start_trial_time
+        except:
+            first_neu_fixation = None
+            capture_delay_neu_first = None
 
         # Time on target and distractors
-        total_eye_fixation_time = sum(x['time'] for x in region_fixations if x['target'])
-        if total_eye_fixation_time == 0:
-            total_eye_fixation_time = None
-        total_faceNotEye_fixation_time = sum(x['time'] for x in region_fixations if not x['target'])
-        if total_faceNotEye_fixation_time == 0:
-            total_faceNotEye_fixation_time = None
+        total_emo_fixation_time = sum(x['time'] for x in region_fixations if x['target'])
+        if total_emo_fixation_time == 0:
+            total_emo_fixation_time = None
+        total_neu_fixation_time = sum(x['time'] for x in region_fixations if not x['target'])
+        if total_neu_fixation_time == 0:
+            total_neu_fixation_time = None
 
         # Determining blink category
         if trial.blinks == []:
             blink_category = "No blink"
         else:
-            if first_good_fixation != None:
-                if trial.blinks[0].getStartTime() < first_good_fixation['begin'].getTime():
+            if first_fixation != None:
+                if trial.blinks[0].getStartTime() < first_fixation['begin'].getTime():
                     blink_category = "early capture"
                 else:
                     blink_category = "late"
@@ -128,15 +146,18 @@ class Gaze_contingent(Experiment):
 
         # Error :
         if (not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)
-            or trial.features['response'] == 'None'
             or blink_category == 'early capture'):
             #or capture_delay_first < 100):
             error = '#N/A'
         else:
-            if trial.features['cor_resp'] != trial.features['response']:
-                error = '1'
-            else:
+            if trial.isTraining():
                 error = '0'
+            else:
+                if ((first_fixation['target'] and trial.features['arrow'] == trial.features['target_side'])
+                    or (not first_fixation['target'] and trial.features['arrow'] != trial.features['target_side'])):
+                    error = '0'
+                else:
+                    error = '1'
 
         # Writing data in result csv file
         s = [str(subject.id) + "-E", # Subject name
@@ -144,19 +165,19 @@ class Gaze_contingent(Experiment):
             trial_number,
             #trial.features['session'],
             trial.features['training'],
-            trial.features['global_task'],
             trial.eye,
             trial.features['emotion'],
-            trial.features['gender'],
-            targetname,
+            trial.features['stim1'],
+            trial.features['stim2'],
             trial.features['target_side'],
-            trial.features['cor_resp'],
-            trial.features['response'],
+            trial.features['arrow'],
+            trial.features['position_emo'],
+            trial.features['position_neu'],
             error,
-            trial.features['response_time'],
-            capture_delay_first,
-            total_eye_fixation_time,
-            total_faceNotEye_fixation_time,
+            capture_delay_emo_first,
+            capture_delay_neu_first,
+            total_emo_fixation_time,
+            total_neu_fixation_time,
             blink_category]
 
         if filename is None:
@@ -169,12 +190,12 @@ class Gaze_contingent(Experiment):
 
     @staticmethod
     def getDefaultResultsFile():
-        return joinPaths(getResultsFolder(), 'gaze_contingent.csv')
+        return joinPaths(getResultsFolder(), 'visual_selection.csv')
 
     @staticmethod
     def makeResultFile() -> None:
         createResultsFolder()
-        Gaze_contingent.makeResultFile(getDefaultResultsFile)
+        Visual_selection.makeResultFile(getDefaultResultsFile)
 
     @staticmethod
     def makeResultFile(filename: str) -> None:
@@ -183,21 +204,20 @@ class Gaze_contingent(Experiment):
             'Subject',
             'Group',
             'TrialID',
-            #'Session',
             'Training',
-            'Task',
             'Eye',
             'Emotion',
-            'Gender',
-            'TargetName',
+            'Emotion target',
+            'Neutral target',
             'TargetSide',
-            'Correct response',
-            'Response',
+            'Arrow orientation',
+            'Position emo',
+            'Position neu',
             'Errors',
-            'Response time',
-            'First time on eyes',
-            'Total fixation time on eyes',
-            'Total fixation time on face (other than eyes)',
+            'First time on emotional target',
+            'First time on neutral target',
+            'Total fixation time on emotional target',
+            'Total fixation time on neutral target',
             'First blink type'
         ]))
         f.write('\n')
@@ -209,6 +229,8 @@ class Gaze_contingent(Experiment):
         plt.clf()
 
         frame_color = (0,0,0)
+        emo_color = (1,0,0)
+        target_color = (0,1,0)
         x_axis = self.eyetracker.screen_center[0] * 2
         y_axis = self.eyetracker.screen_center[1] * 2
         plt.axis([0, x_axis, 0, y_axis])
@@ -216,12 +238,21 @@ class Gaze_contingent(Experiment):
         plt.axis('off')
 
         # Plotting frames
-        if trial.features['target_side'] == 'Left':
-            plotRegion(self.eyetracker.left_ellipse, frame_color)
-            plotRegion(self.eyetracker.left_gaze, frame_color)
-        elif trial.features['target_side'] == 'Right':
-            plotRegion(self.eyetracker.right_ellipse, frame_color)
-            plotRegion(self.eyetracker.right_gaze, frame_color)
+        if trial.isTraining():
+            plotRegion(self.eyetracker.left, frame_color)
+            plotRegion(self.eyetracker.right, frame_color)
+        else:
+            if 'left' in trial.features['target_side']:
+                plotRegion(self.eyetracker.left, emo_color)
+                plotRegion(self.eyetracker.right, frame_color)
+            elif 'right' in trial.features['target_side']:
+                plotRegion(self.eyetracker.left, frame_color)
+                plotRegion(self.eyetracker.right, emo_color)
+
+        if 'left' in trial.features['arrow']:
+            plotRegion(self.eyetracker.left_wide, target_color)
+        elif 'right' in trial.features['arrow']:
+            plotRegion(self.eyetracker.right_wide, target_color)
 
         # Plotting gaze positions
         trial.plot(frequency)
@@ -239,6 +270,8 @@ class Gaze_contingent(Experiment):
         nb_points = len(point_list)
         frame_color = (0,0,0)
         point_color = (1,1,0)
+        target_color = (0,1,0)
+        emo_color = (1,0,0)
 
         # Taking frequency into account
         point_list_f = []
@@ -260,7 +293,7 @@ class Gaze_contingent(Experiment):
             if progress != None:
                 progress.increment(0)
             plt.clf()
-            plt.axis([0,axis_x,0,axis_y])
+            ax = plt.axis([0,axis_x,0,axis_y])
             plt.gca().invert_yaxis()
             plt.axis('off')
 
@@ -268,12 +301,21 @@ class Gaze_contingent(Experiment):
                 plotSegment(point_list_f[j], point_list_f[j+1], c = point_color)
             point_color = (1, point_color[1] - 1.0/nb_points , 0)
 
-            if trial.features['target_side'] == 'Left':
-                plotRegion(self.eyetracker.left_ellipse, frame_color)
-                plotRegion(self.eyetracker.left_gaze, frame_color)
-            elif trial.features['target_side'] == 'Right':
-                plotRegion(self.eyetracker.right_ellipse, frame_color)
-                plotRegion(self.eyetracker.right_gaze, frame_color)
+            if trial.isTraining():
+                plotRegion(self.eyetracker.left, frame_color)
+                plotRegion(self.eyetracker.right, frame_color)
+            else:
+                if 'left' in trial.features['target_side']:
+                    plotRegion(self.eyetracker.left, emo_color)
+                    plotRegion(self.eyetracker.right, frame_color)
+                elif 'right' in trial.features['target_side']:
+                    plotRegion(self.eyetracker.left, frame_color)
+                    plotRegion(self.eyetracker.right, emo_color)
+
+            if 'left' in trial.features['arrow']:
+                plotRegion(self.eyetracker.left_wide, target_color)
+            elif 'right' in trial.features['arrow']:
+                plotRegion(self.eyetracker.right_wide, target_color)
 
             image_name = '%i.png' % elem
             saveImage(getTmpFolder(), image_name)
