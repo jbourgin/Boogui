@@ -34,8 +34,7 @@ class Smi (Eyetracker):
     # Each of the following parser tries to parse one type of Entry
     # If is fails, it returns None
 
-    @staticmethod
-    def parseStartTrial(line: List[str]) -> Entry:
+    def parseStartTrial(self, line: List[str]) -> Entry:
         if len(line) >= 8 and line[5] == 'start_trial':
             try:
                 time = int(line[0])
@@ -46,8 +45,7 @@ class Smi (Eyetracker):
                 pass
         return None
 
-    @staticmethod
-    def parseStopTrial(line: List[str]) -> Entry:
+    def parseStopTrial(self, line: List[str]) -> Entry:
         if len(line) >= 6 and line[5] == 'stop_trial':
             try:
                 time = int(line[0])
@@ -56,8 +54,7 @@ class Smi (Eyetracker):
                 pass
         return None
 
-    @staticmethod
-    def parsePosition(line: List[str]) -> Entry:
+    def parsePosition(self, line: List[str]) -> Entry:
         if len(line) >= 5:
             try:
                 time = int(line[0])
@@ -68,8 +65,7 @@ class Smi (Eyetracker):
                 pass
         return None
 
-    @staticmethod
-    def parseStartFixation(line: List[str]) -> Entry:
+    def parseStartFixation(self, line: List[str]) -> Entry:
         if len(line) >= 3 and line[0] == 'SFIX':
             try:
                 time = int(line[2])
@@ -78,8 +74,7 @@ class Smi (Eyetracker):
                 pass
         return None
 
-    @staticmethod
-    def parseEndFixation(line: List[str]) -> Entry:
+    def parseEndFixation(self, line: List[str]) -> Entry:
         if len(line) >= 4 and line[0] == 'EFIX':
             try:
                 time = int(line[3])
@@ -88,8 +83,7 @@ class Smi (Eyetracker):
                 pass
         return None
 
-    @staticmethod
-    def parseStartBlink(line: List[str]) -> Entry:
+    def parseStartBlink(self, line: List[str]) -> Entry:
         if len(line) >= 3 and line[0] == 'SBLINK':
             try:
                 time = int(line[2])
@@ -98,8 +92,7 @@ class Smi (Eyetracker):
                 pass
         return None
 
-    @staticmethod
-    def parseEndBlink(line: List[str]) -> Entry:
+    def parseEndBlink(self, line: List[str]) -> Entry:
         if len(line) >= 4 and line[0] == 'EBLINK':
             try:
                 time = int(line[3])
@@ -108,8 +101,7 @@ class Smi (Eyetracker):
                 pass
         return None
 
-    @staticmethod
-    def parseStartSaccade(line: List[str]) -> Entry:
+    def parseStartSaccade(self, line: List[str]) -> Entry:
         if len(line) >= 3 and line[0] == 'SSACC':
             try:
                 time = int(line[2])
@@ -118,8 +110,7 @@ class Smi (Eyetracker):
                 pass
         return None
 
-    @staticmethod
-    def parseEndSaccade(line: List[str]) -> Entry:
+    def parseEndSaccade(self, line: List[str]) -> Entry:
         if len(line) >= 4 and line[0] == 'ESACC':
             try:
                 time = int(line[3])
@@ -154,15 +145,15 @@ class Smi (Eyetracker):
         pass
 
     def parseEntry(self, line: List[str]) -> Entry:
-        parsers = [Smi.parseStartTrial,
-            Smi.parseStopTrial,
-            Smi.parsePosition,
-            Smi.parseStartFixation,
-            Smi.parseEndFixation,
-            Smi.parseStartBlink,
-            Smi.parseEndBlink,
-            Smi.parseStartSaccade,
-            Smi.parseEndSaccade,
+        parsers = [self.parseStartTrial,
+            self.parseStopTrial,
+            self.parsePosition,
+            self.parseStartFixation,
+            self.parseEndFixation,
+            self.parseStartBlink,
+            self.parseEndBlink,
+            self.parseStartSaccade,
+            self.parseEndSaccade,
             self.parseResponse,
             self.parseExperimentVariables]
 

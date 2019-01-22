@@ -31,8 +31,7 @@ class Eyelink (Eyetracker):
     # Each of the following parser tries to parse one type of Entry
     # If is fails, it returns None
 
-    @staticmethod
-    def parseStartTrial(line: List[str]) -> Union[Entry, None]:
+    def parseStartTrial(self, line: List[str]) -> Union[Entry, None]:
         if len(line) >= 5 and line[2] == 'start_trial':
             try:
                 time = int(line[1])
@@ -43,8 +42,7 @@ class Eyelink (Eyetracker):
                 pass
         return None
 
-    @staticmethod
-    def parseStopTrial(line: List[str]) -> Union[Entry, None]:
+    def parseStopTrial(self, line: List[str]) -> Union[Entry, None]:
         if len(line) >= 3 and line[2] == 'stop_trial':
             try:
                 time = int(line[1])
@@ -53,8 +51,7 @@ class Eyelink (Eyetracker):
                 pass
         return None
 
-    @staticmethod
-    def parsePosition(line: List[str]) -> Union[Entry, None]:
+    def parsePosition(self, line: List[str]) -> Union[Entry, None]:
         # case Position
         if len(line) >= 3:
             try:
@@ -66,8 +63,7 @@ class Eyelink (Eyetracker):
                 pass
         return None
 
-    @staticmethod
-    def parseStartFixation(line: List[str]) -> Union[Entry, None]:
+    def parseStartFixation(self, line: List[str]) -> Union[Entry, None]:
         # case Position
         if len(line) >= 3 and line[0] == 'SFIX':
             try:
@@ -77,8 +73,7 @@ class Eyelink (Eyetracker):
                 pass
         return None
 
-    @staticmethod
-    def parseEndFixation(line: List[str]) -> Union[Entry, None]:
+    def parseEndFixation(self, line: List[str]) -> Union[Entry, None]:
         # case Position
         if len(line) >= 4 and line[0] == 'EFIX':
             try:
@@ -88,8 +83,7 @@ class Eyelink (Eyetracker):
                 pass
         return None
 
-    @staticmethod
-    def parseStartBlink(line: List[str]) -> Union[Entry, None]:
+    def parseStartBlink(self, line: List[str]) -> Union[Entry, None]:
         # case Position
         if len(line) >= 3 and line[0] == 'SBLINK':
             try:
@@ -99,8 +93,7 @@ class Eyelink (Eyetracker):
                 pass
         return None
 
-    @staticmethod
-    def parseEndBlink(line: List[str]) -> Union[Entry, None]:
+    def parseEndBlink(self, line: List[str]) -> Union[Entry, None]:
         # case Position
         if len(line) >= 4 and line[0] == 'EBLINK':
             try:
@@ -110,8 +103,7 @@ class Eyelink (Eyetracker):
                 pass
         return None
 
-    @staticmethod
-    def parseStartSaccade(line: List[str]) -> Union[Entry, None]:
+    def parseStartSaccade(self, line: List[str]) -> Union[Entry, None]:
         # case Position
         if len(line) >= 3 and line[0] == 'SSACC':
             try:
@@ -121,8 +113,7 @@ class Eyelink (Eyetracker):
                 pass
         return None
 
-    @staticmethod
-    def parseEndSaccade(line: List[str]) -> Union[Entry, None]:
+    def parseEndSaccade(self, line: List[str]) -> Union[Entry, None]:
         # case Position
         if len(line) >= 4 and line[0] == 'ESACC':
             try:
@@ -163,15 +154,15 @@ class Eyelink (Eyetracker):
         pass
 
     def parseEntry(self, line: List[str]) -> Union[Entry, None]:
-        parsers = [Eyelink.parseStartTrial,
-            Eyelink.parseStopTrial,
-            Eyelink.parsePosition,
-            Eyelink.parseStartFixation,
-            Eyelink.parseEndFixation,
-            Eyelink.parseStartBlink,
-            Eyelink.parseEndBlink,
-            Eyelink.parseStartSaccade,
-            Eyelink.parseEndSaccade,
+        parsers = [self.parseStartTrial,
+            self.parseStopTrial,
+            self.parsePosition,
+            self.parseStartFixation,
+            self.parseEndFixation,
+            self.parseStartBlink,
+            self.parseEndBlink,
+            self.parseStartSaccade,
+            self.parseEndSaccade,
             self.parseResponse,
             self.parseExperimentVariables]
 
