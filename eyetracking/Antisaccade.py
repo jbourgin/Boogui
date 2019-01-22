@@ -111,11 +111,18 @@ class Antisaccade(Experiment):
 
         start_trial_time = trial.getStartTrial().getTime()
 
-        targetname = trial.features['stim1']
-
-        response_entry = trial.getResponse()
+        if 'Neg' in targetname[:2]:
+            emotion = 'Negative'
+        elif 'P' in targetname[0]:
+            emotion = 'Positive'
+        else:
+            emotion = 'Neutral'
 
         region_fixations = trial.getFixationTime(regions, emo_position)
+
+        # First saccade
+        if len(trial.saccades) != 0:
+            if (trial.saccades[0].getStartTime() - start_trial_time) < 80 and
 
         # First fixations
         try:
