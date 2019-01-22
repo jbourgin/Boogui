@@ -62,7 +62,7 @@ class Make_Eyelink(Eyelink):
     def isTraining(self, trial) -> bool:
         return 'Dis' in trial.features['stim1']
 
-class Visual_selection(Experiment):
+class Prosaccade(Experiment):
 
     def __init__(self):
         super().__init__(None)

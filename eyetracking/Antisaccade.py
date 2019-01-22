@@ -95,6 +95,8 @@ class Antisaccade(Experiment):
         self.eyetracker = Make_Eyelink()
 
     def processTrial(self, subject, trial, filename = None):
+        pass
+        '''
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
         trial_number = trial.getTrialId()
 
@@ -204,6 +206,7 @@ class Antisaccade(Experiment):
         f.write(';'.join([str(x) for x in s]))
         f.write('\n')
         f.close()
+        '''
 
     @staticmethod
     def getDefaultResultsFile():
