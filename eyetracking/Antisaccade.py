@@ -44,8 +44,8 @@ class Make_Eyelink(Eyelink):
     def isTraining(self, trial) -> bool:
         return 'App' in trial.features['training']
 
-    def parseStartTrial(line: List[str]) -> Union[Entry, None]:
-        if len(line) >= 4 and line[2] == 'BEGIN' and line[3] == 'SEQUENCE':
+    def parseStartTrial(self, line: List[str]) -> Union[Entry, None]:
+        if len(line) >= 4 and line[2] == 'BEGIN' and line[3] == 'TRANSITION' and line[4] == 'time_transition':
             try:
                 time = int(line[1])
                 trial_number = int(line[-1])
@@ -55,7 +55,7 @@ class Make_Eyelink(Eyelink):
                 pass
         return None
 
-    def parseStopTrial(line: List[str]) -> Union[Entry, None]:
+    def parseStopTrial(self, line: List[str]) -> Union[Entry, None]:
         if len(line) >= 4 and line[2] == 'END' and line[3] == 'SEQUENCE':
             try:
                 time = int(line[1])
@@ -284,6 +284,7 @@ class Antisaccade(Experiment):
         n_elem_drawn = 20
         point_list = trial.getGazePoints()
         nb_points = len(point_list)
+        point_color = (1,1,0)
 
         if 'P' in trial.getStimulus()[0]:
             frame_color = (0,1,0)
