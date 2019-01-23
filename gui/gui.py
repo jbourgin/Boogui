@@ -3,7 +3,7 @@ import time
 from PyQt5.QtWidgets import QMainWindow, QAction, QActionGroup, qApp, QWidget
 from PyQt5.QtWidgets import QFileDialog, QTextEdit, QScrollArea, QMessageBox
 from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout, QLabel
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt
 
 from eyetracking.smi import *
@@ -51,7 +51,9 @@ class Main(QMainWindow):
     def initUI(self):
         self.setGeometry(300, 300, 600, 600)
         self.setWindowTitle('Eyetracking analysis')
-        #self.setWindowIcon(QIcon('web.png'))
+        icon = QIcon('gui/icon.png')
+        self.setWindowIcon(icon)
+        print(icon.isNull())
 
         self.set_menu()
         self.set_main_widget()
