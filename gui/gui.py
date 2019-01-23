@@ -53,7 +53,6 @@ class Main(QMainWindow):
         self.setWindowTitle('Eyetracking analysis')
         icon = QIcon('gui/icon.png')
         self.setWindowIcon(icon)
-        print(icon.isNull())
 
         self.set_menu()
         self.set_main_widget()
