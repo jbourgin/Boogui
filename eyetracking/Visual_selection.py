@@ -106,13 +106,13 @@ class Visual_selection(Experiment):
 
         # First fixations
         try:
-            first_fixation = next(fixation for fixation in regions_fixations)
+            first_fixation = next(fixation for fixation in region_fixations)
         except:
             first_fixation = None
 
         try:
             first_emo_fixation = next(fixation for fixation in region_fixations if fixation['target'])
-            capture_delay_emo_first = first_good_fixation['begin'].getTime() - start_trial_time
+            capture_delay_emo_first = first_emo_fixation['begin'].getTime() - start_trial_time
         except:
             first_emo_fixation = None
             capture_delay_emo_first = None
@@ -136,7 +136,7 @@ class Visual_selection(Experiment):
         if trial.blinks == []:
             blink_category = "No blink"
         else:
-            if first_fixation != None:
+            if first_fixation is not None:
                 if trial.blinks[0].getStartTime() < first_fixation['begin'].getTime():
                     blink_category = "early capture"
                 else:
@@ -146,7 +146,7 @@ class Visual_selection(Experiment):
 
         # Error :
         if (not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)
-            or blink_category == 'early capture'):
+            or blink_category == 'early capture' or first_fixation is None):
             #or capture_delay_first < 100):
             error = '#N/A'
         else:
@@ -164,7 +164,7 @@ class Visual_selection(Experiment):
             subject.group,
             trial_number,
             #trial.features['session'],
-            trial.features['training'],
+            trial.isTraining(),
             trial.eye,
             trial.features['emotion'],
             trial.features['stim1'],
