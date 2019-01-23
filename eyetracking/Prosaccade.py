@@ -49,7 +49,7 @@ class Make_Eyelink(Eyelink):
             try:
                 time = int(line[1])
                 trial_number = int(line[-1])
-                stimulus = line[8]
+                stimulus = line[10]
                 return Entry.Start_trial(time, trial_number, stimulus)
             except:
                 pass
@@ -90,15 +90,14 @@ class Prosaccade(Experiment):
             elif trial.features['target_side'] == 'Droite':
                 correct_position = 'Right'
                 target_position = self.eyetracker.right
-            regions = InterestRegionList(target_position)
 
             start_trial_time = trial.getStartTrial().getTime()
 
-            if 'Neg' in targetname[:2]:
+            if 'Neg' in targetname[:3]:
                 emotion = 'Negative'
             elif 'P' in targetname[0]:
                 emotion = 'Positive'
-            elif 'Neu' in targetname[:2]:
+            elif 'Neu' in targetname[:3]:
                 emotion = 'Neutral'
             else:
                 emotion = 'Training'
@@ -208,7 +207,7 @@ class Prosaccade(Experiment):
 
         if 'P' in trial.getStimulus()[0]:
             frame_color = (0,1,0)
-        elif 'Neg' in trial.getStimulus()[:2]:
+        elif 'Neg' in trial.getStimulus()[:3]:
             frame_color = (1,0,0)
         else:
             frame_color = (0,0,0)
@@ -240,7 +239,7 @@ class Prosaccade(Experiment):
 
         if 'P' in trial.getStimulus()[0]:
             frame_color = (0,1,0)
-        elif 'Neg' in trial.getStimulus()[:2]:
+        elif 'Neg' in trial.getStimulus()[:3]:
             frame_color = (1,0,0)
         else:
             frame_color = (0,0,0)

@@ -49,7 +49,7 @@ class Make_Eyelink(Eyelink):
             try:
                 time = int(line[1])
                 trial_number = int(line[-1])
-                stimulus = line[8]
+                stimulus = line[10]
                 return Entry.Start_trial(time, trial_number, stimulus)
             except:
                 pass
@@ -90,15 +90,14 @@ class Antisaccade(Experiment):
             elif trial.features['target_side'] == 'Droite':
                 correct_position = 'Left'
                 target_position = self.eyetracker.right
-            regions = InterestRegionList(target_position)
 
             start_trial_time = trial.getStartTrial().getTime()
 
-            if 'Neg' in targetname[:2]:
+            if 'Neg' in targetname[:3]:
                 emotion = 'Negative'
             elif 'P' in targetname[0]:
                 emotion = 'Positive'
-            elif 'Neu' in targetname[:2]:
+            elif 'Neu' in targetname[:3]:
                 emotion = 'Neutral'
             else:
                 emotion = 'Training'
@@ -131,7 +130,7 @@ class Antisaccade(Experiment):
                 horizontal_gaze_position_end = trial.saccades[0].getLastGazePosition()[0]
                 SRT_threshold = SRT_real + sac_duration
 
-            if (subject.group == 'SJS' and SRT_real > 700) or (subject.group != 'SJS' and SRT > 800):
+            if (subject.group == 'SJS' and SRT_real > 700) or (subject.group != 'SJS' and SRT_real > 800):
                 threshold_excess = 'YES'
             else:
                 threshold_excess = 'NO'
@@ -170,14 +169,15 @@ class Antisaccade(Experiment):
             if error == '1':
                 correction = 'NO'
                 for saccade in trial.saccades:
-                    if saccade.getStartTime() >= SRT_threshold:
+                    if saccade.getStartTime() >= SRT_threshold and correction == 'NO':
                         if ((correct_position == 'Right'
-                            and saccade.getLastGazePosition() > self.eyetracker.screen_center[0])
+                            and saccade.getLastGazePosition()[0] > self.eyetracker.screen_center[0])
                             or (correct_position == 'Left'
-                                and saccade.getLastGazePosition() < self.eyetracker.screen_center[0])):
-                            if saccade.getStartTime() - SRT_threshold <= 80:
+                                and saccade.getLastGazePosition()[0] < self.eyetracker.screen_center[0])):
+                            if saccade.getEndTime() - saccade.getStartTime() <= 130:
                                 correction = 'YES'
                             else:
+                                print(saccade.getEndTime() - saccade.getStartTime())
                                 correction = 'TOO LONG'
 
         # Writing data in result csv file
@@ -256,7 +256,7 @@ class Antisaccade(Experiment):
 
         if 'P' in trial.getStimulus()[0]:
             frame_color = (0,1,0)
-        elif 'Neg' in trial.getStimulus()[:2]:
+        elif 'Neg' in trial.getStimulus()[:3]:
             frame_color = (1,0,0)
         else:
             frame_color = (0,0,0)
@@ -288,7 +288,7 @@ class Antisaccade(Experiment):
 
         if 'P' in trial.getStimulus()[0]:
             frame_color = (0,1,0)
-        elif 'Neg' in trial.getStimulus()[:2]:
+        elif 'Neg' in trial.getStimulus()[:3]:
             frame_color = (1,0,0)
         else:
             frame_color = (0,0,0)
