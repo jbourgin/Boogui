@@ -17,8 +17,8 @@ class Make_Eyelink(Eyelink):
         self.valid_distance_center = 90 #3 degres of visual angle 95 (+ marge)
 
         # Initializing regions of interest
-        self.half_width = 128
-        self.half_height = 128
+        self.half_width = 128 #170
+        self.half_height = 128 #170
 
         # frames
         self.right = RectangleRegion((self.screen_center[0]*1.5, self.screen_center[1]), self.half_width, self.half_height)
@@ -26,50 +26,30 @@ class Make_Eyelink(Eyelink):
 
     # Returns a dictionary of experiment variables
     def parseVariables(self, line: List[str]):
-        if len(line) > 5 and line[3] == "stim1":
+        if len(line) >= 5 and line[2] == 'BEGIN' and line[3] == 'SEQUENCE':
             try:
-                stim1 = line[5]
-                stim2 = line[10]
-                arrow = line[15]
-                emotion = line[20]
-
-            except:
-                pass
-        elif len(line) > 5 and line[3] == "target_side":
-            try:
-                target_side = line[5]
-                position_emo = line[10]
-                position_neu = line[15]
+                training = line[5][:-6]
+                target_side = line[5][-6:]
 
                 return {
-                    'stim1' : stim1,
-                    'stim2' : stim2,
-                    'arrow' : arrow,
-                    'emotion' : emotion,
+                    'training' : training,
                     'target_side' : target_side,
-                    'position_emo' : position_emo,
-                    'position_neu' : position_neu,
-                    }
-
+                }
             except:
                 pass
         return None
 
     def isResponse(self, line: Line) -> bool :
-        return len(line) >= 2 and 'stop_trial' in line[2]
-
+        return len(line) >= 5 and 'END' in line[2] and 'TRANSITION' in line[3] and 'TIMEOUT' in line[4]
     def isTraining(self, trial) -> bool:
-        return 'App' in trial.features['adresseStim']
+        return 'App' in trial.features['training']
 
     def parseStartTrial(line: List[str]) -> Union[Entry, None]:
         if len(line) >= 4 and line[2] == 'BEGIN' and line[3] == 'SEQUENCE':
             try:
                 time = int(line[1])
-                trial_number = int(line[4])
-                if 'Gauche' in line[5]:
-                    stimulus = 'Left'
-                elif 'Droite' in line[5]:
-                    stimulus = 'Right'
+                trial_number = int(line[-1])
+                stimulus = line[8]
                 return Entry.Start_trial(time, trial_number, stimulus)
             except:
                 pass
@@ -96,108 +76,132 @@ class Antisaccade(Experiment):
 
     def processTrial(self, subject, trial, filename = None):
         pass
-        '''
+
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
         trial_number = trial.getTrialId()
+        targetname = trial.getStimulus()
 
         if trial.saccades == []:
-            logTrace ("Subject %i has no saccades at trial %i !" %(subject.id,trial_number), Precision.DETAIL)
-
-        if trial.getStimulus() == 'Left':
-            correct_position = 'Right'
-            target_position = self.eyetracker.left
-        elif trial.getStimulus() == 'Right':
-            correct_position = 'Left'
-            target_position = self.eyetracker.right
-        regions = InterestRegionList(target_position)
-
-        start_trial_time = trial.getStartTrial().getTime()
-
-        if 'Neg' in targetname[:2]:
-            emotion = 'Negative'
-        elif 'P' in targetname[0]:
-            emotion = 'Positive'
+            logTrace ('Subject %i has no saccades at trial %i !' %(subject.id,trial_number), Precision.DETAIL)
         else:
-            emotion = 'Neutral'
+            if trial.features['target_side'] == 'Gauche':
+                correct_position = 'Right'
+                target_position = self.eyetracker.left
+            elif trial.features['target_side'] == 'Droite':
+                correct_position = 'Left'
+                target_position = self.eyetracker.right
+            regions = InterestRegionList(target_position)
 
-        region_fixations = trial.getFixationTime(regions, emo_position)
+            start_trial_time = trial.getStartTrial().getTime()
 
-        # First saccade
-        if len(trial.saccades) != 0:
-            if (trial.saccades[0].getStartTime() - start_trial_time) < 80 and
-
-        # First fixations
-        try:
-            first_fixation = next(fixation for fixation in regions_fixations)
-        except:
-            first_fixation = None
-
-        try:
-            first_emo_fixation = next(fixation for fixation in region_fixations if fixation['target'])
-            capture_delay_emo_first = first_good_fixation['begin'].getTime() - start_trial_time
-        except:
-            first_emo_fixation = None
-            capture_delay_emo_first = None
-
-        try:
-            first_neu_fixation = next(fixation for fixation in region_fixations if not fixation['target'])
-            capture_delay_neu_first = first_neu_fixation['begin'].getTime() - start_trial_time
-        except:
-            first_neu_fixation = None
-            capture_delay_neu_first = None
-
-        # Time on target and distractors
-        total_emo_fixation_time = sum(x['time'] for x in region_fixations if x['target'])
-        if total_emo_fixation_time == 0:
-            total_emo_fixation_time = None
-        total_neu_fixation_time = sum(x['time'] for x in region_fixations if not x['target'])
-        if total_neu_fixation_time == 0:
-            total_neu_fixation_time = None
-
-        # Determining blink category
-        if trial.blinks == []:
-            blink_category = "No blink"
-        else:
-            if first_fixation != None:
-                if trial.blinks[0].getStartTime() < first_fixation['begin'].getTime():
-                    blink_category = "early capture"
-                else:
-                    blink_category = "late"
+            if 'Neg' in targetname[:2]:
+                emotion = 'Negative'
+            elif 'P' in targetname[0]:
+                emotion = 'Positive'
+            elif 'Neu' in targetname[:2]:
+                emotion = 'Neutral'
             else:
-                blink_category = None
+                emotion = 'Training'
 
-        # Error :
-        if (not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)
-            or blink_category == 'early capture'):
-            #or capture_delay_first < 100):
-            error = '#N/A'
-        else:
-            if ((first_fixation['target'] and trial.features['arrow'] == trial.features['target_side'])
-                or (not first_fixation['target'] and trial.features['arrow'] != trial.features['target_side'])):
+            # Saccades
+            SRT2 = None
+            SRT2_real = None
+            SRT2_first_gaze_position = None
+            SRT2_last_gaze_position = None
+            if len(trial.saccades) > 1:
+                SRT2 = trial.saccades[1].getStartTime() - start_trial_time
+                SRT2_first_gaze_position = trial.saccades[1].getFirstGazePosition()
+                SRT2_last_gaze_position = trial.saccades[1].getLastGazePosition()
+                SRT2_real = trial.saccades[1].getStartTime() - trial.saccades[0].getEndTime()
+            if ((trial.saccades[0].getStartTime() - start_trial_time) < 80 and
+                distance(trial.saccades[0].getFirstGazePosition(), trial.saccades[0].getLastGazePosition()) < self.eyetracker.valid_distance_center and
+                distance(trial.saccades[0].getLastGazePosition(), self.eyetracker.screen_center) < self.eyetracker.valid_distance_center and
+                len(trial.saccades) > 1):
+                SRT_to_consider = 'Second saccade'
+                SRT_real = SRT2_real
+                sac_duration = trial.saccades[1].getEndTime() - trial.saccades[1].getStartTime()
+                sac_amplitude = distance(SRT2_first_gaze_position, SRT2_last_gaze_position)
+                horizontal_gaze_position_end = SRT2_last_gaze_position[0]
+                SRT_threshold = SRT2 + sac_duration
+            else:
+                SRT_to_consider = 'First saccade'
+                SRT_real = trial.saccades[0].getStartTime() - start_trial_time
+                sac_duration = trial.saccades[0].getEndTime() - trial.saccades[0].getStartTime()
+                sac_amplitude = distance(trial.saccades[0].getFirstGazePosition(), trial.saccades[0].getLastGazePosition())
+                horizontal_gaze_position_end = trial.saccades[0].getLastGazePosition()[0]
+                SRT_threshold = SRT_real + sac_duration
+
+            if (subject.group == 'SJS' and SRT_real > 700) or (subject.group != 'SJS' and SRT > 800):
+                threshold_excess = 'YES'
+            else:
+                threshold_excess = 'NO'
+
+            # Determining blink category
+            if trial.blinks == []:
+                blink_category = 'No blink'
+            else:
+                if trial.blinks[0].getStartTime() < SRT_threshold:
+                    blink_category = 'early capture'
+                else:
+                    blink_category = 'late'
+
+            # Error :
+            if (not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)
+                or blink_category == 'early capture'
+                or SRT_real <= 80
+                or sac_duration < 22
+                or sac_amplitude < 20):
+                #or capture_delay_first < 100):
+                error = '#N/A'
+            elif ((correct_position == 'Right'
+                  and horizontal_gaze_position_end < self.eyetracker.screen_center[0])
+                  or (correct_position == 'Left'
+                      and horizontal_gaze_position_end > self.eyetracker.screen_center[0])):
+                error = '1'
+            elif ((correct_position == 'Right'
+                  and horizontal_gaze_position_end > self.eyetracker.screen_center[0])
+                  or (correct_position == 'Left'
+                      and horizontal_gaze_position_end < self.eyetracker.screen_center[0])):
                 error = '0'
             else:
-                error = '1'
+                error = None
+
+            correction = None
+            if error == '1':
+                correction = 'NO'
+                for saccade in trial.saccades:
+                    if saccade.getStartTime() >= SRT_threshold:
+                        if ((correct_position == 'Right'
+                            and saccade.getLastGazePosition() > self.eyetracker.screen_center[0])
+                            or (correct_position == 'Left'
+                                and saccade.getLastGazePosition() < self.eyetracker.screen_center[0])):
+                            if saccade.getStartTime() - SRT_threshold <= 80:
+                                correction = 'YES'
+                            else:
+                                correction = 'TOO LONG'
 
         # Writing data in result csv file
-        s = [str(subject.id) + "-E", # Subject name
+        s = [str(subject.id) + '-E', # Subject name
             subject.group,
             trial_number,
-            #trial.features['session'],
             trial.features['training'],
             trial.eye,
-            trial.features['emotion'],
-            trial.features['stim1'],
-            trial.features['stim2'],
+            emotion,
+            targetname,
             trial.features['target_side'],
-            trial.features['arrow'],
-            trial.features['position_emo'],
-            trial.features['position_neu'],
+            correct_position,
             error,
-            capture_delay_emo_first,
-            capture_delay_neu_first,
-            total_emo_fixation_time,
-            total_neu_fixation_time,
-            blink_category]
+            SRT_to_consider,
+            trial.saccades[0].getStartTime() - start_trial_time,
+            trial.saccades[0].getFirstGazePosition(),
+            trial.saccades[0].getLastGazePosition(),
+            SRT2,
+            SRT2_real,
+            SRT2_first_gaze_position,
+            SRT2_last_gaze_position,
+            correction,
+            blink_category,
+            threshold_excess]
 
         if filename is None:
             f = open(getResultsFile(), 'a')
@@ -206,11 +210,10 @@ class Antisaccade(Experiment):
         f.write(';'.join([str(x) for x in s]))
         f.write('\n')
         f.close()
-        '''
 
     @staticmethod
     def getDefaultResultsFile():
-        return joinPaths(getResultsFolder(), 'visual_selection.csv')
+        return joinPaths(getResultsFolder(), 'antisaccade.csv')
 
     @staticmethod
     def makeResultFile() -> None:
@@ -227,18 +230,21 @@ class Antisaccade(Experiment):
             'Training',
             'Eye',
             'Emotion',
-            'Emotion target',
-            'Neutral target',
+            'Target Name',
             'TargetSide',
-            'Arrow orientation',
-            'Position emo',
-            'Position neu',
+            'Correct position',
             'Errors',
-            'First time on emotional target',
-            'First time on neutral target',
-            'Total fixation time on emotional target',
-            'Total fixation time on neutral target',
-            'First blink type'
+            'Saccade to consider',
+            'First saccade RT',
+            'First saccade start gaze position',
+            'First saccade ending gaze position',
+            'Second saccade RT (from trial starting)',
+            'Second saccade real RT (from first saccade ending)',
+            'Second saccade start gaze position',
+            'Second saccade ending gaze position',
+            'Error correction',
+            'First blink type',
+            'Threshold excess'
         ]))
         f.write('\n')
         f.close()
@@ -248,7 +254,13 @@ class Antisaccade(Experiment):
     def scanpath(self, subject_id, trial, frequency : int):
         plt.clf()
 
-        frame_color = (0,0,0)
+        if 'P' in trial.getStimulus()[0]:
+            frame_color = (0,1,0)
+        elif 'Neg' in trial.getStimulus()[:2]:
+            frame_color = (1,0,0)
+        else:
+            frame_color = (0,0,0)
+
         x_axis = self.eyetracker.screen_center[0] * 2
         y_axis = self.eyetracker.screen_center[1] * 2
         plt.axis([0, x_axis, 0, y_axis])
@@ -256,17 +268,10 @@ class Antisaccade(Experiment):
         plt.axis('off')
 
         # Plotting frames
-        if trial.features['position_emo'] == '-300':
-            plotRegion(self.eyetracker.left, emo_color)
-            plotRegion(self.eyetracker.right, frame_color)
-        elif trial.features['position_emo'] == '300':
+        if trial.features['target_side'] == 'Gauche':
             plotRegion(self.eyetracker.left, frame_color)
-            plotRegion(self.eyetracker.right, emo_color)
-
-        if trial.features['arrow'] == 'left':
-            plt.arrow(self.eyetracker.screen_center[0]+10, self.eyetracker.screen_center[1]-2, -20, 4)
-        elif trial.features['arrow'] == 'right':
-            plt.arrow(self.eyetracker.screen_center[0]-10, self.eyetracker.screen_center[1]-2, 20, 4)
+        elif trial.features['target_side'] == 'Droite':
+            plotRegion(self.eyetracker.right, frame_color)
 
         # Plotting gaze positions
         trial.plot(frequency)
@@ -279,8 +284,13 @@ class Antisaccade(Experiment):
         n_elem_drawn = 20
         point_list = trial.getGazePoints()
         nb_points = len(point_list)
-        frame_color = (0,0,0)
-        point_color = (1,1,0)
+
+        if 'P' in trial.getStimulus()[0]:
+            frame_color = (0,1,0)
+        elif 'Neg' in trial.getStimulus()[:2]:
+            frame_color = (1,0,0)
+        else:
+            frame_color = (0,0,0)
 
         # Taking frequency into account
         point_list_f = []
@@ -310,17 +320,10 @@ class Antisaccade(Experiment):
                 plotSegment(point_list_f[j], point_list_f[j+1], c = point_color)
             point_color = (1, point_color[1] - 1.0/nb_points , 0)
 
-            if trial.features['position_emo'] == '-300':
-                plotRegion(self.eyetracker.left, emo_color)
-                plotRegion(self.eyetracker.right, frame_color)
-            elif trial.features['position_emo'] == '300':
+            if trial.features['target_side'] == 'Gauche':
                 plotRegion(self.eyetracker.left, frame_color)
-                plotRegion(self.eyetracker.right, emo_color)
-
-            if trial.features['arrow'] == 'left':
-                plt.arrow(self.eyetracker.screen_center[0]+10, self.eyetracker.screen_center[1]-2, -20, 4)
-            elif trial.features['arrow'] == 'right':
-                plt.arrow(self.eyetracker.screen_center[0]-10, self.eyetracker.screen_center[1]-2, 20, 4)
+            elif trial.features['target_side'] == 'Droite':
+                plotRegion(self.eyetracker.right, frame_color)
 
             image_name = '%i.png' % elem
             saveImage(getTmpFolder(), image_name)
@@ -332,7 +335,7 @@ class Antisaccade(Experiment):
 
     def getSubjectData(self, line: str) -> Union[Tuple[int,str]]:
         try:
-            l = re.split("[\t ]+", line)
+            l = re.split('[\t ]+', line)
             return (int(l[1]), l[2])
         except:
             return None
@@ -352,19 +355,19 @@ class Antisaccade(Experiment):
             raise ExperimentException('Subject number and category could not be found')
 
         else:
-            result_file = "results.txt"
+            result_file = 'results.txt'
             is_processed = self.eyetracker.preprocess(input_file, result_file, progress)
             if is_processed:
-                datafile = open(joinPaths(getTmpFolder(), result_file), "r")
+                datafile = open(joinPaths(getTmpFolder(), result_file), 'r')
             else:
-                datafile = open(input_file, "r")
+                datafile = open(input_file, 'r')
 
             #File conversion in list.
             data = datafile.read()
             data = list(data.splitlines())
 
             #We add a tabulation and space separator.
-            data = [re.split("[\t ]+",line) for line in data]
+            data = [re.split('[\t ]+',line) for line in data]
 
             (n_subject, subject_cat) = subject_data
             return Subject(self, data, n_subject, subject_cat, progress)
