@@ -1,5 +1,6 @@
 import sys
 import time
+import os
 from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QSlider, QStyle, QMessageBox
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
@@ -42,10 +43,11 @@ class VideoWidget(QWidget):
         self.position_slider.sliderMoved.connect(self.setPosition)
 
         url = joinPaths(getTmpFolder(), path)
+        url_absolute = os.path.abspath(url)
 
         vid_wid = QVideoWidget()
 
-        self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(url)))
+        self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(url_absolute)))
         self.media_player.setVideoOutput(vid_wid)
 
         self.layout.addWidget(vid_wid)
