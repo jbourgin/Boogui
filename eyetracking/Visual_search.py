@@ -12,6 +12,7 @@ class Make_Eyelink(Eyelink):
         super().__init__()
         # Center of the screen.
         self.screen_center = (512,384)
+        self.eyetracker_name = "Eyelink"
         # Minimal distance at which we consider the subject is looking at the
         # fixation cross at the trial beginning
         self.valid_distance_center = 125 #3 degres of visual angle 95
@@ -82,6 +83,7 @@ class Make_Smi(Smi):
         super().__init__()
         # Center of the screen.
         self.screen_center = (683,384)
+        self.eyetracker_name = "SMI"
         # Minimal distance at which we consider the subject is looking at the
         # fixation cross at the trial beginning
         self.valid_distance_center = 130 #3 degres of visual angle 95 (+ marge)
@@ -153,7 +155,7 @@ class ExperimentException(Exception):
         super().__init__(message)
 
 
-class Recherche_visuelle(Experiment):
+class Visual_search(Experiment):
 
     def __init__(self):
         super().__init__(None)
@@ -273,7 +275,11 @@ class Recherche_visuelle(Experiment):
                 error = '0'
 
         # Writing data in result csv file
-        s = [str(subject.id) + "-E", # Subject name
+        if self.eyetracker.eyetracker_name == "Eyelink":
+            subject_name = str(subject.id) + "-E"
+        elif self.eyetracker.eyetracker_name == "SMI":
+            subject_name = str(subject.id) + "-S"
+        s = [subject_name, # Subject name
             subject.group,
             trial_number,
             block,
@@ -450,12 +456,12 @@ class Recherche_visuelle(Experiment):
 
     @staticmethod
     def getDefaultResultsFile():
-        return joinPaths(getResultsFolder(), 'recherche_visuelle.csv')
+        return joinPaths(getResultsFolder(), 'visual_search.csv')
 
     @staticmethod
     def makeResultFile() -> None:
         createResultsFolder()
-        Recherche_visuelle.makeResultFile(getDefaultResultsFile)
+        Visual_search.makeResultFile(getDefaultResultsFile)
 
     @staticmethod
     def makeResultFile(filename: str) -> None:
@@ -533,7 +539,7 @@ class Recherche_visuelle(Experiment):
 
         for frame in frame_list:
             if frame.isTarget((trial.features['target_hp'], trial.features['target_vp'])):
-                Recherche_visuelle.plotTarget(frame, trial.features['cor_resp'], target_color)
+                Visual_search.plotTarget(frame, trial.features['cor_resp'], target_color)
             else:
                 plotRegion(frame, frame_color)
 
@@ -592,7 +598,7 @@ class Recherche_visuelle(Experiment):
 
             for frame in frame_list:
                 if frame.isTarget((trial.features['target_hp'], trial.features['target_vp'])):
-                    Recherche_visuelle.plotTarget(frame, trial.features['cor_resp'], target_color)
+                    Visual_search.plotTarget(frame, trial.features['cor_resp'], target_color)
                 else:
                     plotRegion(frame, frame_color)
 

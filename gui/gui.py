@@ -7,7 +7,7 @@ from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt
 
 from eyetracking.smi import *
-from eyetracking.Recherche_visuelle import *
+from eyetracking.Visual_search import *
 from eyetracking.Gaze_contingent import *
 from eyetracking.Visual_selection import *
 from eyetracking.Prosaccade import *
@@ -178,10 +178,10 @@ class Main(QMainWindow):
         # Experiment menu
         ag = QActionGroup(self, exclusive=True)
         self.experiment_menu = menubar.addMenu('&Experiment')
-        # Recherche visuelle
-        setRechercheVisuelle = QAction('&Recherche visuelle', self, checkable = True)
-        setRechercheVisuelle.triggered.connect(self.setRechercheVisuelle)
-        a = ag.addAction(setRechercheVisuelle)
+        # Visual search
+        setVisualSearch = QAction('&Visual search', self, checkable = True)
+        setVisualSearch.triggered.connect(self.setVisualSearch)
+        a = ag.addAction(setVisualSearch)
         self.experiment_menu.addAction(a)
 
         # GazeContingent
@@ -209,13 +209,13 @@ class Main(QMainWindow):
         self.experiment_menu.addAction(e)
 
         #Default experiment
-        setRechercheVisuelle.setChecked(True)
-        self.setRechercheVisuelle()
+        setVisualSearch.setChecked(True)
+        self.setVisualSearch()
 
         # Frequency menu
         ag = QActionGroup(self, exclusive=True)
         self.frequency_menu = menubar.addMenu('&Frequency')
-        # Recherche visuelle
+        # Visual search
         setFrequency1 = QAction('&1', self, checkable = True)
         setFrequency2 = QAction('&2', self, checkable = True)
         setFrequency5 = QAction('&5', self, checkable = True)
@@ -271,9 +271,9 @@ class Main(QMainWindow):
     def getExperiment(self):
         return self.make_experiment
 
-    def setRechercheVisuelle(self):
+    def setVisualSearch(self):
         def set():
-            return Recherche_visuelle()
+            return Visual_search()
         self.make_experiment = set
 
     def setGazeContingent(self):

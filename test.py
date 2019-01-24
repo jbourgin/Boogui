@@ -1,4 +1,4 @@
-from eyetracking.Recherche_visuelle import *
+from eyetracking.Visual_search import *
 from eyetracking.smi_correction import processSubject
 from eyetracking.utils import *
 
@@ -8,7 +8,7 @@ from eyetracking.utils import *
 eyetracker = Make_Smi()
 subject_file = 'data/subject-23Samples.txt'
 
-experiment = Recherche_visuelle(eyetracker)
+experiment = Visual_search(eyetracker)
 
 subject = experiment.processSubject(subject_file)
 
