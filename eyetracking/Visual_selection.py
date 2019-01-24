@@ -81,8 +81,13 @@ class Visual_selection(Experiment):
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
         trial_number = trial.getTrialId()
 
+        start_trial_time = trial.getStartTrial().getTime()
+
         if trial.saccades == []:
             logTrace ("Subject %i has no saccades at trial %i !" %(subject.id,trial_number), Precision.DETAIL)
+            first_saccade = None
+        else:
+            first_saccade = trial.saccades[0].getStartTime() - start_trial_time
 
         if trial.isTraining():
             emo_position = self.eyetracker.left
@@ -96,7 +101,6 @@ class Visual_selection(Experiment):
                 neu_position = self.eyetracker.left
         regions = InterestRegionList([emo_position, neu_position])
 
-        start_trial_time = trial.getStartTrial().getTime()
 
         targetname = trial.features['stim1']
 
@@ -144,6 +148,11 @@ class Visual_selection(Experiment):
             else:
                 blink_category = None
 
+        if trial.features['arrow'] ==  trial.features['target_side']:
+            first_image_to_look = 'EMO'
+        elif trial.features['arrow'] !=  trial.features['target_side']:
+            first_image_to_look = 'NEU'
+
         # Error :
         if (not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)
             or blink_category == 'early capture' or first_fixation is None):
@@ -167,6 +176,7 @@ class Visual_selection(Experiment):
             trial.isTraining(),
             trial.eye,
             trial.features['emotion'],
+            first_image_to_look,
             trial.features['stim1'],
             trial.features['stim2'],
             trial.features['target_side'],
@@ -178,7 +188,8 @@ class Visual_selection(Experiment):
             capture_delay_neu_first,
             total_emo_fixation_time,
             total_neu_fixation_time,
-            blink_category]
+            blink_category,
+            first_saccade]
 
         if filename is None:
             f = open(getResultsFile(), 'a')
@@ -187,6 +198,135 @@ class Visual_selection(Experiment):
         f.write(';'.join([str(x) for x in s]))
         f.write('\n')
         f.close()
+
+    def postProcess(self, filename: str):
+        logTrace ('Post process to check', Precision.TITLE)
+        with open(filename) as datafile:
+            data = datafile.read()
+        data_modified = open(filename, 'w')
+        data = data.split('\n')
+        data = [x.split(';') for x in data]
+        subject = "Subject"
+        sequence = []
+        data_seq = []
+
+        for line in data:
+            if line[0] == "Subject":
+                new_line = line
+                new_line.append('First fixation emo sorting')
+                new_line.append('First fixation neu sorting')
+                s = ";".join([str(e) for e in new_line]) + "\n"
+                data_modified.write(s)
+            if line[0] != subject:
+                data_seq.append(sequence)
+                sequence = [line]
+                subject = line[0]
+            else:
+                sequence.append(line)
+        data = data_seq[1:]
+
+
+        for subject in data:
+            sum_dic = {}
+            counter_dic = {}
+            mean_dic = {}
+            SS_dic = {}
+            counter_SS_dic = {}
+            SD_dic = {}
+
+            for line in subject:
+                emotion = line[5]
+                first_image_to_look = line[6]
+                error = line[13]
+                first_emo = line[14]
+                first_neu = line[15]
+                blink = line[16]
+                code = first_image_to_look + emotion
+                if code not in sum_dic:
+                    sum_dic[code] = {}
+                    counter_dic[code] = {}
+                    mean_dic[code] = {}
+                    sum_dic[code]['first_emo'] = 0
+                    counter_dic[code]['first_emo'] = 0
+                    mean_dic[code]['first_emo'] = None
+                    sum_dic[code]['first_neu'] = 0
+                    counter_dic[code]['first_neu'] = 0
+                    mean_dic[code]['first_neu'] = None
+                if first_emo != 'None' and "early" not in blink:
+                    sum_dic[code]['first_emo'] += float(first_emo)
+                    counter_dic[code]['first_emo'] += 1
+                if first_neu != 'None' and "early" not in blink:
+                    sum_dic[code]['first_neu'] += float(first_neu)
+                    counter_dic[code]['first_neu'] += 1
+
+            for code in mean_dic:
+                for key in mean_dic[code]:
+                    if sum_dic[code][key] != 0:
+                        mean_dic[code][key] = sum_dic[code][key]/counter_dic[code][key]
+
+            for line in subject:
+                emotion = line[5]
+                first_image_to_look = line[6]
+                error = line[13]
+                first_emo = line[14]
+                first_neu = line[15]
+                blink = line[16]
+                code = first_image_to_look + emotion
+                if code not in SS_dic:
+                    SS_dic[code] = {}
+                    counter_SS_dic[code] = {}
+                    SD_dic[code] = {}
+                    SS_dic[code]['first_emo'] = 0
+                    counter_SS_dic[code]['first_emo'] = 0
+                    SD_dic[code]['first_emo'] = None
+                    SS_dic[code]['first_neu'] = 0
+                    counter_SS_dic[code]['first_neu'] = 0
+                    SD_dic[code]['first_neu'] = None
+                if first_emo != "None" and "early" not in blink:
+                    SS_dic[code]['first_emo'] += squareSum(float(first_emo), mean_dic[code]['first_emo'])
+                    counter_SS_dic[code]['first_emo'] += 1
+                if first_neu != "None" and "early" not in blink:
+                    SS_dic[code]['first_neu'] += squareSum(float(first_neu), mean_dic[code]['first_neu'])
+                    counter_SS_dic[code]['first_neu'] += 1
+
+                for code in SD_dic:
+                    for key in SD_dic[code]:
+                        if SS_dic[code][key] != 0:
+                            SD_dic[code][key] = sqrt(SS_dic[code][key]/counter_SS_dic[code][key])
+
+            for line in subject:
+                subject_num = line[0]
+                emotion = line[5]
+                first_image_to_look = line[6]
+                error = line[13]
+                first_emo = line[14]
+                first_neu = line[15]
+                blink = line[16]
+                code = first_image_to_look + emotion
+                new_line = line
+                for key in mean_dic[code]:
+                    if key == 'first_emo':
+                        score = first_emo
+                    elif key == 'first_neu':
+                        score = first_neu
+                    if SD_dic[code][key] != None and score != "None" and "early" not in blink:
+                        current_mean = mean_dic[code][key]
+                        current_SD = SD_dic[code][key]
+                        if (float(score) > (float(current_mean) + 3*float(current_SD)) or float(score) < (float(current_mean) - 3*float(current_SD))):
+                                print(key, " in a ", emotion, " trial exceeds 3 SD for subject ", subject_num, " : ",
+                                      str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
+                                new_line.append("Deviant %s 3 SD" %key)
+                        elif (float(score) > (float(current_mean) + 2*float(current_SD)) or float(score) < (float(current_mean) - 2*float(current_SD))):
+                                print(key, " in a ", emotion, " trial exceeds 2 SD for subject ", subject_num, " : ",
+                                      str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
+                                new_line.append("Deviant %s 2 SD" %key)
+                        else:
+                            new_line.append("Normal %s value" %key)
+                    else:
+                        new_line.append("%s not relevant" %key)
+                s = ";".join([str(e) for e in new_line]) + "\n"
+                data_modified.write(s)
+        data_modified.close()
 
     @staticmethod
     def getDefaultResultsFile():
@@ -207,6 +347,7 @@ class Visual_selection(Experiment):
             'Training',
             'Eye',
             'Emotion',
+            'First image to look',
             'Emotion target',
             'Neutral target',
             'TargetSide',
@@ -218,7 +359,8 @@ class Visual_selection(Experiment):
             'First time on neutral target',
             'Total fixation time on emotional target',
             'Total fixation time on neutral target',
-            'First blink type'
+            'First blink type',
+            'First saccade'
         ]))
         f.write('\n')
         f.close()

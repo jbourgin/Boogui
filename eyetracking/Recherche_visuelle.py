@@ -14,7 +14,7 @@ class Make_Eyelink(Eyelink):
         self.screen_center = (512,384)
         # Minimal distance at which we consider the subject is looking at the
         # fixation cross at the trial beginning
-        self.valid_distance_center = 125 #3 degres of visual angle 95 (+ marge)
+        self.valid_distance_center = 125 #3 degres of visual angle 95
 
         # Initializing regions of interest
         self.half_width = 153
@@ -175,6 +175,7 @@ class Recherche_visuelle(Experiment):
 
     def processTrial(self, subject, trial, filename = None):
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
+        logTrace ('The first SMI version had a redefinition of frames', Precision.TITLE)
         trial_number = trial.getTrialId()
 
         if trial.saccades == []:
@@ -255,7 +256,7 @@ class Recherche_visuelle(Experiment):
 
         # Error :
         if (not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)
-            or first_good_fixation == None
+            or first_good_fixation is None
             or trial.features['response'] == 'None'
             or blink_category == 'early capture'
             or capture_delay_first < 100):
@@ -301,6 +302,151 @@ class Recherche_visuelle(Experiment):
         f.write(';'.join([str(x) for x in s]))
         f.write('\n')
         f.close()
+
+    def postProcess(self, filename: str):
+        # In the first version, there was a minimal threshold for the first localization time.
+        with open(filename) as datafile:
+            data = datafile.read()
+        data_modified = open(filename, 'w')
+        data = data.split('\n')
+        data = [x.split(';') for x in data]
+        subject = "Subject"
+        sequence = []
+        data_seq = []
+
+        for line in data:
+            if line[0] == "Subject":
+                new_line = line
+                new_line.append('First localization sorting')
+                new_line.append('Response delay sorting')
+                new_line.append('Response time sorting')
+                s = ";".join([str(e) for e in new_line]) + "\n"
+                data_modified.write(s)
+            if line[0] != subject:
+                data_seq.append(sequence)
+                sequence = [line]
+                subject = line[0]
+            else:
+                sequence.append(line)
+        data = data_seq[1:]
+
+
+        for subject in data:
+            sum_dic = {}
+            counter_dic = {}
+            mean_dic = {}
+            SS_dic = {}
+            counter_SS_dic = {}
+            SD_dic = {}
+
+            for line in subject:
+                emotion = line[5]
+                distractors = line[7]
+                error = line[14]
+                response_time = line[15]
+                localization_time = line[16]
+                response_delay = line[17]
+                blink = line[20]
+                code = emotion + distractors
+                if (error == '0' or error == 'CONG') and localization_time != 'None' and 'early capture' not in blink:
+                    if code in sum_dic:
+                        sum_dic[code]['localization'] += float(localization_time)
+                        counter_dic[code]['localization'] += 1
+                        sum_dic[code]['delay'] += float(response_delay)
+                        counter_dic[code]['delay'] += 1
+                        sum_dic[code]['response_time'] += float(response_time)
+                        counter_dic[code]['response_time'] += 1
+                    else:
+                        sum_dic[code] = {}
+                        counter_dic[code] = {}
+                        mean_dic[code] = {}
+                        sum_dic[code]['localization'] = float(localization_time)
+                        counter_dic[code]['localization'] = 1
+                        sum_dic[code]['delay'] = float(response_delay)
+                        counter_dic[code]['delay'] = 1
+                        sum_dic[code]['response_time'] = float(response_time)
+                        counter_dic[code]['response_time'] = 1
+                        mean_dic[code]['localization'] = None
+                        mean_dic[code]['delay'] = None
+                        mean_dic[code]['response_time'] = None
+
+            for code in mean_dic:
+                for key in mean_dic[code]:
+                    if code in sum_dic and key in sum_dic[code]:
+                        mean_dic[code][key] = sum_dic[code][key]/counter_dic[code][key]
+
+            for line in subject:
+                emotion = line[5]
+                distractors = line[7]
+                error = line[14]
+                response_time = line[15]
+                localization_time = line[16]
+                response_delay = line[17]
+                blink = line[20]
+                code = emotion + distractors
+                if (error == '0' or error == 'CONG') and localization_time != 'None' and 'early capture' not in blink:
+                    if code in SS_dic:
+                        SS_dic[code]['localization'] += squareSum(float(localization_time), mean_dic[code]['localization'])
+                        counter_SS_dic[code]['localization'] += 1
+                        SS_dic[code]['delay'] += squareSum(float(response_delay), mean_dic[code]['delay'])
+                        counter_SS_dic[code]['delay'] += 1
+                        SS_dic[code]['response_time'] += squareSum(float(response_time), mean_dic[code]['response_time'])
+                        counter_SS_dic[code]['response_time'] += 1
+                    else:
+                        SS_dic[code] = {}
+                        counter_SS_dic[code] = {}
+                        SD_dic[code] = {}
+                        SS_dic[code]['localization'] = squareSum(float(localization_time), mean_dic[code]['localization'])
+                        counter_SS_dic[code]['localization'] = 1
+                        SS_dic[code]['delay'] = squareSum(float(response_delay), mean_dic[code]['delay'])
+                        counter_SS_dic[code]['delay'] = 1
+                        SS_dic[code]['response_time'] = squareSum(float(response_time), mean_dic[code]['response_time'])
+                        counter_SS_dic[code]['response_time'] = 1
+                        SD_dic[code]['localization'] = None
+                        SD_dic[code]['delay'] = None
+                        SD_dic[code]['response_time'] = None
+
+                for code in SD_dic:
+                    for key in SD_dic[code]:
+                        if code in SS_dic and key in SS_dic[code]:
+                            SD_dic[code][key] = sqrt(SS_dic[code][key]/counter_SS_dic[code][key])
+
+            for line in subject:
+                subject_num = line[0]
+                emotion = line[5]
+                distractors = line[7]
+                error = line[14]
+                response_time = line[15]
+                localization_time = line[16]
+                response_delay = line[17]
+                blink = line[20]
+                code = emotion + distractors
+                new_line = line
+                for key in mean_dic[code]:
+                    if key == 'localization':
+                        score = localization_time
+                    elif key == 'delay':
+                        score = response_delay
+                    elif key == 'response_time':
+                        score = response_time
+                    if SD_dic[code][key] != None and (error == '0' or error == 'CONG') and localization_time != 'None' and 'early capture' not in blink:
+                        current_mean = mean_dic[code][key]
+                        current_SD = SD_dic[code][key]
+                        if (float(score) > (float(current_mean) + 3*float(current_SD)) or float(score) < (float(current_mean) - 3*float(current_SD))):
+                                print(key, " in a ", emotion, distractors, " trial exceeds 3 SD for subject ", subject_num, " : ",
+                                      str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
+                                new_line.append("Deviant %s 3 SD" %key)
+                        elif (float(score) > (float(current_mean) + 2*float(current_SD)) or float(score) < (float(current_mean) - 2*float(current_SD))):
+                                print(key, " in a ", emotion, distractors, " trial exceeds 2 SD for subject ", subject_num, " : ",
+                                      str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
+                                new_line.append("Deviant %s 2 SD" %key)
+                        else:
+                            new_line.append("Normal %s value" %key)
+                    else:
+                        new_line.append("%s not relevant" %key)
+                s = ";".join([str(e) for e in new_line]) + "\n"
+                data_modified.write(s)
+        data_modified.close()
 
     @staticmethod
     def getDefaultResultsFile():
@@ -457,7 +603,7 @@ class Recherche_visuelle(Experiment):
             vid_name = 'subject_%i_training_%s.avi' % (subject_id, trial.getTrialId())
         else:
             vid_name = 'subject_%i_trial_%s.avi' % (subject_id, trial.getTrialId())
-            
+
         progress.setText(0, 'Loading frames')
         makeVideo(image_list, vid_name, fps=100/frequency)
         return vid_name

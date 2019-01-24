@@ -170,6 +170,129 @@ class Prosaccade(Experiment):
             f.write('\n')
         f.close()
 
+    def postProcess(self, filename: str):
+        # In the first version, only saccade durations with a duration higher than 100 ms could be considered as deviant.
+        with open(filename) as datafile:
+            data = datafile.read()
+        data_modified = open(filename, 'w')
+        data = data.split('\n')
+        data = [x.split(';') for x in data]
+        subject = "Subject"
+        sequence = []
+        data_seq = []
+
+        for line in data:
+            if line[0] == "Subject":
+                new_line = line
+                new_line.append('Saccade sorting')
+                new_line.append('Duration sorting')
+                s = ";".join([str(e) for e in new_line]) + "\n"
+                data_modified.write(s)
+            if line[0] != subject:
+                data_seq.append(sequence)
+                sequence = [line]
+                subject = line[0]
+            else:
+                sequence.append(line)
+        data = data_seq[1:]
+
+
+        for subject in data:
+            sum_dic = {}
+            counter_dic = {}
+            mean_dic = {}
+            SS_dic = {}
+            counter_SS_dic = {}
+            SD_dic = {}
+
+            for line in subject:
+                emotion = line[5]
+                error = line[9]
+                saccade = line[10]
+                duration = line[13]
+                blink = line[14]
+                if error == '0' and saccade != 'None' and "early" not in blink:
+                    if emotion in sum_dic:
+                        sum_dic[emotion]['saccade'] += float(saccade)
+                        counter_dic[emotion]['saccade'] += 1
+                        sum_dic[emotion]['duration'] += float(duration)
+                        counter_dic[emotion]['duration'] += 1
+                    else:
+                        sum_dic[emotion] = {}
+                        counter_dic[emotion] = {}
+                        mean_dic[emotion] = {}
+                        sum_dic[emotion]['saccade'] = float(saccade)
+                        counter_dic[emotion]['saccade'] = 1
+                        sum_dic[emotion]['duration'] = float(duration)
+                        counter_dic[emotion]['duration'] = 1
+                        mean_dic[emotion]['saccade'] = None
+                        mean_dic[emotion]['duration'] = None
+
+            for emotion in mean_dic:
+                for key in mean_dic[emotion]:
+                    if emotion in sum_dic and key in sum_dic[emotion]:
+                        mean_dic[emotion][key] = sum_dic[emotion][key]/counter_dic[emotion][key]
+
+            for line in subject:
+                emotion = line[5]
+                error = line[9]
+                saccade = line[10]
+                duration = line[13]
+                blink = line[14]
+                if error == "0" and saccade != "None" and "early" not in blink:
+                    if emotion in SS_dic:
+                        SS_dic[emotion]['saccade'] += squareSum(float(saccade), mean_dic[emotion]['saccade'])
+                        counter_SS_dic[emotion]['saccade'] += 1
+                        SS_dic[emotion]['duration'] += squareSum(float(duration), mean_dic[emotion]['duration'])
+                        counter_SS_dic[emotion]['duration'] += 1
+                    else:
+                        SS_dic[emotion] = {}
+                        counter_SS_dic[emotion] = {}
+                        SD_dic[emotion] = {}
+                        SS_dic[emotion]['saccade'] = squareSum(float(saccade), mean_dic[emotion]['saccade'])
+                        counter_SS_dic[emotion]['saccade'] = 1
+                        SS_dic[emotion]['duration'] = squareSum(float(duration), mean_dic[emotion]['duration'])
+                        counter_SS_dic[emotion]['duration'] = 1
+                        SD_dic[emotion]['saccade'] = None
+                        SD_dic[emotion]['duration'] = None
+
+                for emotion in SD_dic:
+                    for key in SD_dic[emotion]:
+                        if emotion in SS_dic and key in SS_dic[emotion]:
+                            SD_dic[emotion][key] = sqrt(SS_dic[emotion][key]/counter_SS_dic[emotion][key])
+
+            for line in subject:
+                subject_num = line[0]
+                emotion = line[5]
+                error = line[9]
+                saccade = line[10]
+                duration = line[13]
+                blink = line[14]
+                new_line = line
+                for key in mean_dic[emotion]:
+                    if key == 'saccade':
+                        score = saccade
+                    elif key == 'duration':
+                        score = duration
+                    if SD_dic[emotion][key] != None and error == "0" and saccade != "None" and "early" not in blink:
+                        current_mean = mean_dic[emotion][key]
+                        current_SD = SD_dic[emotion][key]
+                        if (float(score) > (float(current_mean) + 3*float(current_SD)) or float(score) < (float(current_mean) - 3*float(current_SD))):
+                                print(key, " in a ", emotion, " trial exceeds 3 SD for subject ", subject_num, " : ",
+                                      str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
+                                new_line.append("Deviant %s 3 SD" %key)
+                        elif (float(score) > (float(current_mean) + 2*float(current_SD)) or float(score) < (float(current_mean) - 2*float(current_SD))):
+                                print(key, " in a ", emotion, " trial exceeds 2 SD for subject ", subject_num, " : ",
+                                      str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
+                                new_line.append("Deviant %s 2 SD" %key)
+                        else:
+                            new_line.append("Normal %s value" %key)
+                    else:
+                        new_line.append("%s not relevant" %key)
+                s = ";".join([str(e) for e in new_line]) + "\n"
+                data_modified.write(s)
+        data_modified.close()
+
     @staticmethod
     def getDefaultResultsFile():
         return joinPaths(getResultsFolder(), 'antisaccade.csv')

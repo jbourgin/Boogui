@@ -167,6 +167,134 @@ class Gaze_contingent(Experiment):
         f.write('\n')
         f.close()
 
+    def postProcess(self, filename: str):
+        logTrace ('Post process to check', Precision.TITLE)
+        with open(filename) as datafile:
+            data = datafile.read()
+        data_modified = open(filename, 'w')
+        data = data.split('\n')
+        data = [x.split(';') for x in data]
+        subject = "Subject"
+        sequence = []
+        data_seq = []
+
+        for line in data:
+            if line[0] == "Subject":
+                new_line = line
+                new_line.append('First time on eyes')
+                new_line.append('Response time')
+                s = ";".join([str(e) for e in new_line]) + "\n"
+                data_modified.write(s)
+            if line[0] != subject:
+                data_seq.append(sequence)
+                sequence = [line]
+                subject = line[0]
+            else:
+                sequence.append(line)
+        data = data_seq[1:]
+
+        for subject in data:
+            sum_dic = {}
+            counter_dic = {}
+            mean_dic = {}
+            SS_dic = {}
+            counter_SS_dic = {}
+            SD_dic = {}
+
+            for line in subject:
+                task = line[4]
+                emotion = line[6]
+                error = line[12]
+                response_time = line[13]
+                first_eyes = line[14]
+                blink = line[17]
+                code = task + emotion
+                if code not in sum_dic:
+                    sum_dic[code] = {}
+                    counter_dic[code] = {}
+                    mean_dic[code] = {}
+                    sum_dic[code]['eyes'] = 0
+                    counter_dic[code]['eyes'] = 0
+                    mean_dic[code]['eyes'] = None
+                    sum_dic[code]['response_time'] = 0
+                    counter_dic[code]['response_time'] = 0
+                    mean_dic[code]['response_time'] = None
+                if first_eyes != 'None' and "early" not in blink:
+                    sum_dic[code]['eyes'] += float(first_eyes)
+                    counter_dic[code]['eyes'] += 1
+                if response_time != 'None' and "early" not in blink:
+                    sum_dic[code]['response_time'] += float(response_time)
+                    counter_dic[code]['response_time'] += 1
+
+            for code in mean_dic:
+                for key in mean_dic[code]:
+                    if sum_dic[code][key] != 0:
+                        mean_dic[code][key] = sum_dic[code][key]/counter_dic[code][key]
+
+            for line in subject:
+                task = line[4]
+                emotion = line[6]
+                error = line[12]
+                response_time = line[13]
+                first_eyes = line[14]
+                blink = line[17]
+                code = task + emotion
+                if code not in SS_dic:
+                    SS_dic[code] = {}
+                    counter_SS_dic[code] = {}
+                    SD_dic[code] = {}
+                    SS_dic[code]['eyes'] = 0
+                    counter_SS_dic[code]['eyes'] = 0
+                    SD_dic[code]['eyes'] = None
+                    SS_dic[code]['response_time'] = 0
+                    counter_SS_dic[code]['response_time'] = 0
+                    SD_dic[code]['response_time'] = None
+                if first_eyes != 'None' and "early" not in blink:
+                    SS_dic[code]['eyes'] += squareSum(float(first_eyes), mean_dic[code]['eyes'])
+                    counter_SS_dic[code]['eyes'] += 1
+                if response_time != 'None' and "early" not in blink:
+                    SS_dic[code]['response_time'] += squareSum(float(response_time), mean_dic[code]['response_time'])
+                    counter_SS_dic[code]['response_time'] += 1
+
+                for code in SD_dic:
+                    for key in SD_dic[code]:
+                        if SS_dic[code][key] != 0:
+                            SD_dic[code][key] = sqrt(SS_dic[code][key]/counter_SS_dic[code][key])
+
+            for line in subject:
+                subject_num = line[0]
+                task = line[4]
+                emotion = line[6]
+                error = line[12]
+                response_time = line[13]
+                first_eyes = line[14]
+                blink = line[17]
+                code = task + emotion
+                new_line = line
+                for key in mean_dic[code]:
+                    if key == 'first_eyes':
+                        score = first_eyes
+                    elif key == 'response_time':
+                        score = response_time
+                    if SD_dic[code][key] != None and error == "0" and score != "None" and "early" not in blink:
+                        current_mean = mean_dic[code][key]
+                        current_SD = SD_dic[code][key]
+                        if (float(score) > (float(current_mean) + 3*float(current_SD)) or float(score) < (float(current_mean) - 3*float(current_SD))):
+                                print(key, " in a ", emotion, " trial exceeds 3 SD for subject ", subject_num, " : ",
+                                      str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
+                                new_line.append("Deviant %s 3 SD" %key)
+                        elif (float(score) > (float(current_mean) + 2*float(current_SD)) or float(score) < (float(current_mean) - 2*float(current_SD))):
+                                print(key, " in a ", emotion, " trial exceeds 2 SD for subject ", subject_num, " : ",
+                                      str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
+                                new_line.append("Deviant %s 2 SD" %key)
+                        else:
+                            new_line.append("Normal %s value" %key)
+                    else:
+                        new_line.append("%s not relevant" %key)
+                s = ";".join([str(e) for e in new_line]) + "\n"
+                data_modified.write(s)
+        data_modified.close()
+
     @staticmethod
     def getDefaultResultsFile():
         return joinPaths(getResultsFolder(), 'gaze_contingent.csv')
@@ -198,7 +326,7 @@ class Gaze_contingent(Experiment):
             'First time on eyes',
             'Total fixation time on eyes',
             'Total fixation time on face (other than eyes)',
-            'First blink type'
+            'First blink type',
         ]))
         f.write('\n')
         f.close()

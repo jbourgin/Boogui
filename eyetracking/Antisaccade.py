@@ -216,6 +216,7 @@ class Antisaccade(Experiment):
         f.close()
 
     def postProcess(self, filename: str):
+        # In the first version, only saccade durations with a duration higher than 100 ms could be considered as deviant.
         with open(filename) as datafile:
             data = datafile.read()
         data_modified = open(filename, 'w')
@@ -316,7 +317,7 @@ class Antisaccade(Experiment):
                             SD_dic[emotion][key] = sqrt(SS_dic[emotion][key]/counter_SS_dic[emotion][key])
 
             for line in subject:
-                subject = line[0]
+                subject_num = line[0]
                 emotion = line[5]
                 error = line[9]
                 saccade_to_consider = line[10]
@@ -333,15 +334,15 @@ class Antisaccade(Experiment):
                         score = saccade
                     elif key == 'duration':
                         score = duration
-                    if mean_dic[emotion][key] != None and error == "0" and saccade != "None" and "early" not in blink:
+                    if SD_dic[emotion][key] != None and error == "0" and saccade != "None" and "early" not in blink:
                         current_mean = mean_dic[emotion][key]
                         current_SD = SD_dic[emotion][key]
                         if (float(score) > (float(current_mean) + 3*float(current_SD)) or float(score) < (float(current_mean) - 3*float(current_SD))):
-                                print(key, " in a ", emotion, " trial exceeds 3 SD for subject ", subject, " : ",
+                                print(key, " in a ", emotion, " trial exceeds 3 SD for subject ", subject_num, " : ",
                                       str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
                                 new_line.append("Deviant %s 3 SD" %key)
                         elif (float(score) > (float(current_mean) + 2*float(current_SD)) or float(score) < (float(current_mean) - 2*float(current_SD))):
-                                print(key, " in a ", emotion, " trial exceeds 2 SD for subject ", subject, " : ",
+                                print(key, " in a ", emotion, " trial exceeds 2 SD for subject ", subject_num, " : ",
                                       str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
                                 new_line.append("Deviant %s 2 SD" %key)
                         else:
