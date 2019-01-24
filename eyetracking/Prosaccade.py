@@ -144,29 +144,30 @@ class Prosaccade(Experiment):
             else:
                 error = None
 
-        # Writing data in result csv file
-        s = [str(subject.id) + '-E', # Subject name
-            subject.group,
-            trial_number,
-            trial.features['training'],
-            trial.eye,
-            emotion,
-            targetname,
-            trial.features['target_side'],
-            correct_position,
-            error,
-            trial.saccades[0].getStartTime() - start_trial_time,
-            trial.saccades[0].getFirstGazePosition(),
-            trial.saccades[0].getLastGazePosition(),
-            blink_category,
-            threshold_excess]
+            # Writing data in result csv file
+            s = [str(subject.id) + '-E', # Subject name
+                subject.group,
+                trial_number,
+                trial.features['training'],
+                trial.eye,
+                emotion,
+                targetname,
+                trial.features['target_side'],
+                correct_position,
+                error,
+                trial.saccades[0].getStartTime() - start_trial_time,
+                trial.saccades[0].getFirstGazePosition(),
+                trial.saccades[0].getLastGazePosition(),
+                trial.saccades[0].getEndTime() - trial.saccades[0].getStartTime(),
+                blink_category,
+                threshold_excess]
 
-        if filename is None:
-            f = open(getResultsFile(), 'a')
-        else:
-            f = open(filename, 'a')
-        f.write(';'.join([str(x) for x in s]))
-        f.write('\n')
+            if filename is None:
+                f = open(getResultsFile(), 'a')
+            else:
+                f = open(filename, 'a')
+            f.write(';'.join([str(x) for x in s]))
+            f.write('\n')
         f.close()
 
     @staticmethod
@@ -195,6 +196,7 @@ class Prosaccade(Experiment):
             'First saccade RT',
             'First saccade start gaze position',
             'First saccade ending gaze position',
+            'First saccade duration',
             'First blink type',
             'Threshold excess'
         ]))

@@ -11,6 +11,9 @@ def distance(point1 : Point, point2 : Point) -> float:
 def joinPaths(path1: str, path2: str) -> str:
     return os.path.join(path1, path2)
 
+def squareSum(score: float, global_mean: float):
+    return (float(score) - global_mean)*(float(score) - global_mean)
+
 def getTmpFolder() -> str:
     return '_tmp'
 

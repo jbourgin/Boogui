@@ -370,6 +370,9 @@ class Main(QMainWindow):
                 for trial in subjectData.subject.trials:
                     progress.increment(1)
                     subjectData.experiment.processTrial(subjectData.subject, trial, filename = filename)
+            for subjectData in self.subject_datas:
+                print(filename)
+                subjectData.experiment.postProcess(filename)
 
             # Closing progress bar
             progress.close()

@@ -5,6 +5,7 @@ from eyetracking.experiment import *
 from eyetracking.interest_region import *
 from eyetracking.scanpath import *
 import matplotlib.pyplot as plt
+from math import sqrt
 from PyQt5.QtWidgets import QApplication
 
 class Make_Eyelink(Eyelink):
@@ -107,18 +108,20 @@ class Antisaccade(Experiment):
             SRT2_real = None
             SRT2_first_gaze_position = None
             SRT2_last_gaze_position = None
+            SRT2_duration = None
             if len(trial.saccades) > 1:
                 SRT2 = trial.saccades[1].getStartTime() - start_trial_time
                 SRT2_first_gaze_position = trial.saccades[1].getFirstGazePosition()
                 SRT2_last_gaze_position = trial.saccades[1].getLastGazePosition()
                 SRT2_real = trial.saccades[1].getStartTime() - trial.saccades[0].getEndTime()
+                SRT2_duration = trial.saccades[1].getEndTime() - trial.saccades[1].getStartTime()
             if ((trial.saccades[0].getStartTime() - start_trial_time) < 80 and
                 distance(trial.saccades[0].getFirstGazePosition(), trial.saccades[0].getLastGazePosition()) < self.eyetracker.valid_distance_center and
                 distance(trial.saccades[0].getLastGazePosition(), self.eyetracker.screen_center) < self.eyetracker.valid_distance_center and
                 len(trial.saccades) > 1):
                 SRT_to_consider = 'Second saccade'
                 SRT_real = SRT2_real
-                sac_duration = trial.saccades[1].getEndTime() - trial.saccades[1].getStartTime()
+                sac_duration = SRT2_duration
                 sac_amplitude = distance(SRT2_first_gaze_position, SRT2_last_gaze_position)
                 horizontal_gaze_position_end = SRT2_last_gaze_position[0]
                 SRT_threshold = SRT2 + sac_duration
@@ -177,39 +180,177 @@ class Antisaccade(Experiment):
                             if saccade.getEndTime() - saccade.getStartTime() <= 130:
                                 correction = 'YES'
                             else:
-                                print(saccade.getEndTime() - saccade.getStartTime())
                                 correction = 'TOO LONG'
 
-        # Writing data in result csv file
-        s = [str(subject.id) + '-E', # Subject name
-            subject.group,
-            trial_number,
-            trial.features['training'],
-            trial.eye,
-            emotion,
-            targetname,
-            trial.features['target_side'],
-            correct_position,
-            error,
-            SRT_to_consider,
-            trial.saccades[0].getStartTime() - start_trial_time,
-            trial.saccades[0].getFirstGazePosition(),
-            trial.saccades[0].getLastGazePosition(),
-            SRT2,
-            SRT2_real,
-            SRT2_first_gaze_position,
-            SRT2_last_gaze_position,
-            correction,
-            blink_category,
-            threshold_excess]
+            # Writing data in result csv file
+            s = [str(subject.id) + '-E', # Subject name
+                subject.group,
+                trial_number,
+                trial.features['training'],
+                trial.eye,
+                emotion,
+                targetname,
+                trial.features['target_side'],
+                correct_position,
+                error,
+                SRT_to_consider,
+                trial.saccades[0].getStartTime() - start_trial_time,
+                trial.saccades[0].getFirstGazePosition(),
+                trial.saccades[0].getLastGazePosition(),
+                trial.saccades[0].getEndTime() - trial.saccades[0].getStartTime(),
+                SRT2,
+                SRT2_real,
+                SRT2_first_gaze_position,
+                SRT2_last_gaze_position,
+                SRT2_duration,
+                correction,
+                blink_category,
+                threshold_excess]
 
-        if filename is None:
-            f = open(getResultsFile(), 'a')
-        else:
-            f = open(filename, 'a')
-        f.write(';'.join([str(x) for x in s]))
-        f.write('\n')
+            if filename is None:
+                f = open(getResultsFile(), 'a')
+            else:
+                f = open(filename, 'a')
+            f.write(';'.join([str(x) for x in s]))
+            f.write('\n')
         f.close()
+
+    def postProcess(self, filename: str):
+        with open(filename) as datafile:
+            data = datafile.read()
+        data_modified = open(filename, 'w')
+        data = data.split('\n')
+        data = [x.split(';') for x in data]
+        subject = "Subject"
+        sequence = []
+        data_seq = []
+
+        for line in data:
+            if line[0] == "Subject":
+                new_line = line
+                new_line.append('Saccade sorting')
+                new_line.append('Duration sorting')
+                s = ";".join([str(e) for e in new_line]) + "\n"
+                data_modified.write(s)
+            if line[0] != subject:
+                data_seq.append(sequence)
+                sequence = [line]
+                subject = line[0]
+            else:
+                sequence.append(line)
+        data = data_seq[1:]
+
+
+        for subject in data:
+            sum_dic = {}
+            counter_dic = {}
+            mean_dic = {}
+            SS_dic = {}
+            counter_SS_dic = {}
+            SD_dic = {}
+
+            for line in subject:
+                emotion = line[5]
+                error = line[9]
+                saccade_to_consider = line[10]
+                if saccade_to_consider == "First saccade":
+                    saccade = line[11]
+                    duration = line[14]
+                elif saccade_to_consider == "Second saccade":
+                    saccade = line[16]
+                    duration = line[19]
+                blink = line[21]
+                if error == '0' and saccade != 'None' and "early" not in blink:
+                    if emotion in sum_dic:
+                        sum_dic[emotion]['saccade'] += float(saccade)
+                        counter_dic[emotion]['saccade'] += 1
+                        sum_dic[emotion]['duration'] += float(duration)
+                        counter_dic[emotion]['duration'] += 1
+                    else:
+                        sum_dic[emotion] = {}
+                        counter_dic[emotion] = {}
+                        mean_dic[emotion] = {}
+                        sum_dic[emotion]['saccade'] = float(saccade)
+                        counter_dic[emotion]['saccade'] = 1
+                        sum_dic[emotion]['duration'] = float(duration)
+                        counter_dic[emotion]['duration'] = 1
+                        mean_dic[emotion]['saccade'] = None
+                        mean_dic[emotion]['duration'] = None
+
+            for emotion in mean_dic:
+                for key in mean_dic[emotion]:
+                    if emotion in sum_dic and key in sum_dic[emotion]:
+                        mean_dic[emotion][key] = sum_dic[emotion][key]/counter_dic[emotion][key]
+
+            for line in subject:
+                emotion = line[5]
+                error = line[9]
+                saccade_to_consider = line[10]
+                if saccade_to_consider == "First saccade":
+                    saccade = line[11]
+                    duration = line[14]
+                elif saccade_to_consider == "Second saccade":
+                    saccade = line[16]
+                    duration = line[19]
+                blink = line[21]
+                if error == "0" and saccade != "None" and "early" not in blink:
+                    if emotion in SS_dic:
+                        SS_dic[emotion]['saccade'] += squareSum(float(saccade), mean_dic[emotion]['saccade'])
+                        counter_SS_dic[emotion]['saccade'] += 1
+                        SS_dic[emotion]['duration'] += squareSum(float(duration), mean_dic[emotion]['duration'])
+                        counter_SS_dic[emotion]['duration'] += 1
+                    else:
+                        SS_dic[emotion] = {}
+                        counter_SS_dic[emotion] = {}
+                        SD_dic[emotion] = {}
+                        SS_dic[emotion]['saccade'] = squareSum(float(saccade), mean_dic[emotion]['saccade'])
+                        counter_SS_dic[emotion]['saccade'] = 1
+                        SS_dic[emotion]['duration'] = squareSum(float(duration), mean_dic[emotion]['duration'])
+                        counter_SS_dic[emotion]['duration'] = 1
+                        SD_dic[emotion]['saccade'] = None
+                        SD_dic[emotion]['duration'] = None
+
+                for emotion in SD_dic:
+                    for key in SD_dic[emotion]:
+                        if emotion in SS_dic and key in SS_dic[emotion]:
+                            SD_dic[emotion][key] = sqrt(SS_dic[emotion][key]/counter_SS_dic[emotion][key])
+
+            for line in subject:
+                subject = line[0]
+                emotion = line[5]
+                error = line[9]
+                saccade_to_consider = line[10]
+                if saccade_to_consider == "First saccade":
+                    saccade = line[11]
+                    duration = line[14]
+                elif saccade_to_consider == "Second saccade":
+                    saccade = line[16]
+                    duration = line[19]
+                blink = line[21]
+                new_line = line
+                for key in mean_dic[emotion]:
+                    if key == 'saccade':
+                        score = saccade
+                    elif key == 'duration':
+                        score = duration
+                    if mean_dic[emotion][key] != None and error == "0" and saccade != "None" and "early" not in blink:
+                        current_mean = mean_dic[emotion][key]
+                        current_SD = SD_dic[emotion][key]
+                        if (float(score) > (float(current_mean) + 3*float(current_SD)) or float(score) < (float(current_mean) - 3*float(current_SD))):
+                                print(key, " in a ", emotion, " trial exceeds 3 SD for subject ", subject, " : ",
+                                      str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
+                                new_line.append("Deviant %s 3 SD" %key)
+                        elif (float(score) > (float(current_mean) + 2*float(current_SD)) or float(score) < (float(current_mean) - 2*float(current_SD))):
+                                print(key, " in a ", emotion, " trial exceeds 2 SD for subject ", subject, " : ",
+                                      str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
+                                new_line.append("Deviant %s 2 SD" %key)
+                        else:
+                            new_line.append("Normal %s value" %key)
+                    else:
+                        new_line.append("%s not relevant" %key)
+                s = ";".join([str(e) for e in new_line]) + "\n"
+                data_modified.write(s)
+        data_modified.close()
 
     @staticmethod
     def getDefaultResultsFile():
@@ -238,10 +379,12 @@ class Antisaccade(Experiment):
             'First saccade RT',
             'First saccade start gaze position',
             'First saccade ending gaze position',
+            'First saccade duration',
             'Second saccade RT (from trial starting)',
             'Second saccade real RT (from first saccade ending)',
             'Second saccade start gaze position',
             'Second saccade ending gaze position',
+            'Second saccade duration',
             'Error correction',
             'First blink type',
             'Threshold excess'
