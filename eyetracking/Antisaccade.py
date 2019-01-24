@@ -42,6 +42,7 @@ class Make_Eyelink(Eyelink):
 
     def isResponse(self, line: Line) -> bool :
         return len(line) >= 5 and 'END' in line[2] and 'TRANSITION' in line[3] and 'TIMEOUT' in line[4]
+
     def isTraining(self, trial) -> bool:
         return 'App' in trial.features['training']
 
@@ -148,13 +149,16 @@ class Antisaccade(Experiment):
                     blink_category = 'late'
 
             # Error :
-            if (not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)
-                or blink_category == 'early capture'
-                or SRT_real <= 80
-                or sac_duration < 22
-                or sac_amplitude < 20):
-                #or capture_delay_first < 100):
-                error = '#N/A'
+            if not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center):
+                error = "No valid start"
+            elif blink_category == 'early capture':
+                error = "Early blink"
+            elif SRT_real <= 80:
+                error = "Anticipation saccade"
+            elif sac_duration < 22:
+                error = "Short saccade"
+            elif sac_amplitude < 20:
+                error = "Micro saccade"
             elif ((correct_position == 'Right'
                   and horizontal_gaze_position_end < self.eyetracker.screen_center[0])
                   or (correct_position == 'Left'

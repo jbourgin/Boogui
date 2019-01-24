@@ -154,10 +154,12 @@ class Visual_selection(Experiment):
             first_image_to_look = 'NEU'
 
         # Error :
-        if (not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)
-            or blink_category == 'early capture' or first_fixation is None):
-            #or capture_delay_first < 100):
-            error = '#N/A'
+        if not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center):
+            error = "Not valid start"
+        elif blink_category == 'early capture':
+            error = "Early blink"
+        elif first_fixation is None:
+            error = "No fixation"
         else:
             if trial.isTraining():
                 error = '0'

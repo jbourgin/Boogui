@@ -181,7 +181,6 @@ class Trial:
             if variables != None:
                 for (key,value) in variables.items():
                     self.features[key] = value
-        print(self.features)
 
     # Returns the Start_trial entry of the trial.
     # The trial is assumed to be valid (see checkValid()).
@@ -237,18 +236,25 @@ class Trial:
             def End_saccade(time): return True
             def _(_): return False
         @match(Entry)
-        class is_something_else(object):
-            def Start_trial(time, trial_number, stimulus): return False
-            def Position(time, x, y) : return False
-            def _(_): return True
+        class is_position(object):
+            def Position(time, x, y): return True
+            def _(_): return False
 
+        last_gaze_entry = None
+        saccade_first = False
         # Check if a saccade had begun before the trial start
-        for entry in self.entries:
+        for entry in self.entries[1:]:
             if is_end_saccade(entry):
+                saccade_first = True
+                break
+            elif is_position(entry):
+                last_gaze_entry = entry
+            else:
+                break
+
+        if saccade_first:
+            if distance(last_gaze_entry.getGazePosition(), screen_center) > valid_distance_center:
                 return False
-                break
-            elif is_something_else(entry):
-                break
 
         first_pos = self.getFirstGazePosition()
         if first_pos == None or distance(first_pos.getGazePosition(), screen_center) > valid_distance_center:
@@ -310,11 +316,6 @@ class Trial:
                 if distance(closest_region.center, barycentre) < max_dist:
                     watched_region = closest_region
 
-            if current_region_fixation['begin'] == None and watched_region != None:
-                current_region_fixation['begin'] = fixation.getEntry(fixation.getBegin())
-                current_region_fixation['region'] = watched_region
-                current_region_fixation['end'] = fixation.getEntry(fixation.getEnd())
-
             # If we change of frame or encounter a blink, we end the previous fixation and add it to our list.
             if current_region_fixation['begin'] != None and (watched_region != current_region_fixation['region'] or blink_encountered):
                 current_region_fixation['time'] = current_region_fixation['end'].getTime() - current_region_fixation['begin'].getTime()
@@ -325,6 +326,12 @@ class Trial:
                     region_fixations.append(current_region_fixation)
 
                 current_region_fixation = initialize_region_fixation()
+
+            if current_region_fixation['begin'] == None and watched_region != None:
+                current_region_fixation['begin'] = fixation.getEntry(fixation.getBegin())
+                current_region_fixation['region'] = watched_region
+                current_region_fixation['end'] = fixation.getEntry(fixation.getEnd())
+
             # If we already have a fixation and are still in it, we continue it and just change the ending point.
             elif current_region_fixation['begin'] != None and watched_region == current_region_fixation['region']:
                 current_region_fixation['end'] = fixation.getEntry(fixation.getEnd())

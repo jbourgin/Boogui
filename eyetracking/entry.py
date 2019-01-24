@@ -146,6 +146,9 @@ class EntryList:
         self.begin = begin
         self.end = end
 
+    def __str__(self):
+        return 'EntryList starting at %i' % self.getStartTime()
+
     def getBegin(self) -> int :
         return self.begin
 

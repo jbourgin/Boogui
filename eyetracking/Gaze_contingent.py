@@ -127,11 +127,12 @@ class Gaze_contingent(Experiment):
                 blink_category = None
 
         # Error :
-        if (not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)
-            or trial.features['response'] == 'None'
-            or blink_category == 'early capture'):
-            #or capture_delay_first < 100):
-            error = '#N/A'
+        if not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center):
+            error = "Not valid start"
+        elif trial.features['response'] == 'None':
+            error = "No subject response"
+        elif blink_category == 'early capture':
+            error = "Early blink"
         else:
             if trial.features['cor_resp'] != trial.features['response']:
                 error = '1'

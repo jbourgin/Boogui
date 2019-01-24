@@ -257,12 +257,16 @@ class Visual_search(Experiment):
                 blink_category = "late"
 
         # Error :
-        if (not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)
-            or first_good_fixation is None
-            or trial.features['response'] == 'None'
-            or blink_category == 'early capture'
-            or capture_delay_first < 100):
-            error = '#N/A'
+        if not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center):
+            error = "Not valid start"
+        elif first_good_fixation is None:
+            error = "No fixation on target"
+        elif trial.features['response'] == 'None':
+            error = "No subject response"
+        elif blink_category == 'early capture':
+            error = "Early blink"
+        elif capture_delay_first < 100:
+            error = "Anticipation saccade"
         elif (subject.group == 'MA'
             and subject in list_patients_cong
             and congruency == "NO"
@@ -354,31 +358,30 @@ class Visual_search(Experiment):
                 response_delay = line[17]
                 blink = line[20]
                 code = emotion + distractors
+                if code not in sum_dic:
+                    sum_dic[code] = {}
+                    counter_dic[code] = {}
+                    mean_dic[code] = {}
+                    sum_dic[code]['localization'] = 0
+                    counter_dic[code]['localization'] = 0
+                    sum_dic[code]['delay'] = 0
+                    counter_dic[code]['delay'] = 0
+                    sum_dic[code]['response_time'] = 0
+                    counter_dic[code]['response_time'] = 0
+                    mean_dic[code]['localization'] = None
+                    mean_dic[code]['delay'] = None
+                    mean_dic[code]['response_time'] = None
                 if (error == '0' or error == 'CONG') and localization_time != 'None' and 'early capture' not in blink:
-                    if code in sum_dic:
-                        sum_dic[code]['localization'] += float(localization_time)
-                        counter_dic[code]['localization'] += 1
-                        sum_dic[code]['delay'] += float(response_delay)
-                        counter_dic[code]['delay'] += 1
-                        sum_dic[code]['response_time'] += float(response_time)
-                        counter_dic[code]['response_time'] += 1
-                    else:
-                        sum_dic[code] = {}
-                        counter_dic[code] = {}
-                        mean_dic[code] = {}
-                        sum_dic[code]['localization'] = float(localization_time)
-                        counter_dic[code]['localization'] = 1
-                        sum_dic[code]['delay'] = float(response_delay)
-                        counter_dic[code]['delay'] = 1
-                        sum_dic[code]['response_time'] = float(response_time)
-                        counter_dic[code]['response_time'] = 1
-                        mean_dic[code]['localization'] = None
-                        mean_dic[code]['delay'] = None
-                        mean_dic[code]['response_time'] = None
+                    sum_dic[code]['localization'] += float(localization_time)
+                    counter_dic[code]['localization'] += 1
+                    sum_dic[code]['delay'] += float(response_delay)
+                    counter_dic[code]['delay'] += 1
+                    sum_dic[code]['response_time'] += float(response_time)
+                    counter_dic[code]['response_time'] += 1
 
             for code in mean_dic:
                 for key in mean_dic[code]:
-                    if code in sum_dic and key in sum_dic[code]:
+                    if sum_dic[code][key] != 0:
                         mean_dic[code][key] = sum_dic[code][key]/counter_dic[code][key]
 
             for line in subject:
@@ -390,31 +393,30 @@ class Visual_search(Experiment):
                 response_delay = line[17]
                 blink = line[20]
                 code = emotion + distractors
+                if code not in SS_dic:
+                    SS_dic[code] = {}
+                    counter_SS_dic[code] = {}
+                    SD_dic[code] = {}
+                    SS_dic[code]['localization'] = 0
+                    counter_SS_dic[code]['localization'] = 0
+                    SS_dic[code]['delay'] = 0
+                    counter_SS_dic[code]['delay'] = 0
+                    SS_dic[code]['response_time'] = 0
+                    counter_SS_dic[code]['response_time'] = 0
+                    SD_dic[code]['localization'] = None
+                    SD_dic[code]['delay'] = None
+                    SD_dic[code]['response_time'] = None
                 if (error == '0' or error == 'CONG') and localization_time != 'None' and 'early capture' not in blink:
-                    if code in SS_dic:
-                        SS_dic[code]['localization'] += squareSum(float(localization_time), mean_dic[code]['localization'])
-                        counter_SS_dic[code]['localization'] += 1
-                        SS_dic[code]['delay'] += squareSum(float(response_delay), mean_dic[code]['delay'])
-                        counter_SS_dic[code]['delay'] += 1
-                        SS_dic[code]['response_time'] += squareSum(float(response_time), mean_dic[code]['response_time'])
-                        counter_SS_dic[code]['response_time'] += 1
-                    else:
-                        SS_dic[code] = {}
-                        counter_SS_dic[code] = {}
-                        SD_dic[code] = {}
-                        SS_dic[code]['localization'] = squareSum(float(localization_time), mean_dic[code]['localization'])
-                        counter_SS_dic[code]['localization'] = 1
-                        SS_dic[code]['delay'] = squareSum(float(response_delay), mean_dic[code]['delay'])
-                        counter_SS_dic[code]['delay'] = 1
-                        SS_dic[code]['response_time'] = squareSum(float(response_time), mean_dic[code]['response_time'])
-                        counter_SS_dic[code]['response_time'] = 1
-                        SD_dic[code]['localization'] = None
-                        SD_dic[code]['delay'] = None
-                        SD_dic[code]['response_time'] = None
+                    SS_dic[code]['localization'] += squareSum(float(localization_time), mean_dic[code]['localization'])
+                    counter_SS_dic[code]['localization'] += 1
+                    SS_dic[code]['delay'] += squareSum(float(response_delay), mean_dic[code]['delay'])
+                    counter_SS_dic[code]['delay'] += 1
+                    SS_dic[code]['response_time'] += squareSum(float(response_time), mean_dic[code]['response_time'])
+                    counter_SS_dic[code]['response_time'] += 1
 
                 for code in SD_dic:
                     for key in SD_dic[code]:
-                        if code in SS_dic and key in SS_dic[code]:
+                        if SS_dic[code][key] != 0:
                             SD_dic[code][key] = sqrt(SS_dic[code][key]/counter_SS_dic[code][key])
 
             for line in subject:
