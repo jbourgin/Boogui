@@ -20,16 +20,16 @@ class Trial:
         self.experiment = experiment
         # List of entries
         self.entries = []
-            # Dictionary of trial features
+        # Dictionary of trial features
         self.features = None
-            # List of saccades
+        # List of saccades
         self.saccades = []
-            # List of fixations
+        # List of fixations
         self.fixations = []
-            # List of blinks
+        # List of blinks
         self.blinks = []
-            # Dominant eye.
-            # Either "Left" or "Right"
+        # Dominant eye.
+        # Either "Left" or "Right"
         self.eye = None
 
         self.is_training = False

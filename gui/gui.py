@@ -265,6 +265,10 @@ class Main(QMainWindow):
 
         self.clear_layouts()
 
+    def raiseWarning(self, error_message : str) -> None:
+        error_dialog = QMessageBox()
+        error_dialog.warning(self, 'Error', error_message)
+
     ###########################
     ####### Experiments #######
     ###########################
@@ -328,7 +332,8 @@ class Main(QMainWindow):
                 selected_experiment = self.getExperiment()
 
                 try:
-                    self.subject_datas.append(SubjectData(selected_experiment(), filename, self.frequency, progress))
+                    subject = SubjectData(selected_experiment(), filename, self.frequency, progress)
+                    self.subject_datas.append(subject)
 
                     # Adding subject button
                     n_subject = len(self.subject_datas) - 1
@@ -339,9 +344,8 @@ class Main(QMainWindow):
                     button.clicked.connect(self.make_choose_subject(n_subject))
                     progress.increment(0)
 
-                except ExperimentException as e:
-                    error_dialog = QMessageBox()
-                    error_dialog.warning(self, 'Error', 'File %s could not be read:\n%s' % (filename, str(e)))
+                except Exception as e:
+                    self.raiseWarning('File %s could not be read:\n%s' % (filename, str(e)))
 
             #closing message box
             progress.close()
@@ -356,21 +360,25 @@ class Main(QMainWindow):
         filename,_ = filedialog.getSaveFileName(self, 'Save File')
         # Creation of results file
         if len(filename) > 0:
-            # Progress bar
-            progress = ProgressWidget(self, 2)
-            progress.setText(0, 'Exporting Subjects')
-            progress.setMaximum(0, len(self.subject_datas))
+            try:
+                # Progress bar
+                progress = ProgressWidget(self, 2)
+                progress.setText(0, 'Exporting Subjects')
+                progress.setMaximum(0, len(self.subject_datas))
 
-            selected_experiment = self.getExperiment()
-            selected_experiment().makeResultFile(filename)
-            for subjectData in self.subject_datas:
-                progress.increment(0)
-                progress.setText(1, 'Exporting Trials')
-                progress.setMaximum(1, len(subjectData.subject.trials))
-                for trial in subjectData.subject.trials:
-                    progress.increment(1)
-                    subjectData.experiment.processTrial(subjectData.subject, trial, filename = filename)
-            selected_experiment().postProcess(filename)
+                selected_experiment = self.getExperiment()
+                selected_experiment().makeResultFile(filename)
+                for subjectData in self.subject_datas:
+                    progress.increment(0)
+                    progress.setText(1, 'Exporting Trials')
+                    progress.setMaximum(1, len(subjectData.subject.trials))
+                    for trial in subjectData.subject.trials:
+                        progress.increment(1)
+                        subjectData.experiment.processTrial(subjectData.subject, trial, filename = filename)
+                selected_experiment().postProcess(filename)
+
+            except Exception as e:
+                self.raiseWarning('Error while exporting to file %s: \n%s', filename, str(e))
 
             # Closing progress bar
             progress.close()

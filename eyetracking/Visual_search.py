@@ -160,6 +160,7 @@ class Visual_search(Experiment):
     def __init__(self):
         super().__init__(None)
         self.n_trials = 120
+        self.expected_features = {'target_hp', 'target_vp', 'num_of_dis', 'cor_resp', 'response', 'target_side'}
 
     def selectEyetracker(self, input_file : str) -> None:
         eyelink = Make_Eyelink()
@@ -623,7 +624,7 @@ class Visual_search(Experiment):
         except:
             return None
 
-    def processSubject(self, input_file : str, progress = None) -> Subject:
+    def parseSubject(self, input_file : str, progress = None) -> Subject:
 
         self.selectEyetracker(input_file)
 

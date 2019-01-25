@@ -71,6 +71,7 @@ class Antisaccade(Experiment):
     def __init__(self):
         super().__init__(None)
         self.n_trials = 96
+        self.expected_features = {'training', 'target_side'}
 
     def selectEyetracker(self, input_file : str) -> None:
         logTrace ('Selecting Eyelink', Precision.NORMAL)
@@ -489,7 +490,7 @@ class Antisaccade(Experiment):
         except:
             return None
 
-    def processSubject(self, input_file : str, progress = None) -> Subject:
+    def parseSubject(self, input_file : str, progress = None) -> Subject:
 
         self.selectEyetracker(input_file)
 
