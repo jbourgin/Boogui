@@ -72,6 +72,7 @@ class Visual_selection(Experiment):
         super().__init__(None)
         logTrace ('Number of trials to change', Precision.TITLE)
         self.n_trials = 9 #80
+        self.expected_features = {'stim1', 'stim2', 'arrow', 'emotion', 'target_side', 'position_emo', 'position_neu'}
 
     def selectEyetracker(self, input_file : str) -> None:
         logTrace ('Selecting Eyelink', Precision.NORMAL)
@@ -479,7 +480,7 @@ class Visual_selection(Experiment):
         except:
             return None
 
-    def processSubject(self, input_file : str, progress = None) -> Subject:
+    def parseSubject(self, input_file : str, progress = None) -> Subject:
 
         self.selectEyetracker(input_file)
 

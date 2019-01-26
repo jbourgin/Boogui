@@ -14,6 +14,7 @@ class Experiment (ABC):
 
     def __init__(self, eyetracker):
         self.eyetracker = eyetracker
+        self.expected_features = set()
 
     @abstractmethod
     def processTrial(self, subject : Subject, trial : Trial) -> None:
@@ -28,10 +29,24 @@ class Experiment (ABC):
     def scanpathVideo(self, subject_id : int, trial : Trial, frequency : int, progress = None) -> str:
         pass
 
-    @abstractmethod
     def processSubject(self, input_file: str, progress_bar = None) -> Subject:
+        subject = self.parseSubject(input_file, progress_bar)
+        if self.isSubjectValid(subject):
+            return subject
+        else:
+            raise ExperimentException('File %s does not fit the experiment' % input_file)
+
+    @abstractmethod
+    def parseSubject(self, input_file : str, progress_bar) -> Subject:
         pass
 
     @abstractmethod
     def makeResultFile() -> None:
         pass
+
+    # Returns true if this subject made this experiment
+    def isSubjectValid(self, subject : Subject) -> bool:
+        if len(subject.trials) == 0:
+            return false
+        features = subject.trials[0].features.keys()
+        return self.expected_features == features
