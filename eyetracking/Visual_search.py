@@ -54,8 +54,8 @@ class Make_Eyelink(Eyelink):
                     target_hp = int(line[10]) + self.screen_center[0]
                     target_vp = int(line[15]) + self.screen_center[1]
                     num_of_dis = int(line[5])
-                    cor_resp = int(line[20])
-                    response = int(line[24])
+                    cor_resp = line[20]
+                    response = line[24]
                     if target_hp < self.screen_center[0]:
                         target_side = "L"
                     else:
@@ -124,8 +124,8 @@ class Make_Smi(Smi):
                 target_hp = int(line[9]) + self.screen_center[0]
                 target_vp = int(line[11]) + self.screen_center[1]
                 num_of_dis = int(line[7])
-                cor_resp = int(line[13])
-                response = int(line[15])
+                cor_resp = line[13]
+                response = line[15]
                 if target_hp < self.screen_center[0]:
                     target_side = "L"
                 else:
@@ -178,7 +178,6 @@ class Visual_search(Experiment):
 
     def processTrial(self, subject, trial, filename = None):
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
-        logTrace ('The first SMI version had a redefinition of frames', Precision.TITLE)
         trial_number = trial.getTrialId()
 
         if trial.saccades == []:
@@ -221,8 +220,8 @@ class Visual_search(Experiment):
 
         #We determine congruency between target side and frame break side.
         congruency = None
-        if ((trial.features['target_hp'] < self.eyetracker.screen_center[0] and trial.features['cor_resp'] == 1)
-        or (trial.features['target_hp'] > self.eyetracker.screen_center[0] and trial.features['cor_resp'] == 2)):
+        if ((trial.features['target_hp'] < self.eyetracker.screen_center[0] and trial.features['cor_resp'] == '1')
+        or (trial.features['target_hp'] > self.eyetracker.screen_center[0] and trial.features['cor_resp'] == '2')):
             congruency = "YES"
         else:
             congruency = "NO"
@@ -502,7 +501,7 @@ class Visual_search(Experiment):
     	ru_corner = [region.center[0]+region.half_width, region.center[1]+region.half_height]
     	rb_corner = [region.center[0]+region.half_width, region.center[1]-region.half_height]
 
-    	if cor_resp == 2:
+    	if cor_resp == '2':
     		hole_up = [region.center[0]+region.half_width, region.center[1]+30]
     		hole_down = [region.center[0]+region.half_width, region.center[1]-30]
     		plotSegment(lu_corner, lb_corner, c=color)
@@ -511,7 +510,7 @@ class Visual_search(Experiment):
     		plotSegment(hole_up, ru_corner, c=color)
     		plotSegment(ru_corner, lu_corner, c=color)
 
-    	elif cor_resp == 1:
+    	elif cor_resp == '1':
     		hole_up = [region.center[0]-region.half_width, region.center[1]+30]
     		hole_down = [region.center[0]-region.half_width, region.center[1]-30]
     		plotSegment(lb_corner, rb_corner, c=color)

@@ -153,7 +153,6 @@ class Eyelink (Eyetracker):
     def parseVariables(self, line: Line):
         pass
 
-    @abstractmethod
     def parseMessage(self, line: Line):
         return None
 

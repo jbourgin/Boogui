@@ -15,7 +15,7 @@ class Make_Eyelink(Eyelink):
         self.screen_center = (960,540)
         # Minimal distance at which we consider the subject is looking at the
         # fixation cross at the trial beginning
-        self.valid_distance_center = 300#140 #3 degres of visual angle 95 (+ marge)
+        self.valid_distance_center = 140 #3 degres of visual angle 95 (+ marge)
 
         # Initializing regions of interest
         self.half_width = 182
@@ -42,7 +42,7 @@ class Make_Eyelink(Eyelink):
                     gender = line[8]
                     target_side = line[9]
                     response = line[10]
-                    cor_resp = int(line[11])
+                    cor_resp = line[11]
                     response_time = line[12]
 
                 return {
@@ -112,9 +112,11 @@ class Gaze_contingent(Experiment):
         if trial.features['target_side'] == 'Left':
             eye_position = self.eyetracker.left_gaze
             face_position = self.eyetracker.left_face
+            start_point = (self.eyetracker.screen_center[0]*1.5, self.eyetracker.screen_center[1])
         elif trial.features['target_side'] == 'Right':
             eye_position = self.eyetracker.right_gaze
             face_position = self.eyetracker.right_face
+            start_point = (self.eyetracker.screen_center[0]/2, self.eyetracker.screen_center[1])
         regions = InterestRegionList([eye_position, face_position])
 
         start_trial_time = trial.getStartTrial().getTime()
@@ -156,7 +158,8 @@ class Gaze_contingent(Experiment):
                 blink_category = None
 
         # Error :
-        if not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)[0]:
+
+        if not trial.isStartValid(start_point, self.eyetracker.valid_distance_center)[0]:
             error = "Not valid start"
         elif trial.features['response'] == 'None':
             error = "No subject response"
@@ -184,7 +187,7 @@ class Gaze_contingent(Experiment):
             trial.features['response'],
             error,
             trial.features['response_time'],
-            trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)[1],
+            trial.isStartValid(start_point, self.eyetracker.valid_distance_center)[1],
             capture_delay_first,
             total_eye_fixation_time,
             total_faceNotEye_fixation_time,
