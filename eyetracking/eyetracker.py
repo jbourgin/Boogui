@@ -29,6 +29,10 @@ class Eyetracker (ABC):
         pass
 
     @abstractmethod
+    def parseMessage(line: List[str]) -> Union[Entry, None]:
+        pass
+
+    @abstractmethod
     def isResponse(line: List[str]) -> bool:
         pass
 

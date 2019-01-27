@@ -37,6 +37,9 @@ class Entry:
     # Subject response
     Response = constructor ('time')
 
+    # Message
+    Message = constructor ('time', 'message')
+
     # Trial features
     Experiment_variables = constructor ('time', 'variables')
 
@@ -69,6 +72,8 @@ class entry_to_string(object):
 
     def Response(time): return 'Response at %i' % time
 
+    def Message(time, message): return '%s at %i' % (message, time)
+
     def Experiment_variables(time, variables): return 'Variables at %i: %s' % (time, str(variables))
 
     def Start_trial(time, trial_number, stimulus): return 'Start Trial number %i at %i: %s' % (trial_number, time, stimulus)
@@ -100,6 +105,10 @@ class checkEntry(object):
     def Response(time):
         if type(time) != int: raise EntryException('Time of Response is not int')
 
+    def Message(time, message):
+        if type(message) != str: raise EntryException('Message is not string')
+        if type(time) != int: raise EntryException('Time of %s is not int' % message)
+
     # TODO: tester features
     def Experiment_variables(time, variables):
         if type(time) != int: raise EntryException('Time of Features is not int')
@@ -123,6 +132,7 @@ class getTime(object):
     def Start_blink(time): return time
     def End_blink(time): return time
     def Response(time): return time
+    def Message(time, message): return time
     def Experiment_variables(time, variables): return time
     def Start_trial(time, trial_number, stimulus): return time
     def Stop_trial(time): return time

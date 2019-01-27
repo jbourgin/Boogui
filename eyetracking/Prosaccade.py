@@ -125,7 +125,7 @@ class Prosaccade(Experiment):
                     blink_category = 'late'
 
             # Error :
-            if not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center):
+            if not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)[0]:
                 error = "No valid start"
             elif blink_category == 'early capture':
                 error = "Early blink"

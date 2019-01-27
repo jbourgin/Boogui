@@ -11,10 +11,11 @@ class Make_Eyelink(Eyelink):
     def __init__(self):
         super().__init__()
         # Center of the screen.
-        self.screen_center = (960,600)
+        logTrace ('Screen size to change', Precision.TITLE)
+        self.screen_center = (960,540)
         # Minimal distance at which we consider the subject is looking at the
         # fixation cross at the trial beginning
-        self.valid_distance_center = 140 #3 degres of visual angle 95 (+ marge)
+        self.valid_distance_center = 300#140 #3 degres of visual angle 95 (+ marge)
 
         # Initializing regions of interest
         self.half_width = 182
@@ -59,8 +60,18 @@ class Make_Eyelink(Eyelink):
                 pass
         return None
 
+    def parseMessage(self, line: List[str]):
+        if len(line) > 6 and line[4] == "showing":
+            try:
+                time = int(line[1])
+                message = 'End image showing'
+                return Entry.Message(time, message)
+            except:
+                pass
+        return None
+
     def isResponse(self, line: Line) -> bool :
-        return len(line) >= 5 and 'showing' in line[4]
+        return len(line) >= 5 and 'responded' in line[4]
 
     def isTraining(self, trial) -> bool:
         return 'Training' in trial.features['training']
@@ -76,28 +87,45 @@ class Gaze_contingent(Experiment):
         logTrace ('Selecting Eyelink', Precision.NORMAL)
         self.eyetracker = Make_Eyelink()
 
+    def returnStopImageEntry(self, trial) -> int:
+        @match(Entry)
+        class checkMessage(object):
+            def Message(time, message):
+                return 'End image showing' in message
+            def _(_):
+                return False
+
+        for count, entry in enumerate(trial.entries):
+            if checkMessage(entry):
+                return count
+        return None
+
     def processTrial(self, subject, trial, filename = None):
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
         trial_number = trial.getTrialId()
+
+        #if len(line) >= 5 and 'response' in line[3] and 'screen' in line[4]:
 
         if trial.saccades == []:
             logTrace ("Subject %i has no saccades at trial %i !" %(subject.id,trial_number), Precision.DETAIL)
 
         if trial.features['target_side'] == 'Left':
-            gaze_position = self.eyetracker.left_gaze
+            eye_position = self.eyetracker.left_gaze
             face_position = self.eyetracker.left_face
         elif trial.features['target_side'] == 'Right':
-            gaze_position = self.eyetracker.right_gaze
+            eye_position = self.eyetracker.right_gaze
             face_position = self.eyetracker.right_face
-        regions = InterestRegionList([gaze_position, face_position])
+        regions = InterestRegionList([eye_position, face_position])
 
         start_trial_time = trial.getStartTrial().getTime()
 
         targetname = trial.getStimulus()
 
+        end_line = self.returnStopImageEntry(trial)
+
         response_entry = trial.getResponse()
 
-        region_fixations = trial.getFixationTime(regions, gaze_position)
+        region_fixations = trial.getFixationTime(regions, eye_position, end_line)
 
         # First and last good fixations
         try:
@@ -128,7 +156,7 @@ class Gaze_contingent(Experiment):
                 blink_category = None
 
         # Error :
-        if not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center):
+        if not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)[0]:
             error = "Not valid start"
         elif trial.features['response'] == 'None':
             error = "No subject response"
@@ -144,7 +172,7 @@ class Gaze_contingent(Experiment):
         s = [str(subject.id) + "-E", # Subject name
             subject.group,
             trial_number,
-            #trial.features['session'],
+            trial.features['session'],
             trial.features['training'],
             trial.features['global_task'],
             trial.eye,
@@ -156,6 +184,7 @@ class Gaze_contingent(Experiment):
             trial.features['response'],
             error,
             trial.features['response_time'],
+            trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)[1],
             capture_delay_first,
             total_eye_fixation_time,
             total_faceNotEye_fixation_time,
@@ -170,7 +199,6 @@ class Gaze_contingent(Experiment):
         f.close()
 
     def postProcess(self, filename: str):
-        logTrace ('Post process to check', Precision.TITLE)
         with open(filename) as datafile:
             data = datafile.read()
         data_modified = open(filename, 'w')
@@ -204,12 +232,12 @@ class Gaze_contingent(Experiment):
             SD_dic = {}
 
             for line in subject:
-                task = line[4]
-                emotion = line[6]
-                error = line[12]
-                response_time = line[13]
-                first_eyes = line[14]
-                blink = line[17]
+                task = line[5]
+                emotion = line[7]
+                error = line[13]
+                response_time = line[14]
+                first_eyes = line[16]
+                blink = line[19]
                 code = task + emotion
                 if code not in sum_dic:
                     sum_dic[code] = {}
@@ -234,12 +262,12 @@ class Gaze_contingent(Experiment):
                         mean_dic[code][key] = sum_dic[code][key]/counter_dic[code][key]
 
             for line in subject:
-                task = line[4]
-                emotion = line[6]
-                error = line[12]
-                response_time = line[13]
-                first_eyes = line[14]
-                blink = line[17]
+                task = line[5]
+                emotion = line[7]
+                error = line[13]
+                response_time = line[14]
+                first_eyes = line[16]
+                blink = line[19]
                 code = task + emotion
                 if code not in SS_dic:
                     SS_dic[code] = {}
@@ -265,12 +293,12 @@ class Gaze_contingent(Experiment):
 
             for line in subject:
                 subject_num = line[0]
-                task = line[4]
-                emotion = line[6]
-                error = line[12]
-                response_time = line[13]
-                first_eyes = line[14]
-                blink = line[17]
+                task = line[5]
+                emotion = line[7]
+                error = line[13]
+                response_time = line[14]
+                first_eyes = line[16]
+                blink = line[19]
                 code = task + emotion
                 new_line = line
                 for key in mean_dic[code]:
@@ -313,7 +341,7 @@ class Gaze_contingent(Experiment):
             'Subject',
             'Group',
             'TrialID',
-            #'Session',
+            'Session',
             'Training',
             'Task',
             'Eye',
@@ -325,6 +353,7 @@ class Gaze_contingent(Experiment):
             'Response',
             'Errors',
             'Response time',
+            'First gaze position',
             'First time on eyes',
             'Total fixation time on eyes',
             'Total fixation time on face (other than eyes)',

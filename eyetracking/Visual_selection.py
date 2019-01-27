@@ -11,7 +11,8 @@ class Make_Eyelink(Eyelink):
     def __init__(self):
         super().__init__()
         # Center of the screen.
-        self.screen_center = (683,384)
+        logTrace ('Screen size to change', Precision.TITLE)
+        self.screen_center = (512,384)
         # Minimal distance at which we consider the subject is looking at the
         # fixation cross at the trial beginning
         self.valid_distance_center = 100 #3 degres of visual angle 95 (+ marge)
@@ -70,8 +71,7 @@ class Visual_selection(Experiment):
 
     def __init__(self):
         super().__init__(None)
-        logTrace ('Number of trials to change', Precision.TITLE)
-        self.n_trials = 9 #80
+        self.n_trials = 80
         self.expected_features = {'stim1', 'stim2', 'arrow', 'emotion', 'target_side', 'position_emo', 'position_neu'}
 
     def selectEyetracker(self, input_file : str) -> None:
@@ -155,7 +155,7 @@ class Visual_selection(Experiment):
             first_image_to_look = 'NEU'
 
         # Error :
-        if not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center):
+        if not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)[0]:
             error = "Not valid start"
         elif blink_category == 'early capture':
             error = "Early blink"
@@ -175,7 +175,6 @@ class Visual_selection(Experiment):
         s = [str(subject.id) + "-E", # Subject name
             subject.group,
             trial_number,
-            #trial.features['session'],
             trial.isTraining(),
             trial.eye,
             trial.features['emotion'],
@@ -203,7 +202,6 @@ class Visual_selection(Experiment):
         f.close()
 
     def postProcess(self, filename: str):
-        logTrace ('Post process to check', Precision.TITLE)
         with open(filename) as datafile:
             data = datafile.read()
         data_modified = open(filename, 'w')

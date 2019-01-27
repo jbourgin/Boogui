@@ -258,7 +258,7 @@ class Visual_search(Experiment):
                 blink_category = "late"
 
         # Error :
-        if not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center):
+        if not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)[0]:
             error = "Not valid start"
         elif first_good_fixation is None:
             error = "No fixation on target"

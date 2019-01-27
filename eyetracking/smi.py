@@ -144,6 +144,10 @@ class Smi (Eyetracker):
     def parseVariables(self, line: Line):
         pass
 
+    @abstractmethod
+    def parseMessage(self, line: Line):
+        return None
+
     def parseEntry(self, line: List[str]) -> Entry:
         parsers = [self.parseStartTrial,
             self.parseStopTrial,
@@ -155,7 +159,8 @@ class Smi (Eyetracker):
             self.parseStartSaccade,
             self.parseEndSaccade,
             self.parseResponse,
-            self.parseExperimentVariables]
+            self.parseExperimentVariables,
+            self.parseMessage]
 
         for parser in parsers:
             res = parser(line)

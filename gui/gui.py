@@ -378,7 +378,7 @@ class Main(QMainWindow):
                 selected_experiment().postProcess(filename)
 
             except Exception as e:
-                self.raiseWarning('Error while exporting to file %s: \n%s', filename, str(e))
+                self.raiseWarning('Error while exporting to file %s: \n%s' % (filename, str(e)))
 
             # Closing progress bar
             progress.close()
