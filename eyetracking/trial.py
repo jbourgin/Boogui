@@ -352,14 +352,16 @@ class Trial:
 
         return region_fixations
 
-    def getGazePoints(self) -> List[Point] :
+    def getGazePoints(self, end_line = None) -> List[Point] :
         @match(Entry)
         class isResponse(object):
             def Response(time) : return True
             def _(_): return False
 
         point_list = []
-        for entry in self.entries:
+        for count, entry in enumerate(self.entries):
+            if end_line is not None and count >= end_line:
+                break
             if isResponse(entry):
                 break
             else:
@@ -370,12 +372,12 @@ class Trial:
         return point_list
 
     # Plot the trial on the current image
-    def plot(self, frequency: int):
+    def plot(self, frequency: int, end_line = None):
 
         nb_points = 0
         color = (1,1,0)
 
-        point_list = self.getGazePoints()
+        point_list = self.getGazePoints(end_line)
         nb_points = float(len(point_list))
 
         for i in range(0,len(point_list)-frequency,frequency):

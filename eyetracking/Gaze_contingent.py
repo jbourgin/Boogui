@@ -367,6 +367,8 @@ class Gaze_contingent(Experiment):
     def scanpath(self, subject_id, trial, frequency : int):
         plt.clf()
 
+        end_line = self.returnStopImageEntry(trial)
+
         frame_color = (0,0,0)
         x_axis = self.eyetracker.screen_center[0] * 2
         y_axis = self.eyetracker.screen_center[1] * 2
@@ -383,7 +385,7 @@ class Gaze_contingent(Experiment):
             plotRegion(self.eyetracker.right_gaze, frame_color)
 
         # Plotting gaze positions
-        trial.plot(frequency)
+        trial.plot(frequency, end_line)
         if trial.isTraining():
             image_name = 'subject_%i_training_%i.png' % (subject_id, trial.getTrialId())
         else:
@@ -394,7 +396,8 @@ class Gaze_contingent(Experiment):
     # Creates a video scanpath for one trial.
     def scanpathVideo(self, subject_id, trial, frequency : int, progress = None):
         n_elem_drawn = 20
-        point_list = trial.getGazePoints()
+        end_line = self.returnStopImageEntry(trial)
+        point_list = trial.getGazePoints(end_line)
         nb_points = len(point_list)
         frame_color = (0,0,0)
         point_color = (1,1,0)
