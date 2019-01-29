@@ -46,7 +46,7 @@ class Experiment (ABC):
 
     # Returns true if this subject made this experiment
     def isSubjectValid(self, subject : Subject) -> bool:
-        if len(subject.trials) == 0:
+        if len(subject.trials) == 0 or self.expected_features == set():
             return false
         features = subject.trials[0].features.keys()
         return self.expected_features == features

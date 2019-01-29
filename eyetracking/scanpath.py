@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import os
 from eyetracking.utils import *
 from eyetracking.interest_region import *
+from math import pi
 
 def plotSegment(point1 : Point, point2 : Point, c = 'black', alpha = 1.0) -> None:
 	if point1[0] == point2[0] and point1[1] == point2[1]:
@@ -22,6 +23,7 @@ def plotRectangle(center : Point, color, half_width, half_height) -> None:
 	plotSegment(rb_corner, ru_corner, c=color)
 	plotSegment(ru_corner, lu_corner, c=color)
 
+'''
 def plotEllipse(region, color) -> None:
     (x,y) = region.center
     big_ellipse = EllipseRegion(region.center, region.half_width+1, region.half_height+1)
@@ -29,6 +31,21 @@ def plotEllipse(region, color) -> None:
         for n in range(y-big_ellipse.half_height, y+big_ellipse.half_height):
             if big_ellipse.point_inside((m,n)) and not region.point_inside((m,n)):
                 plotPoint((m,n), color)
+'''
+
+
+def plotEllipse(region, color) -> None:
+    (x,y) = region.center
+    n_segments = 5
+    l = [i*2*pi / n_segments for i in range(n_segments)]
+    for i in range(len(l)):
+        t = l[i]
+        x1 = region.half_width * cos(t)
+        y1 = region.half_height * sin(t)
+        t2 = l[(i+1) % len(l)]
+        x2 = region.half_width * cos(t2)
+        y2 = region.half_height * sin(t2)
+        plotSegment ((x1,y1), (x2,y2), c = color)
 
 def plotRegion(region : InterestRegion, color) -> None:
     if region.type == 'RECTANGLE':
