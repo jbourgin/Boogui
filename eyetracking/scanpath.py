@@ -23,28 +23,17 @@ def plotRectangle(center : Point, color, half_width, half_height) -> None:
 	plotSegment(rb_corner, ru_corner, c=color)
 	plotSegment(ru_corner, lu_corner, c=color)
 
-'''
 def plotEllipse(region, color) -> None:
     (x,y) = region.center
-    big_ellipse = EllipseRegion(region.center, region.half_width+1, region.half_height+1)
-    for m in range(x-big_ellipse.half_width, x+big_ellipse.half_width):
-        for n in range(y-big_ellipse.half_height, y+big_ellipse.half_height):
-            if big_ellipse.point_inside((m,n)) and not region.point_inside((m,n)):
-                plotPoint((m,n), color)
-'''
-
-
-def plotEllipse(region, color) -> None:
-    (x,y) = region.center
-    n_segments = 5
+    n_segments = 15
     l = [i*2*pi / n_segments for i in range(n_segments)]
     for i in range(len(l)):
         t = l[i]
-        x1 = region.half_width * cos(t)
-        y1 = region.half_height * sin(t)
+        x1 = x + region.half_width * cos(t)
+        y1 = y + region.half_height * sin(t)
         t2 = l[(i+1) % len(l)]
-        x2 = region.half_width * cos(t2)
-        y2 = region.half_height * sin(t2)
+        x2 = x + region.half_width * cos(t2)
+        y2 = y + region.half_height * sin(t2)
         plotSegment ((x1,y1), (x2,y2), c = color)
 
 def plotRegion(region : InterestRegion, color) -> None:
