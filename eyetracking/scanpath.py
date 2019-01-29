@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import os
 from eyetracking.utils import *
 from eyetracking.interest_region import *
-from math import pi
+from math import pi, cos, sin
 
 def plotSegment(point1 : Point, point2 : Point, c = 'black', alpha = 1.0) -> None:
 	if point1[0] == point2[0] and point1[1] == point2[1]:
