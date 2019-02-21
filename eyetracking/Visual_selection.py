@@ -12,7 +12,7 @@ class Make_Eyelink(Eyelink):
         super().__init__()
         # Center of the screen.
         logTrace ('Screen size to change', Precision.TITLE)
-        self.screen_center = (512,384)
+        self.screen_center = (683,384)
         # Minimal distance at which we consider the subject is looking at the
         # fixation cross at the trial beginning
         self.valid_distance_center = 100 #3 degres of visual angle 95 (+ marge)
@@ -29,6 +29,7 @@ class Make_Eyelink(Eyelink):
 
     # Returns a dictionary of experiment variables
     def parseVariables(self, line: List[str]):
+        print(line)
         if len(line) > 3 and line[3] == "stim1":
             try:
                 if len(line) > 3 and line[3] == "stim1":

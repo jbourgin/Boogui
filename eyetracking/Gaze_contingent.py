@@ -12,7 +12,7 @@ class Make_Eyelink(Eyelink):
         super().__init__()
         # Center of the screen.
         logTrace ('Screen size to change', Precision.TITLE)
-        self.screen_center = (960,540)
+        self.screen_center = (683,384)
         # Minimal distance at which we consider the subject is looking at the
         # fixation cross at the trial beginning
         self.valid_distance_center = 140 #3 degres of visual angle 95 (+ marge)
@@ -122,6 +122,7 @@ class Gaze_contingent(Experiment):
         start_trial_time = trial.getStartTrial().getTime()
 
         targetname = trial.getStimulus()
+        targetname = targetname.split('.')[0]
 
         end_line = self.returnStopImageEntry(trial)
 
@@ -305,11 +306,13 @@ class Gaze_contingent(Experiment):
                 code = task + emotion
                 new_line = line
                 for key in mean_dic[code]:
-                    if key == 'first_eyes':
+                    if key == 'eyes':
                         score = first_eyes
                     elif key == 'response_time':
                         score = response_time
-                    if SD_dic[code][key] != None and error == "0" and score != "None" and "early" not in blink:
+                    print(key)
+                    print(score)
+                    if SD_dic[code][key] != None and error == "0" and score != "None" and score != "" and "early" not in blink:
                         current_mean = mean_dic[code][key]
                         current_SD = SD_dic[code][key]
                         if (float(score) > (float(current_mean) + 3*float(current_SD)) or float(score) < (float(current_mean) - 3*float(current_SD))):
