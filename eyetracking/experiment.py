@@ -2,6 +2,7 @@ import attr
 from abc import ABC, abstractmethod
 from typing import List, Dict, Union
 
+from eyetracking.utils import *
 from eyetracking.subject import *
 
 class ExperimentException(Exception):
@@ -46,7 +47,14 @@ class Experiment (ABC):
 
     # Returns true if this subject made this experiment
     def isSubjectValid(self, subject : Subject) -> bool:
-        if len(subject.trials) == 0 or self.expected_features == set():
+        if len(subject.trials) == 0:
+            logTrace('Subject has no trial', Precision.ERROR)
+            return False
+        if self.expected_features == set():
+            logTrace('Experiment has no expected features', Precision.ERROR)
             return False
         features = subject.trials[0].features.keys()
-        return self.expected_features == features
+        if self.expected_features != features:
+            logTrace('Excepted features %s, got %s for trial 0' % (self.expected_features, features), Precision.ERROR)
+            return False
+        return True
