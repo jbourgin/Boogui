@@ -1,5 +1,4 @@
-import sys
-import time
+import sys, os, time
 from PyQt5.QtWidgets import QMainWindow, QAction, QActionGroup, qApp, QWidget
 from PyQt5.QtWidgets import QFileDialog, QTextEdit, QScrollArea, QMessageBox
 from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout, QLabel
@@ -265,9 +264,12 @@ class Main(QMainWindow):
 
         self.clear_layouts()
 
-    def raiseWarning(self, error_message : str) -> None:
+    def raiseWarning(self, e, error_message: str) -> None:
         error_dialog = QMessageBox()
-        error_dialog.warning(self, 'Error', error_message)
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        s = 'file: %s, line: %i\n%s' % (fname, exc_tb.tb_lineno, error_message)
+        error_dialog.warning(self, 'Error', s)
 
     ###########################
     ####### Experiments #######
@@ -345,7 +347,7 @@ class Main(QMainWindow):
                     progress.increment(0)
 
                 except Exception as e:
-                    self.raiseWarning('File %s could not be read:\n%s' % (filename, str(e)))
+                    self.raiseWarning(e, 'File %s could not be read:\n%s' % (filename, str(e)))
 
             #closing message box
             progress.close()
@@ -378,7 +380,7 @@ class Main(QMainWindow):
                 selected_experiment().postProcess(filename)
 
             except Exception as e:
-                self.raiseWarning('Error while exporting to file %s: \n%s' % (filename, str(e)))
+                self.raiseWarning(e, 'Error while exporting to file %s: \n%s' % (filename, str(e)))
 
             # Closing progress bar
             progress.close()
