@@ -323,6 +323,7 @@ class Visual_search(Experiment):
         subject = "Subject"
         sequence = []
         data_seq = []
+        low_threshold_delay = 150
 
         for line in data:
             if line[0] == "Subject":
@@ -374,8 +375,9 @@ class Visual_search(Experiment):
                 if (error == '0' or error == 'CONG') and localization_time != 'None' and 'early capture' not in blink:
                     sum_dic[code]['localization'] += float(localization_time)
                     counter_dic[code]['localization'] += 1
-                    sum_dic[code]['delay'] += float(response_delay)
-                    counter_dic[code]['delay'] += 1
+                    if float(response_delay) > low_threshold_delay and error == '0':
+                        sum_dic[code]['delay'] += float(response_delay)
+                        counter_dic[code]['delay'] += 1
                     sum_dic[code]['response_time'] += float(response_time)
                     counter_dic[code]['response_time'] += 1
 
@@ -409,8 +411,9 @@ class Visual_search(Experiment):
                 if (error == '0' or error == 'CONG') and localization_time != 'None' and 'early capture' not in blink:
                     SS_dic[code]['localization'] += squareSum(float(localization_time), mean_dic[code]['localization'])
                     counter_SS_dic[code]['localization'] += 1
-                    SS_dic[code]['delay'] += squareSum(float(response_delay), mean_dic[code]['delay'])
-                    counter_SS_dic[code]['delay'] += 1
+                    if float(response_delay) > low_threshold_delay and error == '0':
+                        SS_dic[code]['delay'] += squareSum(float(response_delay), mean_dic[code]['delay'])
+                        counter_SS_dic[code]['delay'] += 1
                     SS_dic[code]['response_time'] += squareSum(float(response_time), mean_dic[code]['response_time'])
                     counter_SS_dic[code]['response_time'] += 1
 
@@ -438,18 +441,21 @@ class Visual_search(Experiment):
                     elif key == 'response_time':
                         score = response_time
                     if SD_dic[code][key] != None and (error == '0' or error == 'CONG') and localization_time != 'None' and 'early capture' not in blink:
-                        current_mean = mean_dic[code][key]
-                        current_SD = SD_dic[code][key]
-                        if (float(score) > (float(current_mean) + 3*float(current_SD)) or float(score) < (float(current_mean) - 3*float(current_SD))):
-                                print(key, " in a ", emotion, distractors, " trial exceeds 3 SD for subject ", subject_num, " : ",
-                                      str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
-                                new_line.append("Deviant %s 3 SD" %key)
-                        elif (float(score) > (float(current_mean) + 2*float(current_SD)) or float(score) < (float(current_mean) - 2*float(current_SD))):
-                                print(key, " in a ", emotion, distractors, " trial exceeds 2 SD for subject ", subject_num, " : ",
-                                      str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
-                                new_line.append("Deviant %s 2 SD" %key)
+                        if key == 'delay' and float(score) < low_threshold_delay and error == '0':
+                            new_line.append("Deviant response delay")
                         else:
-                            new_line.append("Normal %s value" %key)
+                            current_mean = mean_dic[code][key]
+                            current_SD = SD_dic[code][key]
+                            if (float(score) > (float(current_mean) + 3*float(current_SD)) or float(score) < (float(current_mean) - 3*float(current_SD))):
+                                    print(key, " in a ", emotion, distractors, " trial exceeds 3 SD for subject ", subject_num, " : ",
+                                          str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
+                                    new_line.append("Deviant %s 3 SD" %key)
+                            elif (float(score) > (float(current_mean) + 2*float(current_SD)) or float(score) < (float(current_mean) - 2*float(current_SD))):
+                                    print(key, " in a ", emotion, distractors, " trial exceeds 2 SD for subject ", subject_num, " : ",
+                                          str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
+                                    new_line.append("Deviant %s 2 SD" %key)
+                            else:
+                                new_line.append("Normal %s value" %key)
                     else:
                         new_line.append("%s not relevant" %key)
                 s = ";".join([str(e) for e in new_line]) + "\n"
