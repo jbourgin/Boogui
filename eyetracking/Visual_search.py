@@ -441,8 +441,10 @@ class Visual_search(Experiment):
                     elif key == 'response_time':
                         score = response_time
                     if SD_dic[code][key] != None and (error == '0' or error == 'CONG') and localization_time != 'None' and 'early capture' not in blink:
-                        if key == 'delay' and float(score) < low_threshold_delay and error == '0':
+                        if key == 'delay' and float(score) <= low_threshold_delay and error == '0':
                             new_line.append("Deviant response delay")
+                        elif key == 'delay' and error == 'CONG':
+                            new_line.append("%s not relevant" %key)
                         else:
                             current_mean = mean_dic[code][key]
                             current_SD = SD_dic[code][key]
