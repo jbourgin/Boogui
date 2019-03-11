@@ -23,10 +23,10 @@ class Make_Eyelink(Eyelink):
         self.half_height_eye = 45
 
         # frames
-        self.right_gaze = RectangleRegion((self.screen_center[0]*1.5, self.screen_center[1]+10), self.half_width, self.half_height_eye)
-        self.left_gaze = RectangleRegion((self.screen_center[0]/2.0, self.screen_center[1]+10), self.half_width, self.half_height_eye)
-        self.right_ellipse = EllipseRegion((self.screen_center[0]*1.5, self.screen_center[1]), self.half_width, self.half_height_face)
-        self.left_ellipse = EllipseRegion((self.screen_center[0]/2.0, self.screen_center[1]), self.half_width, self.half_height_face)
+        self.right_gaze = RectangleRegion((self.screen_center[0]*(1+1/3), self.screen_center[1]+10), self.half_width, self.half_height_eye)
+        self.left_gaze = RectangleRegion((self.screen_center[0]-(self.screen_center[0]/3), self.screen_center[1]+10), self.half_width, self.half_height_eye)
+        self.right_ellipse = EllipseRegion((self.screen_center[0]*(1+1/3), self.screen_center[1]), self.half_width, self.half_height_face)
+        self.left_ellipse = EllipseRegion((self.screen_center[0]-(self.screen_center[0]/3), self.screen_center[1]), self.half_width, self.half_height_face)
         self.right_face = DifferenceRegion(self.right_ellipse, self.right_gaze)
         self.left_face = DifferenceRegion(self.left_ellipse, self.left_gaze)
 
@@ -112,11 +112,11 @@ class Gaze_contingent(Experiment):
         if trial.features['target_side'] == 'Left':
             eye_position = self.eyetracker.left_gaze
             face_position = self.eyetracker.left_face
-            start_point = (self.eyetracker.screen_center[0]*1.5, self.eyetracker.screen_center[1])
+            start_point = (self.eyetracker.screen_center[0]*(1+1/3), self.eyetracker.screen_center[1])
         elif trial.features['target_side'] == 'Right':
             eye_position = self.eyetracker.right_gaze
             face_position = self.eyetracker.right_face
-            start_point = (self.eyetracker.screen_center[0]/2, self.eyetracker.screen_center[1])
+            start_point = (self.eyetracker.screen_center[0]-(self.eyetracker.screen_center[0]/3), self.eyetracker.screen_center[1])
         regions = InterestRegionList([eye_position, face_position])
 
         start_trial_time = trial.getStartTrial().getTime()
