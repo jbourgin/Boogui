@@ -112,11 +112,11 @@ class Gaze_contingent(Experiment):
         if trial.features['target_side'] == 'Left':
             eye_position = self.eyetracker.left_gaze
             face_position = self.eyetracker.left_face
-            start_point = (self.eyetracker.screen_center[0]*(1+1/3), self.eyetracker.screen_center[1])
+            start_point = (self.eyetracker.screen_center[0]*(1+1/3), self.eyetracker.screen_center[1]+150)
         elif trial.features['target_side'] == 'Right':
             eye_position = self.eyetracker.right_gaze
             face_position = self.eyetracker.right_face
-            start_point = (self.eyetracker.screen_center[0]-(self.eyetracker.screen_center[0]/3), self.eyetracker.screen_center[1])
+            start_point = (self.eyetracker.screen_center[0]-(self.eyetracker.screen_center[0]/3), self.eyetracker.screen_center[1]+150)
         regions = InterestRegionList([eye_position, face_position])
 
         start_trial_time = trial.getStartTrial().getTime()
@@ -160,9 +160,9 @@ class Gaze_contingent(Experiment):
 
         # Error :
 
-        if not trial.isStartValid(start_point, self.eyetracker.valid_distance_center)[0]:
-            error = "Not valid start"
-        elif trial.features['response'] == 'None':
+        #if not trial.isStartValid(start_point, self.eyetracker.valid_distance_center)[0]:
+        #    error = "Not valid start"
+        if trial.features['response'] == 'None':
             error = "No subject response"
         elif blink_category == 'early capture':
             error = "Early blink"
