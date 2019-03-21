@@ -11,7 +11,6 @@ class Make_Eyelink(Eyelink):
     def __init__(self):
         super().__init__()
         # Center of the screen.
-        logTrace ('Screen size to change', Precision.TITLE)
         self.screen_center = (683,384)
         # Minimal distance at which we consider the subject is looking at the
         # fixation cross at the trial beginning

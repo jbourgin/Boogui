@@ -118,7 +118,7 @@ class Trial:
             def _(_): return False
 
         started = False
-        begin = None
+        begin = []
         #Number of entries
         n_entries = 0
         i_line = -1
@@ -144,17 +144,17 @@ class Trial:
                         return lines[i_line + 1:]
 
                     if isBeginning(entry):
-                        begin = n_entries - 1
-                    if begin is not None:
+                        begin.append(n_entries - 1)
+                    if len(begin) > 0:
                         if isSaccadeEnding(entry):
-                            self.saccades.append(Saccade(self, begin, n_entries - 1))
-                            begin = None
-                        if isFixationEnding(entry):
-                            self.fixations.append(Fixation(self, begin, n_entries - 1))
-                            begin = None
-                        if isBlinkEnding(entry):
-                            self.blinks.append(Blink(self, begin, n_entries - 1))
-                            begin = None
+                            self.saccades.append(Saccade(self, begin[-1], n_entries - 1))
+                            begin.pop()
+                        elif isFixationEnding(entry):
+                            self.fixations.append(Fixation(self, begin[-1], n_entries - 1))
+                            begin.pop()
+                        elif isBlinkEnding(entry):
+                            self.blinks.append(Blink(self, begin[-1], n_entries - 1))
+                            begin.pop()
         return []
 
     def getFirstGazePosition(self) -> Union[Entry,None]:

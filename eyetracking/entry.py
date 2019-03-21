@@ -203,12 +203,13 @@ class EntryList:
                 raise EntryListException('Time is decreasing between %s and %s' % (str(self.getEntry(i)), str(self.getEntry(i+1))))
 
         # The first line must give the time of the second one
-        if self.getEntry(self.begin).getTime() != self.getEntry(self.begin+1).getTime():
+        if (self.getEntry(self.begin+1).getTime() - self.getEntry(self.begin).getTime()) > 2 :
             raise EntryListException('Incorrect time for the first line %s' % str(self.getEntry(self.begin)))
 
         # The last line must give the time of the prevous one
-        if self.getEntry(self.end).getTime() != self.getEntry(self.end-1).getTime():
-            logTrace ('Incorrect time for the last line %s' % str(self.getEntry(self.end)), Precision.ERROR)
+        if (self.getEntry(self.end).getTime() - self.getEntry(self.end-1).getTime()) > 2:
+            raise EntryListException('Incorrect time for the last line %s' % str(self.getEntry(self.end)))
+            #logTrace ('Incorrect time for the last line %s' % str(self.getEntry(self.end)), Precision.ERROR)
 
     def check(self) -> None:
         pass
@@ -277,7 +278,7 @@ class Saccade(EntryList):
         self.checkTimes()
 
     def __str__(self):
-        return 'Saccade: %i' % self.duration()
+        return 'Saccade: duration %i, starting at %i, trial %i' % (self.duration(), self.begin, self.trial.getTrialId())
 
     def check(self) -> None:
         @match(Entry)
