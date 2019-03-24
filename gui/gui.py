@@ -1,9 +1,9 @@
 import sys, os, time
 from PyQt5.QtWidgets import QMainWindow, QAction, QActionGroup, qApp, QWidget
 from PyQt5.QtWidgets import QFileDialog, QTextEdit, QScrollArea, QMessageBox
-from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout, QLabel
-from PyQt5.QtGui import QPixmap, QIcon
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout, QLabel, QLineEdit, QShortcut
+from PyQt5.QtGui import QPixmap, QIcon, QKeySequence
+from PyQt5.QtCore import Qt, pyqtSlot
 
 from eyetracking.smi import *
 from eyetracking.Visual_search import *
@@ -14,6 +14,7 @@ from eyetracking.Antisaccade import *
 from gui.utils import *
 from gui.subject import *
 from gui.progress_widget import ProgressWidget
+from gui.search_widget import SearchWidget
 from gui.video_widget import VideoWidget
 
 import re #To format data lists
@@ -55,7 +56,13 @@ class Main(QMainWindow):
 
         self.set_menu()
         self.set_main_widget()
+        self.set_shortcuts()
         self.show()
+
+    def set_shortcuts(self):
+        self.search_line = None
+        self.shortcut = QShortcut(QKeySequence("Ctrl+F"), self)
+        self.shortcut.activated.connect(self.open_search)
 
     def getTrialData(self, n_subject, n_trial, is_training):
         if is_training:
@@ -98,7 +105,6 @@ class Main(QMainWindow):
         self.mainLayout.addWidget(self.scrollArea)
 
     def set_text_area(self):
-
         # text area
         self.logOutput = QTextEdit()
         self.logOutput.setReadOnly(True)
@@ -477,3 +483,11 @@ class Main(QMainWindow):
 
             self.video_widget.show()
         return choose_trial
+
+    @pyqtSlot()
+    def open_search(self):
+        if self.search_line is None:
+            self.search_line = SearchWidget(self)
+        else:
+            self.search_line.close()
+            self.search_line = None
