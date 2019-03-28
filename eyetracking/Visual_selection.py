@@ -10,9 +10,6 @@ from PyQt5.QtWidgets import QApplication
 class Make_Eyelink(Eyelink):
     def __init__(self):
         super().__init__()
-        # Center of the screen.
-        logTrace ('Screen size to change', Precision.TITLE)
-        self.screen_center = (683,384)
         # Minimal distance at which we consider the subject is looking at the
         # fixation cross at the trial beginning
         self.valid_distance_center = 100 #3 degres of visual angle 95 (+ marge)
@@ -20,6 +17,23 @@ class Make_Eyelink(Eyelink):
         # Initializing regions of interest
         self.half_width = 200
         self.half_height = 150
+
+        self.setupStandard()
+
+
+    def setupStandard(self):
+        # Center of the screen.
+        self.screen_center = (640,400)
+
+        # frames
+        self.right = RectangleRegion((self.screen_center[0]+300, self.screen_center[1]), self.half_width, self.half_height)
+        self.left = RectangleRegion((self.screen_center[0]-300, self.screen_center[1]), self.half_width, self.half_height)
+        self.right_wide = RectangleRegion((self.screen_center[0]+300, self.screen_center[1]), self.half_width+10, self.half_height+10)
+        self.left_wide = RectangleRegion((self.screen_center[0]-300, self.screen_center[1]), self.half_width+10, self.half_height+10)
+
+    def setupFirstSubjects(self):
+        # Center of the screen.
+        self.screen_center = (683,384)
 
         # frames
         self.right = RectangleRegion((self.screen_center[0]+300, self.screen_center[1]), self.half_width, self.half_height)
@@ -80,6 +94,9 @@ class Visual_selection(Experiment):
         self.eyetracker = Make_Eyelink()
 
     def processTrial(self, subject, trial, filename = None):
+        if subject.id <= 3:
+            self.eyetracker.setupFirstSubjects()
+
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
         trial_number = trial.getTrialId()
 
