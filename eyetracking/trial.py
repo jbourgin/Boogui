@@ -315,7 +315,7 @@ class Trial:
                 if watched_region == None:
                     closest_region = regions.find_minimal_distance(barycentre)
                     # maximum distance allowed between a point and a region
-                    max_dist = sqrt(pow(closest_region.half_width, 2) + pow(closest_region.half_height,2) + 30)
+                    max_dist = sqrt(pow(closest_region.half_width, 2) + pow(closest_region.half_height,2)) + 10
                     if distance(closest_region.center, barycentre) < max_dist:
                         watched_region = closest_region
 
@@ -350,7 +350,23 @@ class Trial:
             if current_region_fixation['type'] == "NORMAL":
                 region_fixations.append(current_region_fixation)
 
-        return region_fixations
+        def merge(reg1,reg2):
+            d = dict(reg1)
+            d['end'] = reg2['end']
+            d['time'] = d['end'].getTime() - d['begin'].getTime()
+            return d
+
+        if len(region_fixations) > 0:
+            result = [region_fixations[0]]
+            for i in range(1,len(region_fixations)):
+                reg = region_fixations[i]
+                if result[-1]['region'] == reg['region']:
+                    result[-1] = merge(result[-1], reg)
+                else:
+                    result.append(reg)
+            return result
+        else:
+            return []
 
     def getGazePoints(self, end_line = None) -> List[Point] :
         @match(Entry)

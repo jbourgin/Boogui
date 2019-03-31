@@ -6,6 +6,7 @@ from eyetracking.interest_region import *
 from eyetracking.scanpath import *
 import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import QApplication
+import sys
 
 class Make_Eyelink(Eyelink):
     def __init__(self):
@@ -238,6 +239,13 @@ class Visual_search(Experiment):
             last_good_fixation = None
             response_delay_last = None
             capture_delay_first = None
+        try:
+            last_fixation = region_fixations[-1]['target']
+        except:
+            last_fixation = None
+
+        print(trial_number)
+        print(region_fixations)
 
         # Time on target and distractors
         total_target_fixation_time = sum(x['time'] for x in region_fixations if x['target'])
@@ -303,7 +311,8 @@ class Visual_search(Experiment):
             response_delay_last,
             total_target_fixation_time,
             total_distractor_fixation_time,
-            blink_category]
+            blink_category,
+            last_fixation]
 
         if filename is None:
             f = open(getResultsFile(), 'a')
@@ -315,6 +324,20 @@ class Visual_search(Experiment):
 
     def postProcess(self, filename: str):
         # In the first version, there was a minimal threshold for the first localization time.
+        def initialize_variables(line):
+            d = dict()
+            d['subject_num'] = line[0]
+            d['emotion'] = line[5]
+            d['trialid'] = line[2]
+            d['distractors'] = line[7]
+            d['error'] = line[14]
+            d['response_time'] = float(line[15])
+            d['localization_time'] = float(line[16])
+            d['response_delay'] = float(line[17])
+            d['blink'] = line[20]
+            d['last_fixation'] = line[21]
+            return d
+
         with open(filename) as datafile:
             data = datafile.read()
         data_modified = open(filename, 'w')
@@ -323,7 +346,10 @@ class Visual_search(Experiment):
         subject = "Subject"
         sequence = []
         data_seq = []
-        low_threshold_delay = 150
+        capture_threshold = 100
+        low_threshold_delay_young = 360
+        low_threshold_delay_old = 560
+        list_scores = ['localization', 'delay', 'response_time']
 
         for line in data:
             if line[0] == "Subject":
@@ -341,119 +367,89 @@ class Visual_search(Experiment):
                 sequence.append(line)
         data = data_seq[1:]
 
-
         for subject in data:
-            sum_dic = {}
-            counter_dic = {}
+            elements_list = {}
             mean_dic = {}
-            SS_dic = {}
-            counter_SS_dic = {}
+            square_dic = {}
             SD_dic = {}
+            group = subject[0][1]
+            if group == "SJS":
+                low_threshold_delay = low_threshold_delay_young
+            elif group == "SAS" or group == "MA":
+                low_threshold_delay = low_threshold_delay_old
+            else:
+                raise ExperimentException('No appropriate group for subject %s' % subject[0][0])
 
             for line in subject:
-                emotion = line[5]
-                distractors = line[7]
-                error = line[14]
-                response_time = line[15]
-                localization_time = line[16]
-                response_delay = line[17]
-                blink = line[20]
-                code = emotion + distractors
-                if code not in sum_dic:
-                    sum_dic[code] = {}
-                    counter_dic[code] = {}
+                dic_variables = initialize_variables(line)
+                code = dic_variables['emotion'] + dic_variables['distractors']
+                if code not in elements_list:
+                    elements_list[code] = {}
                     mean_dic[code] = {}
-                    sum_dic[code]['localization'] = 0
-                    counter_dic[code]['localization'] = 0
-                    sum_dic[code]['delay'] = 0
-                    counter_dic[code]['delay'] = 0
-                    sum_dic[code]['response_time'] = 0
-                    counter_dic[code]['response_time'] = 0
-                    mean_dic[code]['localization'] = None
-                    mean_dic[code]['delay'] = None
-                    mean_dic[code]['response_time'] = None
-                if (error == '0' or error == 'CONG') and localization_time != 'None' and 'early capture' not in blink:
-                    sum_dic[code]['localization'] += float(localization_time)
-                    counter_dic[code]['localization'] += 1
-                    if float(response_delay) > low_threshold_delay and error == '0':
-                        sum_dic[code]['delay'] += float(response_delay)
-                        counter_dic[code]['delay'] += 1
-                    sum_dic[code]['response_time'] += float(response_time)
-                    counter_dic[code]['response_time'] += 1
+                    for element in list_scores:
+                        elements_list[code][element] = []
+                        mean_dic[code][element] = None
+                if (dic_variables['error'] == '0' or dic_variables['error'] == 'CONG') and dic_variables['localization_time'] != 'None' and dic_variables['localization_time'] >= capture_threshold:
+                    elements_list[code]['localization'].append(dic_variables['localization_time'])
+                    if float(dic_variables['response_delay']) > low_threshold_delay and dic_variables['error'] == '0' and dic_variables['last_fixation'] == 'True':
+                        elements_list[code]['delay'].append(dic_variables['response_delay'])
+                    elements_list[code]['response_time'].append(dic_variables['response_time'])
 
             for code in mean_dic:
                 for key in mean_dic[code]:
-                    if sum_dic[code][key] != 0:
-                        mean_dic[code][key] = sum_dic[code][key]/counter_dic[code][key]
+                    if len(elements_list[code][key]) != 0:
+                        mean_dic[code][key] = sum(elements_list[code][key])/len(elements_list[code][key])
 
             for line in subject:
-                emotion = line[5]
-                distractors = line[7]
-                error = line[14]
-                response_time = line[15]
-                localization_time = line[16]
-                response_delay = line[17]
-                blink = line[20]
-                code = emotion + distractors
-                if code not in SS_dic:
-                    SS_dic[code] = {}
-                    counter_SS_dic[code] = {}
+                dic_variables = initialize_variables(line)
+                code = dic_variables['emotion'] + dic_variables['distractors']
+                if code not in square_dic:
+                    square_dic[code] = {}
                     SD_dic[code] = {}
-                    SS_dic[code]['localization'] = 0
-                    counter_SS_dic[code]['localization'] = 0
-                    SS_dic[code]['delay'] = 0
-                    counter_SS_dic[code]['delay'] = 0
-                    SS_dic[code]['response_time'] = 0
-                    counter_SS_dic[code]['response_time'] = 0
-                    SD_dic[code]['localization'] = None
-                    SD_dic[code]['delay'] = None
-                    SD_dic[code]['response_time'] = None
-                if (error == '0' or error == 'CONG') and localization_time != 'None' and 'early capture' not in blink:
-                    SS_dic[code]['localization'] += squareSum(float(localization_time), mean_dic[code]['localization'])
-                    counter_SS_dic[code]['localization'] += 1
-                    if float(response_delay) > low_threshold_delay and error == '0':
-                        SS_dic[code]['delay'] += squareSum(float(response_delay), mean_dic[code]['delay'])
-                        counter_SS_dic[code]['delay'] += 1
-                    SS_dic[code]['response_time'] += squareSum(float(response_time), mean_dic[code]['response_time'])
-                    counter_SS_dic[code]['response_time'] += 1
+                    for element in list_scores:
+                        square_dic[code][element] = []
+                        SD_dic[code][element] = None
+                if (dic_variables['error'] == '0' or dic_variables['error'] == 'CONG') and dic_variables['localization_time'] != 'None' and dic_variables['localization_time'] >= capture_threshold:
+                    square_dic[code]['localization'].append(squareSum(dic_variables['localization_time'], mean_dic[code]['localization']))
+                    if float(dic_variables['response_delay']) > low_threshold_delay and dic_variables['error'] == '0' and dic_variables['last_fixation'] == "True":
+                        square_dic[code]['delay'].append(squareSum(dic_variables['response_delay'], mean_dic[code]['delay']))
+                    square_dic[code]['response_time'].append(squareSum(dic_variables['response_time'], mean_dic[code]['response_time']))
 
                 for code in SD_dic:
                     for key in SD_dic[code]:
-                        if SS_dic[code][key] != 0:
-                            SD_dic[code][key] = sqrt(SS_dic[code][key]/counter_SS_dic[code][key])
+                        if len(square_dic[code][key]) != 0:
+                            if len(square_dic[code][key]) > 1:
+                                SD_dic[code][key] = sqrt(sum(square_dic[code][key])/(len(square_dic[code][key])-1))
+                            else:
+                                SD_dic[code][key] = sqrt(sum(square_dic[code][key])/len(square_dic[code][key]))
 
             for line in subject:
-                subject_num = line[0]
-                emotion = line[5]
-                distractors = line[7]
-                error = line[14]
-                response_time = line[15]
-                localization_time = line[16]
-                response_delay = line[17]
-                blink = line[20]
-                code = emotion + distractors
+                dic_variables = initialize_variables(line)
+                code = dic_variables['emotion'] + dic_variables['distractors']
                 new_line = line
                 for key in mean_dic[code]:
                     if key == 'localization':
-                        score = localization_time
+                        score = dic_variables['localization_time']
                     elif key == 'delay':
-                        score = response_delay
+                        score = dic_variables['response_delay']
                     elif key == 'response_time':
-                        score = response_time
-                    if SD_dic[code][key] != None and (error == '0' or error == 'CONG') and localization_time != 'None' and 'early capture' not in blink:
-                        if key == 'delay' and float(score) <= low_threshold_delay and error == '0':
-                            new_line.append("Deviant response delay")
-                        elif key == 'delay' and error == 'CONG':
+                        score = dic_variables['response_time']
+                    if key == 'delay' and float(score) <= low_threshold_delay and dic_variables['error'] == '0':
+                        new_line.append("Deviant response delay")
+                    elif SD_dic[code][key] != None and (dic_variables['error'] == '0' or dic_variables['error'] == 'CONG') and dic_variables['localization_time'] != 'None' and dic_variables['localization_time'] >= capture_threshold:
+                        if key == 'delay' and (dic_variables['error'] == 'CONG' or dic_variables['last_fixation'] != 'True'):
                             new_line.append("%s not relevant" %key)
                         else:
                             current_mean = mean_dic[code][key]
                             current_SD = SD_dic[code][key]
-                            if (float(score) > (float(current_mean) + 3*float(current_SD)) or float(score) < (float(current_mean) - 3*float(current_SD))):
-                                    print(key, " in a ", emotion, distractors, " trial exceeds 3 SD for subject ", subject_num, " : ",
+                            if (score > (current_mean + 3*current_SD) or score < ((current_mean) - 3*current_SD)):
+                                    print(key, " in a ", dic_variables['emotion'], dic_variables['distractors'], " trial %s " % dic_variables['trialid'],
+                                          "exceeds 3 SD for subject ", dic_variables['subject_num'], " : ",
                                           str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
                                     new_line.append("Deviant %s 3 SD" %key)
-                            elif (float(score) > (float(current_mean) + 2*float(current_SD)) or float(score) < (float(current_mean) - 2*float(current_SD))):
-                                    print(key, " in a ", emotion, distractors, " trial exceeds 2 SD for subject ", subject_num, " : ",
+                            elif (score > (current_mean + 2*current_SD) or score < (current_mean - 2*current_SD)):
+                                    print(key, " in a ", dic_variables['emotion'], dic_variables['distractors'], " trial %s " % dic_variables['trialid'],
+                                          "exceeds 2 SD for subject ", dic_variables['subject_num'], " : ",
                                           str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
                                     new_line.append("Deviant %s 2 SD" %key)
                             else:
@@ -497,7 +493,8 @@ class Visual_search(Experiment):
             'Response delay from last fixation',
             'Total fixation time on target',
             'Total fixation time on distractors',
-            'First blink type'
+            'First blink type',
+            'Last fixation type'
         ]))
         f.write('\n')
         f.close()
