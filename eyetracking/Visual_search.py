@@ -244,9 +244,6 @@ class Visual_search(Experiment):
         except:
             last_fixation = None
 
-        print(trial_number)
-        print(region_fixations)
-
         # Time on target and distractors
         total_target_fixation_time = sum(x['time'] for x in region_fixations if x['target'])
         if total_target_fixation_time == 0:
@@ -323,7 +320,6 @@ class Visual_search(Experiment):
         f.close()
 
     def postProcess(self, filename: str):
-        # In the first version, there was a minimal threshold for the first localization time.
         def initialize_variables(line):
             d = dict()
             d['subject_num'] = line[0]
@@ -331,9 +327,18 @@ class Visual_search(Experiment):
             d['trialid'] = line[2]
             d['distractors'] = line[7]
             d['error'] = line[14]
-            d['response_time'] = float(line[15])
-            d['localization_time'] = float(line[16])
-            d['response_delay'] = float(line[17])
+            try:
+                d['response_time'] = float(line[15])
+            except:
+                d['response_time'] = line[15]
+            try:
+                d['localization_time'] = float(line[16])
+            except:
+                d['localization_time'] = line[16]
+            try:
+                d['response_delay'] = float(line[17])
+            except:
+                d['response_delay'] = line[17]
             d['blink'] = line[20]
             d['last_fixation'] = line[21]
             return d
@@ -434,7 +439,7 @@ class Visual_search(Experiment):
                         score = dic_variables['response_delay']
                     elif key == 'response_time':
                         score = dic_variables['response_time']
-                    if key == 'delay' and float(score) <= low_threshold_delay and dic_variables['error'] == '0':
+                    if key == 'delay' and score != "None" and float(score) <= low_threshold_delay and dic_variables['error'] == '0':
                         new_line.append("Deviant response delay")
                     elif SD_dic[code][key] != None and (dic_variables['error'] == '0' or dic_variables['error'] == 'CONG') and dic_variables['localization_time'] != 'None' and dic_variables['localization_time'] >= capture_threshold:
                         if key == 'delay' and (dic_variables['error'] == 'CONG' or dic_variables['last_fixation'] != 'True'):
