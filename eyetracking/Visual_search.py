@@ -273,7 +273,7 @@ class Visual_search(Experiment):
         elif capture_delay_first < 100:
             error = "Anticipation saccade"
         elif (subject.group == 'MA'
-            and subject in list_patients_cong
+            and subject in self.eyetracker.list_patients_cong
             and congruency == "NO"
             and trial.features['cor_resp'] != trial.features['response']):
             error = 'CONG'
