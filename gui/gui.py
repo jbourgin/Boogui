@@ -19,6 +19,7 @@ from gui.search_widget import SearchWidget
 from gui.video_widget import VideoWidget
 
 import re #To format data lists
+import traceback
 
 class Main(QMainWindow):
 
@@ -275,10 +276,11 @@ class Main(QMainWindow):
         sound = QSound(get_ressources_file('error.wav'))
         sound.play()
         error_dialog = QMessageBox()
-        exc_type, exc_obj, exc_tb = sys.exc_info()
+        '''exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        s = 'file: %s, line: %i\n%s' % (fname, exc_tb.tb_lineno, error_message)
-        error_dialog.warning(self, 'Error', s)
+        print(traceback.format_exc())'''
+        #s = 'file: %s, line: %i\n%s' % (fname, exc_tb.tb_lineno, error_message)
+        error_dialog.warning(self, 'Error', traceback.format_exc())
 
     ###########################
     ####### Experiments #######
