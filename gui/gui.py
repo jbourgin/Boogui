@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QMainWindow, QAction, QActionGroup, qApp, QWidget
 from PyQt5.QtWidgets import QFileDialog, QTextEdit, QScrollArea, QMessageBox
 from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout, QLabel, QLineEdit, QShortcut
 from PyQt5.QtGui import QPixmap, QIcon, QKeySequence
+from PyQt5.QtMultimedia import QSound
 from PyQt5.QtCore import Qt, pyqtSlot
 
 from eyetracking.smi import *
@@ -51,7 +52,7 @@ class Main(QMainWindow):
     def initUI(self):
         self.setGeometry(300, 300, 600, 600)
         self.setWindowTitle('Eyetracking analysis')
-        icon = QIcon('gui/icon.png')
+        icon = QIcon(get_ressources_file('icon.png'))
         self.setWindowIcon(icon)
 
         self.set_menu()
@@ -271,6 +272,8 @@ class Main(QMainWindow):
         self.clear_layouts()
 
     def raiseWarning(self, e, error_message: str) -> None:
+        sound = QSound(get_ressources_file('error.wav'))
+        sound.play()
         error_dialog = QMessageBox()
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
