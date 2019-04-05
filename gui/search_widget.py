@@ -12,7 +12,7 @@ class SearchWidget(QWidget):
         self.height = 75
         self.width = 400
 
-        self.setAutoFillBackground(True)
+        #self.setAutoFillBackground(True)
         self.layout = QVBoxLayout()
         self.editline = QLineEdit()
 

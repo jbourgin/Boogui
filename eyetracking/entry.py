@@ -159,6 +159,9 @@ class EntryList:
     def __str__(self):
         return 'EntryList starting at %i' % self.getStartTime()
 
+    def entries_to_string(self):
+        return '\n'.join([str(self.getEntry(i_line)) for i_line in range(self.begin, self.end)])
+
     def getBegin(self) -> int :
         return self.begin
 
@@ -204,7 +207,7 @@ class EntryList:
 
         # The first line must give the time of the second one
         if (self.getEntry(self.begin+1).getTime() - self.getEntry(self.begin).getTime()) > 2 :
-            raise EntryListException('Incorrect time for the first line %s' % str(self.getEntry(self.begin)))
+            raise EntryListException('Incorrect time for the first line: %s' % self.entries_to_string())
 
         # The last line must give the time of the prevous one
         if (self.getEntry(self.end).getTime() - self.getEntry(self.end-1).getTime()) > 2:

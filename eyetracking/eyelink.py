@@ -153,8 +153,14 @@ class Eyelink (Eyetracker):
     def parseVariables(self, line: Line):
         pass
 
-    def parseMessage(self, line: Line):
-        return None
+    def parseMessage(self, line: Line) -> Union[Entry, None]:
+        try:
+            time = int(line[1])
+            message = ' '.join(line[2:])
+            return Entry.Message(time, message)
+        except:
+            return None
+
 
     def parseEntry(self, line: List[str]) -> Union[Entry, None]:
         parsers = [self.parseStartTrial,
