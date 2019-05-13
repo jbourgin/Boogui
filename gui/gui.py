@@ -2,7 +2,7 @@ import sys, os, time
 from PyQt5.QtWidgets import QMainWindow, QAction, QActionGroup, qApp, QWidget
 from PyQt5.QtWidgets import QFileDialog, QTextEdit, QScrollArea, QMessageBox
 from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout, QLabel, QLineEdit, QShortcut
-from PyQt5.QtGui import QPixmap, QIcon, QKeySequence
+from PyQt5.QtGui import QPixmap, QIcon, QKeySequence, QCloseEvent
 from PyQt5.QtMultimedia import QSound
 from PyQt5.QtCore import Qt, pyqtSlot
 
@@ -154,7 +154,7 @@ class Main(QMainWindow):
         exitAct = QAction('&Exit', self)
         exitAct.setShortcut('Ctrl+Q')
         exitAct.setStatusTip('Exit application')
-        exitAct.triggered.connect(qApp.quit)
+        exitAct.triggered.connect(self.close)
 
         # Browse menu item
         browseAct = QAction("&Open File", self)
@@ -496,3 +496,23 @@ class Main(QMainWindow):
         else:
             self.search_line.close()
             self.search_line = None
+
+    def closeEvent(self, event):
+        messagebox = QMessageBox(QMessageBox.Question, "Are you sure you want to quit?",
+        "Boo will miss you...",
+        buttons = QMessageBox.Yes | QMessageBox.No,
+        parent = self)
+        messagebox.setDefaultButton(QMessageBox.No)
+        messagebox.setIconPixmap(QPixmap(get_ressources_file("boo.png")))
+        sound = QSound(get_ressources_file('squeak.wav'))
+        sound.play()
+        reply = messagebox.exec_()
+
+        #reply = QMessageBox.question(self,
+        #    'Are you sure you want to quit?',
+        #    'Boo will miss you...',
+        #    QMessageBox.Yes, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            super(Main, self).closeEvent(event)
+        else:
+            event.ignore()
