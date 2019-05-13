@@ -202,6 +202,23 @@ class Gaze_contingent(Experiment):
         f.close()
 
     def postProcess(self, filename: str):
+        def initialize_variables(line):
+            d = dict()
+            d['subject_num'] = line[0]
+            d['emotion'] = line[7]
+            d['task'] = line[5]
+            d['blink'] = line[19]
+            d['error'] = line[13]
+            try:
+                d['response_time'] = float(line[14])
+            except:
+                d['response_time'] = line[14]
+            try:
+                d['first_eyes'] = float(line[16])
+            except:
+                d['first_eyes'] = line[16]
+            return d
+
         with open(filename) as datafile:
             data = datafile.read()
         data_modified = open(filename, 'w')
@@ -210,6 +227,7 @@ class Gaze_contingent(Experiment):
         subject = "Subject"
         sequence = []
         data_seq = []
+        list_scores = ['first_eyes', 'response_time']
 
         for line in data:
             if line[0] == "Subject":
@@ -227,99 +245,79 @@ class Gaze_contingent(Experiment):
         data = data_seq[1:]
 
         for subject in data:
-            sum_dic = {}
-            counter_dic = {}
+            elements_list = {}
             mean_dic = {}
-            SS_dic = {}
-            counter_SS_dic = {}
+            square_dic = {}
             SD_dic = {}
+            group = subject[0][1]
+            if group == "SJS":
+                pass
+            elif group == "SAS" or group == "MA":
+                pass
+            else:
+                raise ExperimentException('No appropriate group for subject %s' % subject[0][0])
 
             for line in subject:
-                task = line[5]
-                emotion = line[7]
-                error = line[13]
-                response_time = line[14]
-                first_eyes = line[16]
-                blink = line[19]
-                code = task + emotion
-                if code not in sum_dic:
-                    sum_dic[code] = {}
-                    counter_dic[code] = {}
+                dic_variables = initialize_variables(line)
+                code = dic_variables['task'] + dic_variables['emotion']
+                if code not in elements_list:
+                    elements_list[code] = {}
                     mean_dic[code] = {}
-                    sum_dic[code]['eyes'] = 0
-                    counter_dic[code]['eyes'] = 0
-                    mean_dic[code]['eyes'] = None
-                    sum_dic[code]['response_time'] = 0
-                    counter_dic[code]['response_time'] = 0
-                    mean_dic[code]['response_time'] = None
-                if first_eyes != 'None' and "early" not in blink:
-                    sum_dic[code]['eyes'] += float(first_eyes)
-                    counter_dic[code]['eyes'] += 1
-                if response_time != 'None' and "early" not in blink:
-                    sum_dic[code]['response_time'] += float(response_time)
-                    counter_dic[code]['response_time'] += 1
+                    for element in list_scores:
+                        elements_list[code][element] = []
+                        mean_dic[code][element] = None
+                if dic_variables['first_eyes'] != 'None' and "early" not in dic_variables['blink']:
+                    elements_list[code]['first_eyes'].append(dic_variables['first_eyes'])
+                if dic_variables['response_time'] != 'None' and "early" not in dic_variables['blink']:
+                    elements_list[code]['response_time'].append(dic_variables['response_time'])
 
             for code in mean_dic:
                 for key in mean_dic[code]:
-                    if sum_dic[code][key] != 0:
-                        mean_dic[code][key] = sum_dic[code][key]/counter_dic[code][key]
+                    if len(elements_list[code][key]) != 0:
+                        mean_dic[code][key] = sum(elements_list[code][key])/len(elements_list[code][key])
 
             for line in subject:
-                task = line[5]
-                emotion = line[7]
-                error = line[13]
-                response_time = line[14]
-                first_eyes = line[16]
-                blink = line[19]
-                code = task + emotion
-                if code not in SS_dic:
-                    SS_dic[code] = {}
-                    counter_SS_dic[code] = {}
+                dic_variables = initialize_variables(line)
+                code = dic_variables['task'] + dic_variables['emotion']
+                if code not in square_dic:
+                    square_dic[code] = {}
                     SD_dic[code] = {}
-                    SS_dic[code]['eyes'] = 0
-                    counter_SS_dic[code]['eyes'] = 0
-                    SD_dic[code]['eyes'] = None
-                    SS_dic[code]['response_time'] = 0
-                    counter_SS_dic[code]['response_time'] = 0
-                    SD_dic[code]['response_time'] = None
-                if first_eyes != 'None' and "early" not in blink:
-                    SS_dic[code]['eyes'] += squareSum(float(first_eyes), mean_dic[code]['eyes'])
-                    counter_SS_dic[code]['eyes'] += 1
-                if response_time != 'None' and "early" not in blink:
-                    SS_dic[code]['response_time'] += squareSum(float(response_time), mean_dic[code]['response_time'])
-                    counter_SS_dic[code]['response_time'] += 1
+                    for element in list_scores:
+                        square_dic[code][element] = []
+                        SD_dic[code][element] = None
+                if dic_variables['first_eyes'] != 'None' and "early" not in dic_variables['blink']:
+                    square_dic[code]['first_eyes'].append(squareSum(dic_variables['first_eyes'], mean_dic[code]['first_eyes']))
+                if dic_variables['response_time'] != 'None' and "early" not in dic_variables['blink']:
+                    square_dic[code]['response_time'].append(squareSum(dic_variables['response_time'], mean_dic[code]['response_time']))
 
                 for code in SD_dic:
                     for key in SD_dic[code]:
-                        if SS_dic[code][key] != 0:
-                            SD_dic[code][key] = sqrt(SS_dic[code][key]/counter_SS_dic[code][key])
+                        if len(square_dic[code][key]) != 0:
+                            if len(square_dic[code][key]) > 1:
+                                SD_dic[code][key] = sqrt(sum(square_dic[code][key])/(len(square_dic[code][key])-1))
+                            else:
+                                SD_dic[code][key] = sqrt(sum(square_dic[code][key])/len(square_dic[code][key]))
 
             for line in subject:
-                subject_num = line[0]
-                task = line[5]
-                emotion = line[7]
-                error = line[13]
-                response_time = line[14]
-                first_eyes = line[16]
-                blink = line[19]
-                code = task + emotion
+                dic_variables = initialize_variables(line)
+                code = dic_variables['task'] + dic_variables['emotion']
                 new_line = line
                 for key in mean_dic[code]:
-                    if key == 'eyes':
-                        score = first_eyes
+                    if key == 'first_eyes':
+                        score = dic_variables['first_eyes']
                     elif key == 'response_time':
-                        score = response_time
+                        score = dic_variables['response_time']
                     print(key)
                     print(score)
-                    if SD_dic[code][key] != None and error == "0" and score != "None" and score != "" and "early" not in blink:
+                    if SD_dic[code][key] != None and dic_variables['error'] == "0" and score != "None" and score != "" and "early" not in dic_variables['blink']:
                         current_mean = mean_dic[code][key]
                         current_SD = SD_dic[code][key]
                         if (float(score) > (float(current_mean) + 3*float(current_SD)) or float(score) < (float(current_mean) - 3*float(current_SD))):
-                                print(key, " in a ", emotion, " trial exceeds 3 SD for subject ", subject_num, " : ",
+                                print(key, " in a ", dic_variables['emotion'], " trial exceeds 3 SD for subject ", dic_variables['subject_num'], " : ",
                                       str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
                                 new_line.append("Deviant %s 3 SD" %key)
                         elif (float(score) > (float(current_mean) + 2*float(current_SD)) or float(score) < (float(current_mean) - 2*float(current_SD))):
-                                print(key, " in a ", emotion, " trial exceeds 2 SD for subject ", subject_num, " : ",
+                                print(key, " in a ", dic_variables['emotion'], " trial exceeds 2 SD for subject ", dic_variables['subject_num'], " : ",
                                       str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
                                 new_line.append("Deviant %s 2 SD" %key)
                         else:
