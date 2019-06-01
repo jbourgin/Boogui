@@ -63,8 +63,8 @@ class Main(QMainWindow):
 
     def set_shortcuts(self):
         self.search_line = None
-        self.shortcut = QShortcut(QKeySequence("Ctrl+F"), self)
-        self.shortcut.activated.connect(self.open_search)
+        shortcut = QShortcut(QKeySequence("Ctrl+F"), self)
+        shortcut.activated.connect(self.open_search)
 
     def getTrialData(self, n_subject, n_trial, is_training):
         if is_training:
@@ -276,10 +276,6 @@ class Main(QMainWindow):
         sound = QSound(get_ressources_file('error.wav'))
         sound.play()
         error_dialog = QMessageBox()
-        '''exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(traceback.format_exc())'''
-        #s = 'file: %s, line: %i\n%s' % (fname, exc_tb.tb_lineno, error_message)
         error_dialog.warning(self, 'Error', traceback.format_exc())
 
     ###########################
@@ -326,7 +322,6 @@ class Main(QMainWindow):
     def file_open(self):
         filedialog = QFileDialog()
         filedialog.setDirectory('data')
-        #filedialog.setOption(QFileDialog.Option.DontUseNativeDialog,False)
         filenames,_ = filedialog.getOpenFileNames(self, 'Open File')
 
         if len(filenames) > 0:
