@@ -7,12 +7,12 @@ Boogui (named so after the great [Boo](https://baldursgate.fandom.com/wiki/Boo),
 Boogui currently includes:
 * Visualization of gaze data over time for each trial with target frames displayed
 * A video view that plays back the trial with eye movements overlaid
-* Filtering of SMI data based on fixation / saccade parameters (e.g. duration)
+* Filtering of SMI data based on fixation / saccade / blink parameters (e.g. duration). Compared to the default algorithm provided by SMI, it takes into account artifacts and allows to consider both dispersion and velocity for more accurate calculation of fixations.
 * Output reports (.txt or .csv files) that can then be directly imported in statistical analysis packages such as Statistica or R for further processing.
 
 Boogui currently implements experiments conducted during a thesis work conducted by Jessica Bourgin:
 * Visual search
-* Pro-saccade/anti-saccade [Reference](https://www.researchgate.net/publication/325241657_Early_Emotional_Attention_is_Impacted_in_Alzheimer's_Disease_An_Eye-Tracking_Study)
+* Pro-saccade/anti-saccade ([Reference](https://www.researchgate.net/publication/325241657_Early_Emotional_Attention_is_Impacted_in_Alzheimer's_Disease_An_Eye-Tracking_Study))
 * Gaze-contingent
 * Saccadic choice
 
