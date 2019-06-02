@@ -2,6 +2,8 @@
 
 Boogui (named so after the great [Boo](https://baldursgate.fandom.com/wiki/Boo), who was always keen to "go for the eyes") is a software dedicated to viewing and processing gaze data recorded with [EyeLink](https://www.sr-research.com/) or [SMI](https://www.smivision.com/) eye trackers.
 
+![Screenshot](gui/ressources/boogui.png)
+
 Boogui currently includes:
 * Visualization of gaze data over time for each trial with target frames displayed
 * A video view that plays back the trial with eye movements overlaid
