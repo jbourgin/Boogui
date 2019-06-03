@@ -35,7 +35,7 @@ Any further experiment may be implemented upon request.
 pip install pipenv
 ```
 
-    If pip is not installed, download [get-pip.py](https://bootstrap.pypa.io/get-pip.py) and run:
+  If pip is not installed, download [get-pip.py](https://bootstrap.pypa.io/get-pip.py) and run:
 
 ```
 python get-pip.py
