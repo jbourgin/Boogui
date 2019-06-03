@@ -35,7 +35,7 @@ Any further experiment may be implemented upon request.
 pip install pipenv
 ```
 
-If pip is not installed, download [get-pip.py](https://bootstrap.pypa.io/get-pip.py) and run:
+    If pip is not installed, download [get-pip.py](https://bootstrap.pypa.io/get-pip.py) and run:
 
 ```
 python get-pip.py
@@ -64,10 +64,15 @@ pip install pipenv
 ```
 
 4. __MISC__
-For ubuntu: see https://github.com/pypa/packaging-problems/issues/211
-apt install libqt5multimedia5-plugins
+
+    For ubuntu: see https://github.com/pypa/packaging-problems/issues/211
+```
+sudo apt install libqt5multimedia5-plugins
+
 sudo rm /usr/local/lib/python3.6/dist-packages/PyQt5/Qt/plugins/mediaservice/libgstmediaplayer.so
+
 sudo ln -s /usr/lib/x86_64-linux-gnu/qt5/plugins/mediaservice/libgstmediaplayer.so /usr/local/lib/python3.6/dist-packages/PyQt5/Qt/plugins/mediaservice/libgstmediaplayer.so
+```
 
 ## Installation
 
