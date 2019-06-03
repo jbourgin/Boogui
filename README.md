@@ -28,17 +28,19 @@ Any further experiment may be implemented upon request.
 
     This program requires Python 3.6. It was tested on versions 3.6.5 and 3.6.7.
 
-2. __[PIPENV](https://docs.python-guide.org/dev/virtualenvs/)__
-
-    Dependencies are handled by Pipenv. To install Pipenv:
-```
-pip install pipenv
-```
+2. __[PIP](https://pypi.org/project/pip/)__
 
     If pip is not installed, download [get-pip.py](https://bootstrap.pypa.io/get-pip.py) and run:
 
 ```
 python get-pip.py
+```
+
+3. __[PIPENV](https://docs.python-guide.org/dev/virtualenvs/)__
+
+    Dependencies are handled by Pipenv. To install Pipenv:
+```
+pip install pipenv
 ```
 
 
