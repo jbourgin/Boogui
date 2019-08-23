@@ -80,6 +80,7 @@ class Make_Eyelink(Eyelink):
         return 'face' in trial.getStimulus()
 
 class Make_Smi(Smi):
+    # Currently, Smi data are not run in Boogui. If they were, we would need to remove first fixation (on center) of each trial from fixation list.
     def __init__(self):
         super().__init__()
         # Center of the screen.

@@ -96,9 +96,17 @@ class Trial:
             def _(_): return False
 
         @match(Entry)
-        class isBeginning(object):
+        class isSaccadeBeginning(object):
             def Start_saccade(_): return True
+            def _(_): return False
+
+        @match(Entry)
+        class isFixationBeginning(object):
             def Start_fixation(_): return True
+            def _(_): return False
+
+        @match(Entry)
+        class isBlinkBeginning(object):
             def Start_blink(_): return True
             def _(_): return False
 
@@ -117,10 +125,11 @@ class Trial:
             def End_blink(_): return True
             def _(_): return False
 
-        started = False
-        begin = []
         #Number of entries
-        n_entries = 0
+        begin_saccade = None
+        begin_fixation = None
+        begin_blink = None
+        started = False
         i_line = -1
         for line in lines:
             i_line += 1
@@ -130,7 +139,6 @@ class Trial:
                     started = True
                 if started:
                     entry.check()
-                    n_entries += 1
                     self.entries.append(entry)
                     #We are looking for entries with the same time as the stop trial entry
                     if stop(entry):
@@ -138,23 +146,36 @@ class Trial:
                             entry2 = self.experiment.eyetracker.parseEntry(line)
                             if entry2 != None and entry2.getTime() == entry.getTime():
                                 self.entries.insert(len(self.entries)-1, entry2)
-                            else:
+                                if begin_saccade is not None and isSaccadeEnding(entry2):
+                                    self.saccades.append(Saccade(self, begin_saccade, len(self.entries) - 2))
+                                    begin_saccade = None
+                                elif begin_fixation is not None and isFixationEnding(entry2):
+                                    self.fixations.append(Fixation(self, begin_fixation, len(self.entries) - 2))
+                                    begin_fixation = None
+                                elif begin_blink is not None and isBlinkEnding(entry2):
+                                    self.blinks.append(Blink(self, begin_blink, len(self.entries) - 2))
+                                    begin_blink = None
+                            elif entry2 != None and entry2.getTime() != entry.getTime():
                                 break
                             i_line += 1
                         return lines[i_line + 1:]
 
-                    if isBeginning(entry):
-                        begin.append(n_entries - 1)
-                    if len(begin) > 0:
-                        if isSaccadeEnding(entry):
-                            self.saccades.append(Saccade(self, begin[-1], n_entries - 1))
-                            begin.pop()
-                        elif isFixationEnding(entry):
-                            self.fixations.append(Fixation(self, begin[-1], n_entries - 1))
-                            begin.pop()
-                        elif isBlinkEnding(entry):
-                            self.blinks.append(Blink(self, begin[-1], n_entries - 1))
-                            begin.pop()
+                    if isSaccadeBeginning(entry):
+                        begin_saccade = len(self.entries) - 1
+                    elif isFixationBeginning(entry):
+                        begin_fixation = len(self.entries) - 1
+                    elif isBlinkBeginning(entry):
+                        begin_blink = len(self.entries) - 1
+
+                    if begin_saccade is not None and isSaccadeEnding(entry):
+                        self.saccades.append(Saccade(self, begin_saccade, len(self.entries) - 1))
+                        begin_saccade = None
+                    elif begin_fixation is not None and isFixationEnding(entry):
+                        self.fixations.append(Fixation(self, begin_fixation, len(self.entries) - 1))
+                        begin_fixation = None
+                    elif begin_blink is not None and isBlinkEnding(entry):
+                        self.blinks.append(Blink(self, begin_blink, len(self.entries) - 1))
+                        begin_blink = None
         return []
 
     def getFirstGazePosition(self) -> Union[Entry,None]:

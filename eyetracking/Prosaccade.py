@@ -175,6 +175,22 @@ class Prosaccade(Experiment):
         f.close()
 
     def postProcess(self, filename: str):
+        def initialize_variables(line):
+            d = dict()
+            d['subject_num'] = line[0]
+            d['emotion'] = line[5]
+            d['error'] = line[9]
+            d['blink'] = line[14]
+            try:
+                d['saccade'] = float(line[10])
+            except:
+                d['saccade'] = line[10]
+            try:
+                d['duration'] = float(line[13])
+            except:
+                d['duration'] = line[13]
+            return d
+
         # In the first version, only saccade durations with a duration higher than 100 ms could be considered as deviant.
         with open(filename) as datafile:
             data = datafile.read()
@@ -184,6 +200,7 @@ class Prosaccade(Experiment):
         subject = "Subject"
         sequence = []
         data_seq = []
+        list_scores = ['saccade', 'duration']
 
         for line in data:
             if line[0] == "Subject":
@@ -202,91 +219,75 @@ class Prosaccade(Experiment):
 
 
         for subject in data:
-            sum_dic = {}
-            counter_dic = {}
+            elements_list = {}
             mean_dic = {}
-            SS_dic = {}
-            counter_SS_dic = {}
+            square_dic = {}
             SD_dic = {}
+            group = subject[0][1]
+            if group == "SJS":
+                pass
+            elif group == "SAS" or group == "MA":
+                pass
+            else:
+                raise ExperimentException('No appropriate group for subject %s' % subject[0][0])
 
             for line in subject:
-                emotion = line[5]
-                error = line[9]
-                saccade = line[10]
-                duration = line[13]
-                blink = line[14]
-                if error == '0' and saccade != 'None' and "early" not in blink:
-                    if emotion in sum_dic:
-                        sum_dic[emotion]['saccade'] += float(saccade)
-                        counter_dic[emotion]['saccade'] += 1
-                        sum_dic[emotion]['duration'] += float(duration)
-                        counter_dic[emotion]['duration'] += 1
-                    else:
-                        sum_dic[emotion] = {}
-                        counter_dic[emotion] = {}
-                        mean_dic[emotion] = {}
-                        sum_dic[emotion]['saccade'] = float(saccade)
-                        counter_dic[emotion]['saccade'] = 1
-                        sum_dic[emotion]['duration'] = float(duration)
-                        counter_dic[emotion]['duration'] = 1
-                        mean_dic[emotion]['saccade'] = None
-                        mean_dic[emotion]['duration'] = None
+                dic_variables = initialize_variables(line)
+                code = dic_variables['emotion']
+                if code not in elements_list:
+                    elements_list[code] = {}
+                    mean_dic[code] = {}
+                    for element in list_scores:
+                        elements_list[code][element] = []
+                        mean_dic[code][element] = None
+                if dic_variables['error'] == '0' and dic_variables['saccade'] != 'None' and "early" not in dic_variables['blink']:
+                    elements_list[code]['saccade'].append(dic_variables['saccade'])
+                    elements_list[code]['duration'].append(dic_variables['duration'])
 
-            for emotion in mean_dic:
-                for key in mean_dic[emotion]:
-                    if emotion in sum_dic and key in sum_dic[emotion]:
-                        mean_dic[emotion][key] = sum_dic[emotion][key]/counter_dic[emotion][key]
+            for code in mean_dic:
+                for key in mean_dic[code]:
+                    if len(elements_list[code][key]) != 0:
+                        mean_dic[code][key] = sum(elements_list[code][key])/len(elements_list[code][key])
 
             for line in subject:
-                emotion = line[5]
-                error = line[9]
-                saccade = line[10]
-                duration = line[13]
-                blink = line[14]
-                if error == "0" and saccade != "None" and "early" not in blink:
-                    if emotion in SS_dic:
-                        SS_dic[emotion]['saccade'] += squareSum(float(saccade), mean_dic[emotion]['saccade'])
-                        counter_SS_dic[emotion]['saccade'] += 1
-                        SS_dic[emotion]['duration'] += squareSum(float(duration), mean_dic[emotion]['duration'])
-                        counter_SS_dic[emotion]['duration'] += 1
-                    else:
-                        SS_dic[emotion] = {}
-                        counter_SS_dic[emotion] = {}
-                        SD_dic[emotion] = {}
-                        SS_dic[emotion]['saccade'] = squareSum(float(saccade), mean_dic[emotion]['saccade'])
-                        counter_SS_dic[emotion]['saccade'] = 1
-                        SS_dic[emotion]['duration'] = squareSum(float(duration), mean_dic[emotion]['duration'])
-                        counter_SS_dic[emotion]['duration'] = 1
-                        SD_dic[emotion]['saccade'] = None
-                        SD_dic[emotion]['duration'] = None
+                dic_variables = initialize_variables(line)
+                code = dic_variables['emotion']
+                if code not in square_dic:
+                    square_dic[code] = {}
+                    SD_dic[code] = {}
+                    for element in list_scores:
+                        square_dic[code][element] = []
+                        SD_dic[code][element] = None
+                if dic_variables['error'] == "0" and dic_variables['saccade'] != "None" and "early" not in dic_variables['blink']:
+                    square_dic[code]['saccade'].append(squareSum(dic_variables['saccade'], mean_dic[code]['saccade']))
+                    square_dic[code]['duration'].append(squareSum(dic_variables['duration'], mean_dic[code]['duration']))
 
-                for emotion in SD_dic:
-                    for key in SD_dic[emotion]:
-                        if emotion in SS_dic and key in SS_dic[emotion]:
-                            SD_dic[emotion][key] = sqrt(SS_dic[emotion][key]/counter_SS_dic[emotion][key])
+                for code in SD_dic:
+                    for key in SD_dic[code]:
+                        if len(square_dic[code][key]) != 0:
+                            if len(square_dic[code][key]) > 1:
+                                SD_dic[code][key] = sqrt(sum(square_dic[code][key])/(len(square_dic[code][key])-1))
+                            else:
+                                SD_dic[code][key] = sqrt(sum(square_dic[code][key])/len(square_dic[code][key]))
 
             for line in subject:
-                subject_num = line[0]
-                emotion = line[5]
-                error = line[9]
-                saccade = line[10]
-                duration = line[13]
-                blink = line[14]
+                dic_variables = initialize_variables(line)
+                code = dic_variables['emotion']
                 new_line = line
-                for key in mean_dic[emotion]:
+                for key in mean_dic[code]:
                     if key == 'saccade':
-                        score = saccade
+                        score = dic_variables['saccade']
                     elif key == 'duration':
-                        score = duration
-                    if SD_dic[emotion][key] != None and error == "0" and saccade != "None" and "early" not in blink:
-                        current_mean = mean_dic[emotion][key]
-                        current_SD = SD_dic[emotion][key]
+                        score = dic_variables['duration']
+                    if SD_dic[code][key] != None and dic_variables['error'] == "0" and dic_variables['saccade'] != "None" and "early" not in dic_variables['blink']:
+                        current_mean = mean_dic[code][key]
+                        current_SD = SD_dic[code][key]
                         if (float(score) > (float(current_mean) + 3*float(current_SD)) or float(score) < (float(current_mean) - 3*float(current_SD))):
-                                print(key, " in a ", emotion, " trial exceeds 3 SD for subject ", subject_num, " : ",
+                                print(key, " in a ", code, " trial exceeds 3 SD for subject ", dic_variables['subject_num'], " : ",
                                       str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
                                 new_line.append("Deviant %s 3 SD" %key)
                         elif (float(score) > (float(current_mean) + 2*float(current_SD)) or float(score) < (float(current_mean) - 2*float(current_SD))):
-                                print(key, " in a ", emotion, " trial exceeds 2 SD for subject ", subject_num, " : ",
+                                print(key, " in a ", code, " trial exceeds 2 SD for subject ", dic_variables['subject_num'], " : ",
                                       str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
                                 new_line.append("Deviant %s 2 SD" %key)
                         else:

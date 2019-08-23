@@ -2,7 +2,7 @@ import sys, os, time
 from PyQt5.QtWidgets import QMainWindow, QAction, QActionGroup, qApp, QWidget
 from PyQt5.QtWidgets import QFileDialog, QTextEdit, QScrollArea, QMessageBox, QButtonGroup
 from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout, QLabel, QLineEdit, QShortcut
-from PyQt5.QtGui import QPixmap, QIcon, QKeySequence
+from PyQt5.QtGui import QPixmap, QIcon, QKeySequence, QCloseEvent
 from PyQt5.QtMultimedia import QSound
 from PyQt5.QtCore import Qt, pyqtSlot
 
@@ -64,8 +64,8 @@ class Main(QMainWindow):
 
     def set_shortcuts(self):
         self.search_line = None
-        self.shortcut = QShortcut(QKeySequence("Ctrl+F"), self)
-        self.shortcut.activated.connect(self.open_search)
+        shortcut = QShortcut(QKeySequence("Ctrl+F"), self)
+        shortcut.activated.connect(self.open_search)
 
     def getTrialData(self, n_subject, n_trial, is_training):
         if is_training:
@@ -155,7 +155,7 @@ class Main(QMainWindow):
         exitAct = QAction('&Exit', self)
         exitAct.setShortcut('Ctrl+Q')
         exitAct.setStatusTip('Exit application')
-        exitAct.triggered.connect(qApp.quit)
+        exitAct.triggered.connect(self.close)
 
         # Browse menu item
         browseAct = QAction("&Open File", self)
@@ -278,10 +278,6 @@ class Main(QMainWindow):
         sound = QSound(get_ressources_file('error.wav'))
         sound.play()
         error_dialog = QMessageBox()
-        '''exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(traceback.format_exc())'''
-        #s = 'file: %s, line: %i\n%s' % (fname, exc_tb.tb_lineno, error_message)
         error_dialog.warning(self, 'Error', traceback.format_exc())
 
     ###########################
@@ -328,7 +324,6 @@ class Main(QMainWindow):
     def file_open(self):
         filedialog = QFileDialog()
         filedialog.setDirectory('data')
-        #filedialog.setOption(QFileDialog.Option.DontUseNativeDialog,False)
         filenames,_ = filedialog.getOpenFileNames(self, 'Open File')
 
         if len(filenames) > 0:
@@ -476,3 +471,23 @@ class Main(QMainWindow):
         else:
             self.search_line.close()
             self.search_line = None
+
+    def closeEvent(self, event):
+        messagebox = QMessageBox(QMessageBox.Question, "Are you sure you want to quit?",
+        "Boo will miss you...",
+        buttons = QMessageBox.Yes | QMessageBox.No,
+        parent = self)
+        messagebox.setDefaultButton(QMessageBox.No)
+        messagebox.setIconPixmap(QPixmap(get_ressources_file("boo.png")))
+        sound = QSound(get_ressources_file('squeak.wav'))
+        sound.play()
+        reply = messagebox.exec_()
+
+        #reply = QMessageBox.question(self,
+        #    'Are you sure you want to quit?',
+        #    'Boo will miss you...',
+        #    QMessageBox.Yes, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            super(Main, self).closeEvent(event)
+        else:
+            event.ignore()

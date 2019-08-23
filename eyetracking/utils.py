@@ -50,3 +50,6 @@ def print_trace(message, precision):
 def logTrace(message, precision):
     if precision.value <= precision_level:
         print_trace(message, precision)
+
+def skip():
+    1
