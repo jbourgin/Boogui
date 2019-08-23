@@ -1,6 +1,6 @@
 import sys, os, time
 from PyQt5.QtWidgets import QMainWindow, QAction, QActionGroup, qApp, QWidget
-from PyQt5.QtWidgets import QFileDialog, QTextEdit, QScrollArea, QMessageBox
+from PyQt5.QtWidgets import QFileDialog, QTextEdit, QScrollArea, QMessageBox, QButtonGroup
 from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout, QLabel, QLineEdit, QShortcut
 from PyQt5.QtGui import QPixmap, QIcon, QKeySequence
 from PyQt5.QtMultimedia import QSound
@@ -31,7 +31,8 @@ class Main(QMainWindow):
 
         self.subject_datas = []
 
-        self.subject_buttons = []
+        self.subject_buttons = QButtonGroup()
+        self.subject_buttons.setExclusive(True)
 
         # The main window widget
         self.main_wid = None
@@ -254,7 +255,8 @@ class Main(QMainWindow):
 
     def clear_subjects(self):
         self.subject_datas = []
-        self.subject_buttons = []
+        self.subject_buttons = QButtonGroup()
+        self.subject_buttons.setExclusive(True)
         # Disabling Save menu action
         self.exportAct.setEnabled(False)
         # Enabling change of experiment
@@ -351,7 +353,7 @@ class Main(QMainWindow):
                     # Adding subject button
                     n_subject = len(self.subject_datas) - 1
                     button = QPushButton('Subject %i' % self.subject_datas[-1].subject.id)
-                    self.subject_buttons.append(button)
+                    self.subject_buttons.addButton(button)
                     button.setCheckable(True)
                     self.subjecttrialScrollLayout.addWidget(button)
                     button.clicked.connect(self.make_choose_subject(n_subject))
@@ -409,13 +411,7 @@ class Main(QMainWindow):
 
     def make_choose_subject(self, n_subject):
         def choose_subject():
-
-            for i in range(len(self.subject_datas)):
-                if i != n_subject:
-                    self.subject_buttons[i].setChecked(False)
-
             self.setup_trials(n_subject)
-
         return choose_subject
 
     # Setups the Trial scroller components after selecting a subject
@@ -427,12 +423,13 @@ class Main(QMainWindow):
         subject_data = self.subject_datas[n_subject]
         subject = subject_data.subject
 
-        self.trial_buttons = []
+        self.buttonGroup = QButtonGroup()
+        self.buttonGroup.setExclusive(True)
         i = 0
         for trial in subject.training_trials:
             button = QPushButton('Training %i' % i, self)
             button.setCheckable(True)
-            self.trial_buttons.append(button)
+            self.buttonGroup.addButton(button)
             self.trialScrollLayout.addWidget(button)
             button.clicked.connect(self.make_choose_trial(n_subject, i, trial))
             i += 1
@@ -441,7 +438,7 @@ class Main(QMainWindow):
         for trial in subject.trials:
             button = QPushButton('Trial %i' % i, self)
             button.setCheckable(True)
-            self.trial_buttons.append(button)
+            self.buttonGroup.addButton(button)
             self.trialScrollLayout.addWidget(button)
             button.clicked.connect(self.make_choose_trial(n_subject, i, trial))
             i += 1
@@ -450,23 +447,6 @@ class Main(QMainWindow):
         def choose_trial():
             logTrace ('choosing trial', Precision.NORMAL)
             self.clear_layouts()
-            n_trainings = self.subject_datas[n_subject].getNTrainings()
-            if trial.isTraining():
-                for i in range(n_trainings):
-                    if i != n_trial:
-                        self.trial_buttons[i].setChecked(False)
-                    else:
-                        self.trial_buttons[i].setChecked(True)
-                for button in self.trial_buttons[n_trainings:]:
-                    button.setChecked(False)
-            else:
-                for button in self.trial_buttons[:n_trainings]:
-                    button.setChecked(False)
-                for i in range(n_trainings, len(self.trial_buttons)):
-                    if i - n_trainings != n_trial:
-                        self.trial_buttons[i].setChecked(False)
-                    else:
-                        self.trial_buttons[i].setChecked(True)
 
             for entry in trial.entries:
                 self.logOutput.append(str(entry))
