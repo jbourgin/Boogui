@@ -26,6 +26,9 @@ class Main(QMainWindow):
     scrollLayouWidth = 125
     previsuAreaWidth = 700
 
+    # folder where the "open" file dialog starts
+    dataDirectory = 'data'
+
     def __init__(self):
         super().__init__()
 
@@ -323,10 +326,11 @@ class Main(QMainWindow):
     ###########################
     def file_open(self):
         filedialog = QFileDialog()
-        filedialog.setDirectory('data')
+        filedialog.setDirectory(self.dataDirectory)
         filenames,_ = filedialog.getOpenFileNames(self, 'Open File')
-
         if len(filenames) > 0:
+            # Storing new default data folder
+            self.dataDirectory = '/'.join(filenames[0].split('/')[0:-1])
             # Enabling Save menu action
             self.exportAct.setEnabled(True)
             # Disabling change of experiment
