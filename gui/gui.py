@@ -1,4 +1,5 @@
 import sys, os, time
+from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMainWindow, QAction, QActionGroup, qApp, QWidget
 from PyQt5.QtWidgets import QFileDialog, QTextEdit, QScrollArea, QMessageBox, QButtonGroup
 from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout, QLabel, QLineEdit, QShortcut
@@ -223,27 +224,28 @@ class Main(QMainWindow):
         setVisualSearch.setChecked(True)
         self.setVisualSearch()
 
-        # Frequency menu
+        # Config menu
+        self.config_menu = menubar.addMenu('&Config')
+
+        # Frequency submenu
         ag = QActionGroup(self, exclusive=True)
-        self.frequency_menu = menubar.addMenu('&Frequency')
+        frequency_menu = self.config_menu.addMenu('&Frequency')
         # Visual search
-        setFrequency1 = QAction('&1', self, checkable = True)
-        setFrequency2 = QAction('&2', self, checkable = True)
-        setFrequency5 = QAction('&5', self, checkable = True)
-        setFrequency10 = QAction('&10', self, checkable = True)
-        setFrequency1.triggered.connect(self.setFrequency(1))
-        setFrequency2.triggered.connect(self.setFrequency(2))
-        setFrequency5.triggered.connect(self.setFrequency(5))
-        setFrequency10.triggered.connect(self.setFrequency(10))
-        a = ag.addAction(setFrequency1)
-        self.frequency_menu.addAction(a)
-        a = ag.addAction(setFrequency2)
-        self.frequency_menu.addAction(a)
-        a = ag.addAction(setFrequency5)
-        self.frequency_menu.addAction(a)
-        a = ag.addAction(setFrequency10)
-        self.frequency_menu.addAction(a)
-        setFrequency10.setChecked(True)
+        for i in [1,2,5,10]:
+            setFrequency = QAction('&%i' % i, self, checkable = True)
+            setFrequency.triggered.connect(self.setFrequency(i))
+            a = ag.addAction(setFrequency)
+            frequency_menu.addAction(a)
+        setFrequency.setChecked(True)
+
+        # Warning submenu
+        #warning_menu = self.config_menu.addMenu('&Exception is Warning')
+        setWarning = self.config_menu.addAction('&Exception is Warning')
+        setWarning.setCheckable(True)
+        setWarning.setChecked(EntryList.ENTRYLISTEXCEPTION_WARNING)
+        def f():
+            EntryList.ENTRYLISTEXCEPTION_WARNING = not EntryList.ENTRYLISTEXCEPTION_WARNING
+        setWarning.triggered.connect(f)
 
     # Called when the application stops
     # Clears the temporary folder

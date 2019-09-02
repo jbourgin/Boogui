@@ -150,6 +150,8 @@ class EntryListException(Exception):
 
 class EntryList:
 
+    ENTRYLISTEXCEPTION_WARNING = True
+
     def __init__(self, trial, begin, end):
         # Begin is the index of the first line, and end the index of the last line.
         self.trial = trial
@@ -199,19 +201,36 @@ class EntryList:
             return 0
         return self.getEntry(self.getEnd()).getTime() - self.getEntry(self.getBegin()).getTime()
 
+    def raiseException(self, e):
+        if self.ENTRYLISTEXCEPTION_WARNING:
+            logTrace(str(e), Precision.ERROR)
+        else:
+            raise e
+
     def checkTimes(self) -> None:
         # Time must increase for all lines except the first and last ones.
         for i in range(self.begin+1, self.end-2):
             if self.getEntry(i).getTime() > self.getEntry(i+1).getTime():
-                raise EntryListException('Time is decreasing between %s and %s' % (str(self.getEntry(i)), str(self.getEntry(i+1))))
+                self.raiseException(
+                    EntryListException(
+                        'Time is decreasing between %s and %s' % (
+                            str(self.getEntry(i)),
+                            str(self.getEntry(i+1))
+                        )
+                    )
+                )
 
         # The first line must give the time of the second one
         if (self.getEntry(self.begin+1).getTime() - self.getEntry(self.begin).getTime()) > 2 :
-            raise EntryListException('Incorrect time for the first line: %s' % self.entries_to_string())
+            self.raiseException(
+                EntryListException('Incorrect time for the first line: %s' % self.entries_to_string())
+            )
 
         # The last line must give the time of the prevous one
         if (self.getEntry(self.end).getTime() - self.getEntry(self.end-1).getTime()) > 2:
-            raise EntryListException('Incorrect time for the last line %s' % str(self.getEntry(self.end)))
+            self.raiseException(
+                EntryListException('Incorrect time for the last line %s' % str(self.getEntry(self.end)))
+            )
             #logTrace ('Incorrect time for the last line %s' % str(self.getEntry(self.end)), Precision.ERROR)
 
     def check(self) -> None:
