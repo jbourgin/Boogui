@@ -28,9 +28,12 @@ class TrialData:
 
     def setFrequency(self, frequency : int):
         if self.frequency != frequency:
-            self.image = None
-            self.video = None
+            self.clearScanpaths()
             self.frequency = frequency
+
+    def clearScanpaths(self):
+        self.video = None
+        self.image = None
 
 class SubjectData:
     def __init__(self, experiment, input_file: str, frequency, progress = None):
@@ -54,3 +57,10 @@ class SubjectData:
 
     def getNTrainings(self):
         return len(self.training_trial_datas)
+
+    def clearScanpaths(self):
+        for trial in self.training_trial_datas:
+            trial.clearScanpaths()
+
+        for trial in self.trial_datas:
+            trial.clearScanpaths()

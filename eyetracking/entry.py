@@ -164,10 +164,10 @@ class EntryList:
     def entries_to_string(self):
         return '\n'.join([str(self.getEntry(i_line)) for i_line in range(self.begin, self.end)])
 
-    def getBegin(self) -> int :
+    def getBegin(self) -> int:
         return self.begin
 
-    def getEnd(self) -> int :
+    def getEnd(self) -> int:
         return self.end
 
     def getStartTime(self) -> int:

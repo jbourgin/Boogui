@@ -37,6 +37,9 @@ class Experiment (ABC):
         else:
             raise ExperimentException('File %s does not fit the experiment' % input_file)
 
+    def recalibrate(self, subject : Subject) -> None:
+        pass
+
     @abstractmethod
     def parseSubject(self, input_file : str, progress_bar) -> Subject:
         pass

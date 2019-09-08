@@ -247,6 +247,15 @@ class Main(QMainWindow):
             EntryList.ENTRYLISTEXCEPTION_WARNING = not EntryList.ENTRYLISTEXCEPTION_WARNING
         setWarning.triggered.connect(f)
 
+        # Recalibrate menu
+        recalibrate = QAction('&Recalibrate', self)
+        def f_recalibrate():
+            for subjectData in self.subject_datas:
+                subjectData.experiment.recalibrate(subjectData.subject)
+                subjectData.clearScanpaths()
+        recalibrate.triggered.connect(f_recalibrate)
+        self.config_menu.addAction(recalibrate)
+
     # Called when the application stops
     # Clears the temporary folder
     def closeEvent(self, close_event):
