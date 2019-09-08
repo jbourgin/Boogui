@@ -56,7 +56,14 @@ class Trial:
         return rest_lines
 
     def isEmpty(self) -> bool:
-        return self.entries == []
+        @match(Entry)
+        class isPosition(object):
+            def Position(time,x,y): return True
+            def _(_): return False
+        for entry in self.entries:
+            if isPosition(entry):
+                return False
+        return True
 
     def isTraining(self) -> bool:
         return self.is_training
@@ -279,8 +286,11 @@ class Trial:
             else:
                 return (True, last_gaze_entry.getGazePosition())
         first_pos = self.getFirstGazePosition()
-        if first_pos == None or distance(first_pos.getGazePosition(), screen_center) > valid_distance_center:
+        if first_pos == None:
+            return (False, None)
+        elif distance(first_pos.getGazePosition(), screen_center) > valid_distance_center:
             return (False, first_pos.getGazePosition())
+
 
         return (True, first_pos.getGazePosition())
 

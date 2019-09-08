@@ -17,9 +17,9 @@ class Make_Eyelink(Eyelink):
         self.valid_distance_center = 140 #3 degres of visual angle 95 (+ marge)
 
         # Initializing regions of interest
-        self.half_width = 182
-        self.half_height_face = 232
-        self.half_height_eye = 45
+        self.half_width = 200 #182
+        self.half_height_face = 268 #232
+        self.half_height_eye = 55 #45
 
         # frames
         self.right_gaze = RectangleRegion((self.screen_center[0]*(1+1/3), self.screen_center[1]+10), self.half_width, self.half_height_eye)
@@ -102,6 +102,7 @@ class Gaze_contingent(Experiment):
     def processTrial(self, subject, trial, filename = None):
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
         trial_number = trial.getTrialId()
+        print("Subject %i, trial %i" %(subject.id,trial_number))
 
         #if len(line) >= 5 and 'response' in line[3] and 'screen' in line[4]:
 
@@ -139,11 +140,12 @@ class Gaze_contingent(Experiment):
 
         # Time on target and distractors
         total_eye_fixation_time = sum(x['time'] for x in region_fixations if x['target'])
-        if total_eye_fixation_time == 0:
-            total_eye_fixation_time = None
+        # if total_eye_fixation_time == 0:
+        #     total_eye_fixation_time = None
         total_faceNotEye_fixation_time = sum(x['time'] for x in region_fixations if not x['target'])
-        if total_faceNotEye_fixation_time == 0:
-            total_faceNotEye_fixation_time = None
+        total_fixation_time = total_eye_fixation_time + total_faceNotEye_fixation_time
+        # if total_faceNotEye_fixation_time == 0:
+        #     total_faceNotEye_fixation_time = None
 
         # Determining blink category
         if trial.blinks == []:
@@ -163,6 +165,8 @@ class Gaze_contingent(Experiment):
         #    error = "Not valid start"
         if trial.features['response'] == 'None':
             error = "No subject response"
+        elif total_fixation_time < 2000:
+            error = "Low fixation time"
         elif blink_category == 'early capture':
             error = "Early blink"
         else:
@@ -250,7 +254,7 @@ class Gaze_contingent(Experiment):
             square_dic = {}
             SD_dic = {}
             group = subject[0][1]
-            if group == "SJS":
+            if group == "YA":
                 pass
             elif group == "SAS" or group == "MA":
                 pass

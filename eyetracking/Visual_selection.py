@@ -15,8 +15,8 @@ class Make_Eyelink(Eyelink):
         self.valid_distance_center = 100 #3 degres of visual angle 95 (+ marge)
 
         # Initializing regions of interest
-        self.half_width = 200
-        self.half_height = 150
+        self.half_width = 200 #200
+        self.half_height = 150 #150
 
         self.setupStandard()
 
@@ -43,7 +43,7 @@ class Make_Eyelink(Eyelink):
 
     # Returns a dictionary of experiment variables
     def parseVariables(self, line: List[str]):
-        print(line)
+        #print(line)
         if len(line) > 3 and line[3] == "stim1":
             try:
                 if len(line) > 3 and line[3] == "stim1":
@@ -149,11 +149,16 @@ class Visual_selection(Experiment):
 
         # Time on target and distractors
         total_emo_fixation_time = sum(x['time'] for x in region_fixations if x['target'])
-        if total_emo_fixation_time == 0:
-            total_emo_fixation_time = None
         total_neu_fixation_time = sum(x['time'] for x in region_fixations if not x['target'])
-        if total_neu_fixation_time == 0:
-            total_neu_fixation_time = None
+        if total_emo_fixation_time != 0 or total_neu_fixation_time != 0:
+            percent_emo_fixation_time = total_emo_fixation_time/(total_neu_fixation_time+total_emo_fixation_time)*100
+            percent_neu_fixation_time = total_neu_fixation_time/(total_neu_fixation_time+total_emo_fixation_time)*100
+        # if total_emo_fixation_time == 0:
+        #     total_emo_fixation_time = None
+        #     percent_emo_fixation_time = None
+        # if total_neu_fixation_time == 0:
+        #     total_neu_fixation_time = None
+        #     percent_neu_fixation_time = None
 
         # Determining blink category
         if trial.blinks == []:
@@ -175,6 +180,8 @@ class Visual_selection(Experiment):
         # Error :
         if not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)[0]:
             error = "Not valid start"
+        elif (total_neu_fixation_time+total_emo_fixation_time) < 4000:
+            error = "Low fixation"
         elif blink_category == 'early capture':
             error = "Early blink"
         elif first_fixation is None:
@@ -188,6 +195,7 @@ class Visual_selection(Experiment):
                     error = '0'
                 else:
                     error = '1'
+
 
         # Writing data in result csv file
         s = [str(subject.id) + "-E", # Subject name
@@ -208,6 +216,8 @@ class Visual_selection(Experiment):
             capture_delay_neu_first,
             total_emo_fixation_time,
             total_neu_fixation_time,
+            percent_emo_fixation_time,
+            percent_neu_fixation_time,
             blink_category,
             first_saccade]
 
@@ -268,7 +278,7 @@ class Visual_selection(Experiment):
             square_dic = {}
             SD_dic = {}
             group = subject[0][1]
-            if group == "SJS":
+            if group == "YA":
                 pass
             elif group == "SAS" or group == "MA":
                 pass
@@ -375,6 +385,8 @@ class Visual_selection(Experiment):
             'First time on neutral target',
             'Total fixation time on emotional target',
             'Total fixation time on neutral target',
+            '% fixation time on emotional target',
+            '% fixation time on neutral target',
             'First blink type',
             'First saccade'
         ]))
