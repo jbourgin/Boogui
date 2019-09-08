@@ -99,7 +99,8 @@ class Gaze_contingent(Experiment):
                 return count
         return None
 
-    def recalibrate(self, subject : Subject) -> None:
+    def recalibrate(self, subject : Subject, progress = None) -> None:
+
         def shift(trial, vec):
             for (i_entry,entry) in enumerate(trial.entries):
                 pos = getGazePosition(entry)
@@ -132,6 +133,8 @@ class Gaze_contingent(Experiment):
                 for trial in subject.trials[n_trial - 23: n_trial+1]:
                     shift(trial, (0,shift_y))
                 gaze_positions = []
+                if progress != None:
+                    progress[0].increment(progress[1])
 
     def processTrial(self, subject, trial, filename = None):
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)

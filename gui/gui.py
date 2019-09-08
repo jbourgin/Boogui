@@ -248,11 +248,10 @@ class Main(QMainWindow):
         setWarning.triggered.connect(f)
 
         # Recalibrate menu
-        recalibrate = QAction('&Recalibrate', self)
+        recalibrate = QAction('&Recalibrate all subjects', self)
         def f_recalibrate():
             for subjectData in self.subject_datas:
-                subjectData.experiment.recalibrate(subjectData.subject)
-                subjectData.clearScanpaths()
+                self.recalibrate(subjectData)
         recalibrate.triggered.connect(f_recalibrate)
         self.config_menu.addAction(recalibrate)
 
@@ -364,6 +363,16 @@ class Main(QMainWindow):
                     n_subject = len(self.subject_datas) - 1
                     button = QPushButton('Subject %i' % self.subject_datas[-1].subject.id)
                     self.subject_buttons.addButton(button)
+                    # set button context menu policy
+                    button.setContextMenuPolicy(Qt.CustomContextMenu)
+                    # create context menu
+                    popMenu = QtWidgets.QMenu(self)
+                    a = QAction('Recalibrate', self)
+                    a.triggered.connect(lambda:self.recalibrate(subject))
+                    popMenu.addAction(a)
+                    button.customContextMenuRequested.connect(
+                        lambda point: popMenu.exec_(button.mapToGlobal(point))
+                    )
                     button.setCheckable(True)
                     self.subjecttrialScrollLayout.addWidget(button)
                     button.clicked.connect(self.make_choose_subject(n_subject))
@@ -374,6 +383,16 @@ class Main(QMainWindow):
 
             #closing message box
             progress.close()
+
+    def recalibrate(self, subject: Subject) -> None:
+        progress = ProgressWidget(self, 1)
+        progress.setText(0, 'Recalibration')
+        progress.setMaximum(0, 3)
+        subject.experiment.recalibrate(subject.subject,
+            (progress, 0)
+        )
+        subject.clearScanpaths()
+        progress.close()
 
     def exportSubjects(self):
         """
