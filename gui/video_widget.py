@@ -1,5 +1,4 @@
-import sys
-import time
+import sys, time, os
 from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QSlider, QStyle, QMessageBox
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
@@ -32,16 +31,21 @@ class VideoWidget(QWidget):
         self.layout.addWidget(self.button)
 
     def setVideo(self, path: str) -> None:
+        url = joinPaths(getTmpFolder(), path)
         self.clear()
         self.play_button = QPushButton("Play")
         self.play_button.clicked.connect(self.play)
         self.play_button.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
 
+        play_vlc = QPushButton("Play with VLC")
+        def f():
+            self.playWithVLC(url)
+        play_vlc.clicked.connect(f)
+        play_vlc.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
+
         self.position_slider = QSlider(Qt.Horizontal)
         self.position_slider.setRange(0, 0)
         self.position_slider.sliderMoved.connect(self.setPosition)
-
-        url = joinPaths(getTmpFolder(), path)
 
         vid_wid = QVideoWidget()
 
@@ -51,12 +55,16 @@ class VideoWidget(QWidget):
         self.layout.addWidget(vid_wid)
         self.layout.addWidget(self.position_slider)
         self.layout.addWidget(self.play_button)
+        self.layout.addWidget(play_vlc)
 
     def play(self):
         if self.media_player.state() == QMediaPlayer.PlayingState:
             self.media_player.pause()
         else:
             self.media_player.play()
+
+    def playWithVLC(self, url):
+        os.system('vlc %s' % url)
 
     def mediaStateChanged(self, state):
         if self.media_player.state() == QMediaPlayer.PlayingState:
