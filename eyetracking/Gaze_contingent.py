@@ -124,7 +124,7 @@ class Gaze_contingent(Experiment):
                 ]
                 if trial.features['target_side'] == 'Left':
                     gaze_positions[i]['left'] += x
-                else:
+                elif trial.features['target_side'] == 'Right':
                     gaze_positions[i]['right'] += x
             if (n_trial + 1) % 24 == 0:
                 i += 1
@@ -137,6 +137,10 @@ class Gaze_contingent(Experiment):
             self.eyetracker.left_gaze.center[0],
             self.eyetracker.left_gaze.center[1] + 100
         )
+        cluster3_left = Entry.Position(0.0,
+            self.eyetracker.screen_center[0] * 4/3,
+            self.eyetracker.screen_center[1] + 150
+        )
         cluster1_right = Entry.Position(0.0,
             self.eyetracker.right_gaze.center[0],
             self.eyetracker.right_gaze.center[1] - 50
@@ -145,9 +149,13 @@ class Gaze_contingent(Experiment):
             self.eyetracker.right_gaze.center[0],
             self.eyetracker.right_gaze.center[1] + 100
         )
+        cluster3_right = Entry.Position(0.0,
+            self.eyetracker.screen_center[0] * 2/3,
+            self.eyetracker.screen_center[1] + 150
+        )
         for i in range(4):
-            means_left = k_clusters(gaze_positions[i]['left'], 2, [cluster1_left, cluster2_left])
-            means_right = k_clusters(gaze_positions[i]['right'], 2, [cluster1_right, cluster2_right])
+            means_left = k_clusters(gaze_positions[i]['left'], 3, [cluster1_left, cluster2_left, cluster3_left])
+            means_right = k_clusters(gaze_positions[i]['right'], 3, [cluster1_right, cluster2_right, cluster3_right])
             shift_vec_left = (
                 self.eyetracker.left_gaze.center[0] - means_left[0].getGazePosition()[0],
                 self.eyetracker.left_gaze.center[1] - means_left[0].getGazePosition()[1],
