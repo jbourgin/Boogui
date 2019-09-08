@@ -14,12 +14,12 @@ class Make_Eyelink(Eyelink):
         self.screen_center = (683,384)
         # Minimal distance at which we consider the subject is looking at the
         # fixation cross at the trial beginning
-        self.valid_distance_center = 140 #3 degres of visual angle 95 (+ marge)
+        self.valid_distance_center = 100 #3 degres of visual angle 95 (+ marge)
 
         # Initializing regions of interest
-        self.half_width = 200 #182
-        self.half_height_face = 268 #232
-        self.half_height_eye = 55 #45
+        self.half_width = 200 #200
+        self.half_height_face = 268 #268
+        self.half_height_eye = 45 #45
 
         # frames
         self.right_gaze = RectangleRegion((self.screen_center[0]*(1+1/3), self.screen_center[1]+10), self.half_width, self.half_height_eye)
@@ -144,6 +144,12 @@ class Gaze_contingent(Experiment):
         #     total_eye_fixation_time = None
         total_faceNotEye_fixation_time = sum(x['time'] for x in region_fixations if not x['target'])
         total_fixation_time = total_eye_fixation_time + total_faceNotEye_fixation_time
+        if total_fixation_time != 0:
+            percent_eye = total_eye_fixation_time/total_fixation_time*100
+            percent_face = total_faceNotEye_fixation_time/total_fixation_time*100
+        else:
+            percent_eye = None
+            percent_face = None
         # if total_faceNotEye_fixation_time == 0:
         #     total_faceNotEye_fixation_time = None
 
@@ -161,8 +167,8 @@ class Gaze_contingent(Experiment):
 
         # Error :
 
-        #if not trial.isStartValid(start_point, self.eyetracker.valid_distance_center)[0]:
-        #    error = "Not valid start"
+        # if not trial.isStartValid(start_point, self.eyetracker.valid_distance_center)[0]:
+        #     error = "Not valid start"
         if trial.features['response'] == 'None':
             error = "No subject response"
         elif total_fixation_time < 2000:
@@ -195,6 +201,8 @@ class Gaze_contingent(Experiment):
             capture_delay_first,
             total_eye_fixation_time,
             total_faceNotEye_fixation_time,
+            percent_eye,
+            percent_face,
             blink_category]
 
         if filename is None:
@@ -364,6 +372,8 @@ class Gaze_contingent(Experiment):
             'First time on eyes',
             'Total fixation time on eyes',
             'Total fixation time on face (other than eyes)',
+            'Percent time on eyes',
+            'Percent time on face',
             'First blink type',
         ]))
         f.write('\n')
