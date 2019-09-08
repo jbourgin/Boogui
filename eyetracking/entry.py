@@ -1,5 +1,6 @@
 from sumtypes import sumtype, match, constructor
 from typing import Tuple, TypeVar, Union
+import math, random
 from eyetracking.utils import *
 
 class EntryException(Exception):
@@ -346,3 +347,63 @@ class Blink(EntryList):
         #self.checkTimes()
         checkStart(self.getEntry(self.begin))
         checkEnd(self.getEntry(self.end))
+
+def k_clusters(entries, k, means = None, epsilon = 0.5):
+    print('k_clusters')
+    def norm(e1, e2):
+        (x1,y1) = e1.getGazePosition()
+        (x2,y2) = e2.getGazePosition()
+        return math.sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1))
+
+    def i_min(l):
+        i = 0
+        min = l[0]
+        for j in range(len(l)):
+            if l[j] < min:
+                min = l[j]
+                i = j
+        return i
+
+    if means == None:
+        # Initialization
+        means = []
+        for i in range(k):
+            mean = random.randint(0,len(entries))
+            while mean in means:
+                mean = random.randint(0,len(entries))
+            means.append(mean)
+        means = [entries[i_mean] for i_mean in means]
+    else:
+        if k != len(means):
+            raise "K clusters: means length is not k"
+
+    while True:
+        print(means)
+        clusters = [[] for i in range(k)]
+        for entry in entries:
+            norms = [norm(mean, entry) for mean in means]
+            clusters[i_min(norms)].append(entry)
+
+        # Computing new means
+        new_means = []
+        for i in range(k):
+            mean = [0.0,0.0]
+            for entry in clusters[i]:
+                mean[0] += entry.getGazePosition()[0]
+                mean[1] += entry.getGazePosition()[1]
+            new_means.append(Entry.Position(0.0,
+                mean[0] / len(clusters[i]),
+                mean[1] / len(clusters[i])
+            ))
+
+        stop = True
+        for i in range(k):
+            if norm(new_means[i], means[i]) > epsilon:
+                stop = False
+                break
+        if stop:
+            break
+        else:
+            means = new_means
+
+    return means

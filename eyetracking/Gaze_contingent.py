@@ -100,7 +100,6 @@ class Gaze_contingent(Experiment):
         return None
 
     def recalibrate(self, subject : Subject, progress = None) -> None:
-
         def shift(trial, vec):
             for (i_entry,entry) in enumerate(trial.entries):
                 pos = getGazePosition(entry)
@@ -110,31 +109,86 @@ class Gaze_contingent(Experiment):
                         pos[0] + vec[0],
                         pos[1] + vec[1]
                     )
+
         gaze_positions = []
+        for i in range(4):
+            gaze_positions.append({'left': [], 'right': []})
+
+        i = 0
         for (n_trial, trial) in enumerate(subject.trials):
             for fixation in trial.fixations:
-                gaze_positions += [
-                    getGazePosition(fixation.getEntry(i))
+                x = [
+                    fixation.getEntry(i)
                     for i in range(fixation.getBegin(), fixation.getEnd())
                     if getGazePosition(fixation.getEntry(i)) != None
                 ]
-
+                if trial.features['target_side'] == 'Left':
+                    gaze_positions[i]['left'] += x
+                else:
+                    gaze_positions[i]['right'] += x
             if (n_trial + 1) % 24 == 0:
-                gaze_positions = sorted(gaze_positions,
-                    key = lambda x: x[1])
-                # Removing first 5%
-                id = int(len(gaze_positions)*5.0/100.0)
-                print(id)
-                gaze_positions = gaze_positions[id:]
-                min_y = gaze_positions[0][1]
-                print('min_y: ' + str(min_y))
-                print(self.eyetracker.left_gaze)
-                shift_y = self.eyetracker.left_gaze.center[1] - min_y
-                for trial in subject.trials[n_trial - 23: n_trial+1]:
-                    shift(trial, (0,shift_y))
-                gaze_positions = []
-                if progress != None:
-                    progress[0].increment(progress[1])
+                i += 1
+
+        cluster1_left = Entry.Position(0.0,
+            self.eyetracker.left_gaze.center[0],
+            self.eyetracker.left_gaze.center[1] - 50
+        )
+        cluster2_left = Entry.Position(0.0,
+            self.eyetracker.left_gaze.center[0],
+            self.eyetracker.left_gaze.center[1] + 100
+        )
+        cluster1_right = Entry.Position(0.0,
+            self.eyetracker.right_gaze.center[0],
+            self.eyetracker.right_gaze.center[1] - 50
+        )
+        cluster2_right = Entry.Position(0.0,
+            self.eyetracker.right_gaze.center[0],
+            self.eyetracker.right_gaze.center[1] + 100
+        )
+        for i in range(4):
+            means_left = k_clusters(gaze_positions[i]['left'], 2, [cluster1_left, cluster2_left])
+            means_right = k_clusters(gaze_positions[i]['right'], 2, [cluster1_right, cluster2_right])
+            shift_vec_left = (
+                self.eyetracker.left_gaze.center[0] - means_left[0].getGazePosition()[0],
+                self.eyetracker.left_gaze.center[1] - means_left[0].getGazePosition()[1],
+            )
+            shift_vec_right = (
+                self.eyetracker.right_gaze.center[0] - means_right[0].getGazePosition()[0],
+                self.eyetracker.right_gaze.center[1] - means_right[0].getGazePosition()[1],
+            )
+            for trial in subject.trials[i*24 : (i+1)*24]:
+                if trial.features['target_side'] == 'Left':
+                    shift(trial, shift_vec_left)
+                else:
+                    shift(trial, shift_vec_right)
+            if progress != None:
+                progress[0].increment(progress[1])
+
+        # gaze_positions = []
+        # for (n_trial, trial) in enumerate(subject.trials):
+        #     for fixation in trial.fixations:
+        #         gaze_positions += [
+        #             getGazePosition(fixation.getEntry(i))
+        #             for i in range(fixation.getBegin(), fixation.getEnd())
+        #             if getGazePosition(fixation.getEntry(i)) != None
+        #         ]
+        #
+        #     if (n_trial + 1) % 24 == 0:
+        #         gaze_positions = sorted(gaze_positions,
+        #             key = lambda x: x[1])
+        #         # Removing first 5%
+        #         id = int(len(gaze_positions)*5.0/100.0)
+        #         print(id)
+        #         gaze_positions = gaze_positions[id:]
+        #         min_y = gaze_positions[0][1]
+        #         print('min_y: ' + str(min_y))
+        #         print(self.eyetracker.left_gaze)
+        #         shift_y = self.eyetracker.left_gaze.center[1] - min_y
+        #         for trial in subject.trials[n_trial - 23: n_trial+1]:
+        #             shift(trial, (0,shift_y))
+        #         gaze_positions = []
+        #         if progress != None:
+        #             progress[0].increment(progress[1])
 
     def processTrial(self, subject, trial, filename = None):
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
