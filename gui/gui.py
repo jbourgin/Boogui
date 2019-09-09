@@ -251,7 +251,8 @@ class Main(QMainWindow):
         recalibrate = QAction('&Recalibrate all subjects', self)
         def f_recalibrate():
             for subjectData in self.subject_datas:
-                self.recalibrate(subjectData)
+                g = self.recalibrate(subjectData)
+                g()
         recalibrate.triggered.connect(f_recalibrate)
         self.config_menu.addAction(recalibrate)
 
@@ -335,6 +336,7 @@ class Main(QMainWindow):
     ###### I/O functions ######
     ###########################
     def file_open(self):
+
         filedialog = QFileDialog()
         filedialog.setDirectory(self.dataDirectory)
         filenames,_ = filedialog.getOpenFileNames(self, 'Open File')
@@ -364,15 +366,18 @@ class Main(QMainWindow):
                     button = QPushButton('Subject %i' % self.subject_datas[-1].subject.id)
                     self.subject_buttons.addButton(button)
                     # set button context menu policy
-                    button.setContextMenuPolicy(Qt.CustomContextMenu)
+                    button.setContextMenuPolicy(Qt.ActionsContextMenu)
                     # create context menu
-                    popMenu = QtWidgets.QMenu(self)
+                    #popMenu = QtWidgets.QMenu(self)
                     a = QAction('Recalibrate', self)
-                    a.triggered.connect(lambda:self.recalibrate(subject))
-                    popMenu.addAction(a)
-                    button.customContextMenuRequested.connect(
-                        lambda point: popMenu.exec_(button.mapToGlobal(point))
-                    )
+
+
+                    a.triggered.connect(self.recalibrate(subject))
+                    #popMenu.addAction(a)
+                    # button.customContextMenuRequested.connect(
+                    #     lambda point: popMenu.exec_(button.mapToGlobal(point))
+                    # )
+                    button.addAction(a)
                     button.setCheckable(True)
                     self.subjecttrialScrollLayout.addWidget(button)
                     button.clicked.connect(self.make_choose_subject(n_subject))
@@ -385,14 +390,16 @@ class Main(QMainWindow):
             progress.close()
 
     def recalibrate(self, subject: Subject) -> None:
-        progress = ProgressWidget(self, 1)
-        progress.setText(0, 'Recalibration')
-        progress.setMaximum(0, 3)
-        subject.experiment.recalibrate(subject.subject,
-            (progress, 0)
-        )
-        subject.clearScanpaths()
-        progress.close()
+        def f():
+            progress = ProgressWidget(self, 1)
+            progress.setText(0, 'Recalibration')
+            progress.setMaximum(0, 3)
+            subject.experiment.recalibrate(subject.subject,
+                (progress, 0)
+            )
+            subject.clearScanpaths()
+            progress.close()
+        return f
 
     def exportSubjects(self):
         """

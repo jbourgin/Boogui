@@ -100,6 +100,7 @@ class Gaze_contingent(Experiment):
         return None
 
     def recalibrate(self, subject : Subject, progress = None) -> None:
+        print('K clusters on subject %i' % subject.id)
         def shift(trial, vec):
             for (i_entry,entry) in enumerate(trial.entries):
                 pos = getGazePosition(entry)
@@ -171,32 +172,6 @@ class Gaze_contingent(Experiment):
                     shift(trial, shift_vec_right)
             if progress != None:
                 progress[0].increment(progress[1])
-
-        # gaze_positions = []
-        # for (n_trial, trial) in enumerate(subject.trials):
-        #     for fixation in trial.fixations:
-        #         gaze_positions += [
-        #             getGazePosition(fixation.getEntry(i))
-        #             for i in range(fixation.getBegin(), fixation.getEnd())
-        #             if getGazePosition(fixation.getEntry(i)) != None
-        #         ]
-        #
-        #     if (n_trial + 1) % 24 == 0:
-        #         gaze_positions = sorted(gaze_positions,
-        #             key = lambda x: x[1])
-        #         # Removing first 5%
-        #         id = int(len(gaze_positions)*5.0/100.0)
-        #         print(id)
-        #         gaze_positions = gaze_positions[id:]
-        #         min_y = gaze_positions[0][1]
-        #         print('min_y: ' + str(min_y))
-        #         print(self.eyetracker.left_gaze)
-        #         shift_y = self.eyetracker.left_gaze.center[1] - min_y
-        #         for trial in subject.trials[n_trial - 23: n_trial+1]:
-        #             shift(trial, (0,shift_y))
-        #         gaze_positions = []
-        #         if progress != None:
-        #             progress[0].increment(progress[1])
 
     def processTrial(self, subject, trial, filename = None):
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
