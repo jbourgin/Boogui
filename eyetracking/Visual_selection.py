@@ -216,8 +216,8 @@ class Visual_selection(Experiment):
             capture_delay_neu_first,
             total_emo_fixation_time,
             total_neu_fixation_time,
-            percent_emo_fixation_time,
-            percent_neu_fixation_time,
+            percent_emo_fixation_time.replace('.',','),
+            percent_neu_fixation_time.replace('.',','),
             blink_category,
             first_saccade]
 

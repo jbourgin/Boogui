@@ -301,8 +301,8 @@ class Gaze_contingent(Experiment):
             capture_delay_first,
             total_eye_fixation_time,
             total_faceNotEye_fixation_time,
-            percent_eye,
-            percent_face,
+            percent_eye.replace('.',','),
+            percent_face.replace('.',','),
             blink_category]
 
         if filename is None:
