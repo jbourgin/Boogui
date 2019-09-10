@@ -370,13 +370,7 @@ class Main(QMainWindow):
                     # create context menu
                     #popMenu = QtWidgets.QMenu(self)
                     a = QAction('Recalibrate', self)
-
-
                     a.triggered.connect(self.recalibrate(subject))
-                    #popMenu.addAction(a)
-                    # button.customContextMenuRequested.connect(
-                    #     lambda point: popMenu.exec_(button.mapToGlobal(point))
-                    # )
                     button.addAction(a)
                     button.setCheckable(True)
                     self.subjecttrialScrollLayout.addWidget(button)
@@ -393,7 +387,7 @@ class Main(QMainWindow):
         def f():
             progress = ProgressWidget(self, 1)
             progress.setText(0, 'Recalibration')
-            progress.setMaximum(0, 3)
+            progress.setMaximum(0, 4)
             subject.experiment.recalibrate(subject.subject,
                 (progress, 0)
             )
@@ -450,6 +444,15 @@ class Main(QMainWindow):
             self.setup_trials(n_subject)
         return choose_subject
 
+    def deleteTrial(self, subject_data, n_trial, button):
+        def f():
+            subject_data.subject.trials.pop(n_trial)
+            subject_data.trial_datas.pop(n_trial)
+            # Deleting trial button
+            self.trialScrollLayout.removeWidget(button)
+            button.deleteLater()
+        return f
+
     # Setups the Trial scroller components after selecting a subject
     def setup_trials(self, n_subject):
         # Clearing layouts
@@ -477,6 +480,13 @@ class Main(QMainWindow):
             self.buttonGroup.addButton(button)
             self.trialScrollLayout.addWidget(button)
             button.clicked.connect(self.make_choose_trial(n_subject, i, trial))
+            # set button context menu policy
+            button.setContextMenuPolicy(Qt.ActionsContextMenu)
+            # create context menu
+            #popMenu = QtWidgets.QMenu(self)
+            a = QAction('Delete', self)
+            a.triggered.connect(self.deleteTrial(subject_data, i, button))
+            button.addAction(a)
             i += 1
 
     def make_choose_trial(self, n_subject, n_trial, trial):
