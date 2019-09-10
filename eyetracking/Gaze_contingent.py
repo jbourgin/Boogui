@@ -17,8 +17,8 @@ class Make_Eyelink(Eyelink):
         self.valid_distance_center = 100 #3 degres of visual angle 95 (+ marge)
 
         # Initializing regions of interest
-        self.half_width = 200 #200
-        self.half_height_face = 268 #268
+        self.half_width = 250 #200
+        self.half_height_face = 300 #268
         self.half_height_eye = 45 #45
 
         # frames
@@ -276,8 +276,8 @@ class Gaze_contingent(Experiment):
             capture_delay_first,
             total_eye_fixation_time,
             total_faceNotEye_fixation_time,
-            percent_eye.replace('.',','),
-            percent_face.replace('.',','),
+            str(percent_eye).replace('.',','),
+            str(percent_face).replace('.',','),
             blink_category]
 
         if filename is None:
