@@ -99,14 +99,7 @@ class Visual_selection(Experiment):
 
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
         trial_number = trial.getTrialId()
-
         start_trial_time = trial.getStartTrial().getTime()
-
-        if trial.saccades == []:
-            logTrace ("Subject %i has no saccades at trial %i !" %(subject.id,trial_number), Precision.DETAIL)
-            first_saccade = None
-        else:
-            first_saccade = trial.saccades[0].getStartTime() - start_trial_time
 
         if trial.isTraining():
             emo_position = self.eyetracker.left
@@ -119,6 +112,17 @@ class Visual_selection(Experiment):
                 emo_position = self.eyetracker.right
                 neu_position = self.eyetracker.left
         regions = InterestRegionList([emo_position, neu_position])
+
+        if trial.saccades == []:
+            logTrace ("Subject %i has no saccades at trial %i !" %(subject.id,trial_number), Precision.DETAIL)
+            first_saccade = None
+            first_saccade_pos = None
+        else:
+            first_saccade = trial.saccades[0].getStartTimeFromStartTrial()
+            if trial.saccades[0].getLastGazePosition()[0] > self.eyetracker.screen_center[0]:
+                first_saccade_pos = 'right'
+            else:
+                first_saccade_pos = 'left'
 
 
         targetname = trial.features['stim1']
@@ -180,22 +184,29 @@ class Visual_selection(Experiment):
         # Error :
         if not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)[0]:
             error = "Not valid start"
-        elif (total_neu_fixation_time+total_emo_fixation_time) < 4000:
-            error = "Low fixation"
+        # elif (total_neu_fixation_time+total_emo_fixation_time) < 4000:
+        #     error = "Low fixation"
+        # Add sac amplitude ?
         elif blink_category == 'early capture':
             error = "Early blink"
         elif first_fixation is None:
             error = "No fixation"
+        elif first_fixation < 100:
+             error = "Anticipation saccade"
+        # elif first_saccade <= 80:
+        #     error = "Anticipation saccade"
+        # elif first_saccade > 700:
+        #     error = "Saccade too long"
         else:
             if trial.isTraining():
                 error = '0'
             else:
                 if ((first_fixation['target'] and trial.features['arrow'] == trial.features['target_side'])
                     or (not first_fixation['target'] and trial.features['arrow'] != trial.features['target_side'])):
+                #if first_saccade_pos == trial.features['arrow']:
                     error = '0'
                 else:
                     error = '1'
-
 
         # Writing data in result csv file
         s = [str(subject.id) + "-E", # Subject name
@@ -229,6 +240,103 @@ class Visual_selection(Experiment):
         f.write('\n')
         f.close()
 
+    def computeCurveTrial(self, trial, region_fixation):
+        res = [0 for i in range(0, trial.getStopTrial().getTime() - trial.getStartTrial().getTime())]
+        for fixation in region_fixation:
+            if fixation['target']:
+                for time in range(
+                    fixation['begin'].getTime() - trial.getStartTrial().getTime(),
+                    fixation['end'].getTime() - trial.getStartTrial().getTime(),
+                    2):
+                    res[time] = 1 if trial.features['emotion'] == 'pos' else -1
+        return res
+
+    def computeCurve(self, subject):
+
+        def make_gnuplot_script(emotion):
+            f = open('plots/make_plot', 'w')
+            f.write(
+                '''
+                set term 'png'
+                set output 'plots/%s_%s.png'
+                set yrange [-0.5:0.5]
+                set datafile separator ";"
+                plot '%s.csv' smooth acsplines
+                set output 'plots/%s_%s_bez.png'
+                plot '%s.csv' smooth bezier
+                ''' % (subject.id, emotion, emotion, subject.id, emotion, emotion)
+            )
+            f.close()
+
+        def add_curves(x,y):
+            res = [a + b for (a,b) in zip(x,y)]
+            if len(x) < len(y):
+                res += y[len(x):]
+            elif len(y) < len(x):
+                res += x[len(y):]
+            return res
+
+        if subject.id <= 3:
+            self.eyetracker.setupFirstSubjects()
+
+        n_pos = 0
+        n_neg = 0
+        pos_curve = []
+        neg_curve = []
+        for trial in subject.trials:
+
+            if trial.isTraining():
+                emo_position = self.eyetracker.left
+                neu_position = self.eyetracker.right
+            else:
+                if 'left' in trial.features['target_side']:
+                    emo_position = self.eyetracker.left
+                    neu_position = self.eyetracker.right
+                elif 'right' in trial.features['target_side']:
+                    emo_position = self.eyetracker.right
+                    neu_position = self.eyetracker.left
+            regions = InterestRegionList([emo_position, neu_position])
+
+            region_fixations = trial.getFixationTime(regions, emo_position)
+
+            res = self.computeCurveTrial(trial, region_fixations)
+            if trial.features['emotion'] == 'pos':
+                pos_curve = add_curves(pos_curve, res)
+                n_pos += 1
+            else:
+                neg_curve = add_curves(neg_curve, res)
+                n_neg += 1
+
+        for i in range(len(pos_curve)):
+            pos_curve[i] /= n_pos
+        for i in range(len(neg_curve)):
+            neg_curve[i] /= n_neg
+
+        f = open('pos.csv', 'w')
+        for i in range(len(pos_curve)):
+            f.write('%i ; %s\n' % (i, str(pos_curve[i])))
+        f.close()
+
+        f = open('neg.csv', 'w')
+        for i in range(len(neg_curve)):
+            f.write('%i ; %s\n' % (i, str(neg_curve[i])))
+        f.close()
+
+        diff_curve = add_curves(pos_curve, neg_curve)
+        f = open('diff.csv', 'w')
+        for i in range(len(diff_curve)):
+            f.write('%i ; %s\n' % (i, str(diff_curve[i])))
+        f.close()
+
+        make_gnuplot_script('pos')
+        os.system('gnuplot plots/make_plot')
+        make_gnuplot_script('neg')
+        os.system('gnuplot plots/make_plot')
+        make_gnuplot_script('diff')
+        os.system('gnuplot plots/make_plot')
+
+
+
     def postProcess(self, filename: str):
         def initialize_variables(line):
             d = dict()
@@ -236,7 +344,7 @@ class Visual_selection(Experiment):
             d['emotion'] = line[5]
             d['first_image_to_look'] = line[6]
             d['error'] = line[13]
-            d['blink'] = line[16]
+            d['blink'] = line[20]
             try:
                 d['first_emo'] = float(line[14])
             except:
@@ -245,6 +353,10 @@ class Visual_selection(Experiment):
                 d['first_neu'] = float(line[15])
             except:
                 d['first_neu'] = line[15]
+            try:
+                d['first_sac'] = float(line[21])
+            except:
+                d['first_sac'] = line[21]
             return d
 
         with open(filename) as datafile:
@@ -255,13 +367,14 @@ class Visual_selection(Experiment):
         subject = "Subject"
         sequence = []
         data_seq = []
-        list_scores = ['first_emo', 'first_neu']
+        list_scores = ['first_emo', 'first_neu', 'first_sac']
 
         for line in data:
             if line[0] == "Subject":
                 new_line = line
                 new_line.append('First fixation emo sorting')
                 new_line.append('First fixation neu sorting')
+                new_line.append('First saccade sorting')
                 s = ";".join([str(e) for e in new_line]) + "\n"
                 data_modified.write(s)
             if line[0] != subject:
@@ -298,6 +411,8 @@ class Visual_selection(Experiment):
                     elements_list[code]['first_emo'].append(dic_variables['first_emo'])
                 if dic_variables['first_neu'] != 'None' and "early" not in dic_variables['blink']:
                     elements_list[code]['first_neu'].append(dic_variables['first_neu'])
+                if dic_variables['first_sac'] != 'None' and "early" not in dic_variables['blink']:
+                    elements_list[code]['first_sac'].append(dic_variables['first_sac'])
 
             for code in mean_dic:
                 for key in mean_dic[code]:
@@ -317,6 +432,8 @@ class Visual_selection(Experiment):
                     square_dic[code]['first_emo'].append(squareSum(dic_variables['first_emo'], mean_dic[code]['first_emo']))
                 if dic_variables['first_neu'] != "None" and "early" not in dic_variables['blink']:
                     square_dic[code]['first_neu'].append(squareSum(dic_variables['first_neu'], mean_dic[code]['first_neu']))
+                if dic_variables['first_sac'] != "None" and "early" not in dic_variables['blink']:
+                    square_dic[code]['first_sac'].append(squareSum(dic_variables['first_sac'], mean_dic[code]['first_sac']))
 
                 for code in SD_dic:
                     for key in SD_dic[code]:
@@ -335,6 +452,8 @@ class Visual_selection(Experiment):
                         score = dic_variables['first_emo']
                     elif key == 'first_neu':
                         score = dic_variables['first_neu']
+                    elif key == 'first_sac':
+                        score = dic_variables['first_sac']
                     if SD_dic[code][key] != None and score != "None" and "early" not in dic_variables['blink']:
                         current_mean = mean_dic[code][key]
                         current_SD = SD_dic[code][key]
@@ -535,4 +654,7 @@ class Visual_selection(Experiment):
             data = [re.split("[\t ]+",line) for line in data]
 
             (n_subject, subject_cat) = subject_data
-            return Subject(self, data, n_subject, subject_cat, progress)
+            subject = Subject(self, data, n_subject, subject_cat, progress)
+
+            self.computeCurve(subject)
+            return subject

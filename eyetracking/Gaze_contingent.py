@@ -180,9 +180,13 @@ class Gaze_contingent(Experiment):
         print("eyetracker")
         print(self.eyetracker)
         #if len(line) >= 5 and 'response' in line[3] and 'screen' in line[4]:
+        start_trial_time = trial.getStartTrial().getTime()
 
         if trial.saccades == []:
             logTrace ("Subject %i has no saccades at trial %i !" %(subject.id,trial_number), Precision.DETAIL)
+            first_saccade = None
+        else:
+            first_saccade = trial.saccades[0].getStartTimeFromStartTrial()
 
         if trial.features['target_side'] == 'Left':
             eye_position = self.eyetracker.left_gaze
@@ -194,8 +198,6 @@ class Gaze_contingent(Experiment):
             start_point = (self.eyetracker.screen_center[0]-(self.eyetracker.screen_center[0]/3), self.eyetracker.screen_center[1]+150)
         regions = InterestRegionList([eye_position, face_position])
 
-        start_trial_time = trial.getStartTrial().getTime()
-
         targetname = trial.getStimulus()
         targetname = targetname.split('.')[0]
 
@@ -206,6 +208,10 @@ class Gaze_contingent(Experiment):
         region_fixations = trial.getFixationTime(regions, eye_position, end_line)
 
         # First and last good fixations
+        try:
+            first_fixation = next(fixation for fixation in region_fixations)
+        except:
+            first_fixation = None
         try:
             first_good_fixation = next(fixation for fixation in region_fixations if fixation['target'])
             capture_delay_first = first_good_fixation['begin'].getTime() - start_trial_time
@@ -232,8 +238,8 @@ class Gaze_contingent(Experiment):
         if trial.blinks == []:
             blink_category = "No blink"
         else:
-            if first_good_fixation != None:
-                if trial.blinks[0].getStartTime() < first_good_fixation['begin'].getTime():
+            if region_fixations != {}:
+                if trial.blinks[0].getStartTime() < region_fixation[0]['begin'].getTime():
                     blink_category = "early capture"
                 else:
                     blink_category = "late"
@@ -250,6 +256,12 @@ class Gaze_contingent(Experiment):
             error = "Low fixation time"
         elif blink_category == 'early capture':
             error = "Early blink"
+        elif first_fixation is None:
+            error = "No fixation"
+        elif first_saccade < 100:
+            error = "Anticipation saccade"
+        elif first_saccade > 700:
+            error = "Saccade too long"
         else:
             if trial.features['cor_resp'] != trial.features['response']:
                 error = '1'
@@ -294,7 +306,7 @@ class Gaze_contingent(Experiment):
             d['subject_num'] = line[0]
             d['emotion'] = line[7]
             d['task'] = line[5]
-            d['blink'] = line[19]
+            d['blink'] = line[21]
             d['error'] = line[13]
             try:
                 d['response_time'] = float(line[14])
@@ -304,6 +316,10 @@ class Gaze_contingent(Experiment):
                 d['first_eyes'] = float(line[16])
             except:
                 d['first_eyes'] = line[16]
+            try:
+                d['total_eye'] = float(line[17])
+            except:
+                d['total_eye'] = line[17]
             return d
 
         with open(filename) as datafile:
@@ -314,13 +330,14 @@ class Gaze_contingent(Experiment):
         subject = "Subject"
         sequence = []
         data_seq = []
-        list_scores = ['first_eyes', 'response_time']
+        list_scores = ['first_eyes', 'response_time', 'total_eye']
 
         for line in data:
             if line[0] == "Subject":
                 new_line = line
                 new_line.append('First time on eyes')
                 new_line.append('Response time')
+                new_line.append('Total eye')
                 s = ";".join([str(e) for e in new_line]) + "\n"
                 data_modified.write(s)
             if line[0] != subject:
@@ -357,6 +374,8 @@ class Gaze_contingent(Experiment):
                     elements_list[code]['first_eyes'].append(dic_variables['first_eyes'])
                 if dic_variables['response_time'] != 'None' and "early" not in dic_variables['blink']:
                     elements_list[code]['response_time'].append(dic_variables['response_time'])
+                if dic_variables['total_eye'] != 'None' and "early" not in dic_variables['blink']:
+                    elements_list[code]['total_eye'].append(dic_variables['total_eye'])
 
             for code in mean_dic:
                 for key in mean_dic[code]:
@@ -376,6 +395,8 @@ class Gaze_contingent(Experiment):
                     square_dic[code]['first_eyes'].append(squareSum(dic_variables['first_eyes'], mean_dic[code]['first_eyes']))
                 if dic_variables['response_time'] != 'None' and "early" not in dic_variables['blink']:
                     square_dic[code]['response_time'].append(squareSum(dic_variables['response_time'], mean_dic[code]['response_time']))
+                if dic_variables['total_eye'] != 'None' and "early" not in dic_variables['blink']:
+                    square_dic[code]['total_eye'].append(squareSum(dic_variables['total_eye'], mean_dic[code]['total_eye']))
 
                 for code in SD_dic:
                     for key in SD_dic[code]:
@@ -394,6 +415,8 @@ class Gaze_contingent(Experiment):
                         score = dic_variables['first_eyes']
                     elif key == 'response_time':
                         score = dic_variables['response_time']
+                    elif key == 'total_eye':
+                        score = dic_variables['total_eye']
                     print(key)
                     print(score)
                     if SD_dic[code][key] != None and dic_variables['error'] == "0" and score != "None" and score != "" and "early" not in dic_variables['blink']:

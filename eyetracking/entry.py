@@ -168,6 +168,12 @@ class EntryList:
     def getBegin(self) -> int:
         return self.begin
 
+    def getStartTimeFromStartTrial(self) -> int:
+        return self.getStartTime() - self.trial.getStartTrial().getTime()
+
+    def getEndTimeFromStartTrial(self) -> int:
+        return self.getEndTime() - self.trial.getStartTrial().getTime()
+
     def getEnd(self) -> int:
         return self.end
 
