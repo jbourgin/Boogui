@@ -248,7 +248,13 @@ class Visual_selection(Experiment):
                     fixation.getStartTimeFromStartTrial(),
                     fixation.getEndTimeFromStartTrial(),
                     2):
-                    res[time] = 1 if trial.features['emotion'] == 'pos' else -1
+                    res[time] = 1
+            else:
+                for time in range(
+                    fixation.getStartTimeFromStartTrial(),
+                    fixation.getEndTimeFromStartTrial(),
+                    2):
+                    res[time] = -1
         return res
 
     def computeCurve(self, subject):
@@ -261,10 +267,8 @@ class Visual_selection(Experiment):
                 set output 'plots/%s_%s.png'
                 set yrange [-0.5:0.5]
                 set datafile separator ";"
-                plot '%s.csv' smooth acsplines
-                set output 'plots/%s_%s_bez.png'
-                plot '%s.csv' smooth bezier
-                ''' % (subject.id, emotion, emotion, subject.id, emotion, emotion)
+                plot '%s.csv' smooth bezier w filledcurves
+                ''' % (subject.id, emotion, emotion)
             )
             f.close()
 
@@ -272,6 +276,14 @@ class Visual_selection(Experiment):
             res = [a + b for (a,b) in zip(x,y)]
             if len(x) < len(y):
                 res += y[len(x):]
+            elif len(y) < len(x):
+                res += x[len(y):]
+            return res
+
+        def diff_curves(x,y):
+            res = [a - b for (a,b) in zip(x,y)]
+            if len(x) < len(y):
+                res += [-1*b for b in y[len(x):]]
             elif len(y) < len(x):
                 res += x[len(y):]
             return res
@@ -322,7 +334,7 @@ class Visual_selection(Experiment):
             f.write('%i ; %s\n' % (i, str(neg_curve[i])))
         f.close()
 
-        diff_curve = add_curves(pos_curve, neg_curve)
+        diff_curve = diff_curves(pos_curve, neg_curve)
         f = open('diff.csv', 'w')
         for i in range(len(diff_curve)):
             f.write('%i ; %s\n' % (i, str(diff_curve[i])))
