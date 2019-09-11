@@ -295,33 +295,29 @@ class Trial:
         return (True, first_pos.getGazePosition())
 
     def getFixationTime(self, regions : InterestRegionList, target_region : InterestRegion, end_line = None):
+        """
+        Returns the list of fixations that happen on the given regions.
+        """
         # end_line : line indicating the point where we are no longer interested in fixations.
         # Initializer of result type.
         def initialize_region_fixation():
-            region_fixation = {}
-            # First entry of the beginning
-            region_fixation['begin'] = None
-            # Last entry of the last fixation
-            region_fixation['end'] = None
+            fix = Fixation(self)
             # Region watched during fixations
-            region_fixation['region'] = None
-            # Total time on the regions
-            region_fixation['time'] = None
+            fix.region = None
             # Type of the fixations
-            region_fixation['type'] = None
+            fix.type = None
             # Boolean stating if the fixation happened on the target region
-            region_fixation['target'] = None
-            return region_fixation
+            fix.on_target = None
+            return fix
 
         #Returns fixation type (normal, to the end of the trial, or too short)
-        def set_type_fixation(region_fixation):
-            region_fixation['type'] = "WRONG"
-            if region_fixation['time'] != None and region_fixation['time'] != 0:
-                region_fixation['type'] = "NORMAL"
-
-            #We determine if the fixation is too short or not.
-            if region_fixation['type'] != "WRONG" and region_fixation['time'] < 80:
-                region_fixation['type'] = "SHORT"
+        def set_type_fixation(fix):
+            fix.type = "WRONG"
+            if fix.duration() > 0:
+                if fix.duration() < 80:
+                    fix.type = "SHORT"
+                else:
+                    fix.type = "NORMAL"
 
         current_region_fixation = initialize_region_fixation()
         closest_region = None
@@ -351,48 +347,40 @@ class Trial:
                         watched_region = closest_region
 
                 # If we change of frame or encounter a blink, we end the previous fixation and add it to our list.
-                if current_region_fixation['begin'] != None and (watched_region != current_region_fixation['region'] or blink_encountered):
-                    current_region_fixation['time'] = current_region_fixation['end'].getTime() - current_region_fixation['begin'].getTime()
+                if current_region_fixation.begin != None and (watched_region != current_region_fixation.region or blink_encountered):
                     set_type_fixation(current_region_fixation)
-                    current_region_fixation['target'] = (target_region == current_region_fixation['region'])
+                    current_region_fixation.on_target = (target_region == current_region_fixation.region)
 
-                    if current_region_fixation['type'] == "NORMAL":
+                    if current_region_fixation.type == "NORMAL":
                         region_fixations.append(current_region_fixation)
 
                     current_region_fixation = initialize_region_fixation()
 
-                if current_region_fixation['begin'] == None and watched_region != None:
-                    current_region_fixation['begin'] = fixation.getEntry(fixation.getBegin())
-                    current_region_fixation['region'] = watched_region
-                    current_region_fixation['end'] = fixation.getEntry(fixation.getEnd())
+                if current_region_fixation.begin == None and watched_region != None:
+                    current_region_fixation.begin = fixation.getBegin()
+                    current_region_fixation.region = watched_region
+                    current_region_fixation.end = fixation.getEnd()
 
                 # If we already have a fixation and are still in it, we continue it and just change the ending point.
-                elif current_region_fixation['begin'] != None and watched_region == current_region_fixation['region']:
-                    current_region_fixation['end'] = fixation.getEntry(fixation.getEnd())
+            elif current_region_fixation.begin != None and watched_region == current_region_fixation.region:
+                current_region_fixation.end = fixation.getEnd()
 
         # For the last region_fixation
-        if current_region_fixation['begin'] != None:
+        if current_region_fixation.begin != None:
             if end_line is not None:
-                current_region_fixation['end'] = self.entries[end_line]
-            current_region_fixation['time'] = current_region_fixation['end'].getTime() - current_region_fixation['begin'].getTime()
+                current_region_fixation.end = end_line
             set_type_fixation(current_region_fixation)
-            current_region_fixation['target'] = (target_region == current_region_fixation['region'])
+            current_region_fixation.on_target = (target_region == current_region_fixation.region)
 
-            if current_region_fixation['type'] == "NORMAL":
+            if current_region_fixation.type == "NORMAL":
                 region_fixations.append(current_region_fixation)
-
-        def merge(reg1,reg2):
-            d = dict(reg1)
-            d['end'] = reg2['end']
-            d['time'] = d['end'].getTime() - d['begin'].getTime()
-            return d
 
         if len(region_fixations) > 0:
             result = [region_fixations[0]]
             for i in range(1,len(region_fixations)):
                 reg = region_fixations[i]
-                if result[-1]['region'] == reg['region']:
-                    result[-1] = merge(result[-1], reg)
+                if result[-1].region == reg.region:
+                    result[-1].merge(reg)
                 else:
                     result.append(reg)
             return result

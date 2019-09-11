@@ -138,22 +138,22 @@ class Visual_selection(Experiment):
             first_fixation = None
 
         try:
-            first_emo_fixation = next(fixation for fixation in region_fixations if fixation['target'])
-            capture_delay_emo_first = first_emo_fixation['begin'].getTime() - start_trial_time
+            first_emo_fixation = next(fixation for fixation in region_fixations if fixation.on_target)
+            capture_delay_emo_first = first_emo_fixation.getStartTimeFromStartTrial()
         except:
             first_emo_fixation = None
             capture_delay_emo_first = None
 
         try:
-            first_neu_fixation = next(fixation for fixation in region_fixations if not fixation['target'])
-            capture_delay_neu_first = first_neu_fixation['begin'].getTime() - start_trial_time
+            first_neu_fixation = next(fixation for fixation in region_fixations if not fixation.on_target)
+            capture_delay_neu_first = first_neu_fixation.getStartTimeFromStartTrial()
         except:
             first_neu_fixation = None
             capture_delay_neu_first = None
 
         # Time on target and distractors
-        total_emo_fixation_time = sum(x['time'] for x in region_fixations if x['target'])
-        total_neu_fixation_time = sum(x['time'] for x in region_fixations if not x['target'])
+        total_emo_fixation_time = sum(x.duration() for x in region_fixations if x.on_target)
+        total_neu_fixation_time = sum(x.duration() for x in region_fixations if not x.on_target)
         if total_emo_fixation_time != 0 or total_neu_fixation_time != 0:
             percent_emo_fixation_time = total_emo_fixation_time/(total_neu_fixation_time+total_emo_fixation_time)*100
             percent_neu_fixation_time = total_neu_fixation_time/(total_neu_fixation_time+total_emo_fixation_time)*100
@@ -169,7 +169,7 @@ class Visual_selection(Experiment):
             blink_category = "No blink"
         else:
             if first_fixation is not None:
-                if trial.blinks[0].getStartTime() < first_fixation['begin'].getTime():
+                if trial.blinks[0].getStartTime() < first_fixation.getStartTime():
                     blink_category = "early capture"
                 else:
                     blink_category = "late"
@@ -201,8 +201,8 @@ class Visual_selection(Experiment):
             if trial.isTraining():
                 error = '0'
             else:
-                if ((first_fixation['target'] and trial.features['arrow'] == trial.features['target_side'])
-                    or (not first_fixation['target'] and trial.features['arrow'] != trial.features['target_side'])):
+                if ((first_fixation.on_target and trial.features['arrow'] == trial.features['target_side'])
+                    or (not first_fixation.on_target and trial.features['arrow'] != trial.features['target_side'])):
                 #if first_saccade_pos == trial.features['arrow']:
                     error = '0'
                 else:
@@ -243,10 +243,10 @@ class Visual_selection(Experiment):
     def computeCurveTrial(self, trial, region_fixation):
         res = [0 for i in range(0, trial.getStopTrial().getTime() - trial.getStartTrial().getTime())]
         for fixation in region_fixation:
-            if fixation['target']:
+            if fixation.on_target:
                 for time in range(
-                    fixation['begin'].getTime() - trial.getStartTrial().getTime(),
-                    fixation['end'].getTime() - trial.getStartTrial().getTime(),
+                    fixation.getStartTimeFromStartTrial(),
+                    fixation.getEndTimeFromStartTrial(),
                     2):
                     res[time] = 1 if trial.features['emotion'] == 'pos' else -1
         return res

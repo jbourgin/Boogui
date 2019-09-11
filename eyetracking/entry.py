@@ -243,6 +243,9 @@ class EntryList:
     def check(self) -> None:
         pass
 
+    def merge(self, reg2):
+        self.end = reg2.end
+
     def barycentre(self) -> Point:
         i_line = self.begin
         counter = 0
@@ -271,10 +274,11 @@ class FixationException(Exception):
 
 class Fixation(EntryList):
 
-    def __init__(self, trial, begin, end):
+    def __init__(self, trial, begin = None, end = None):
         super().__init__(trial, begin, end)
-        self.check()
-        self.checkTimes()
+        if begin != None and end != None:
+            self.check()
+            self.checkTimes()
 
     def __str__(self):
         return 'Fixation starting at %i, ending at %i' % (self.getStartTime(), self.getEndTime())

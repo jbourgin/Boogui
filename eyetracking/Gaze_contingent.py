@@ -214,17 +214,17 @@ class Gaze_contingent(Experiment):
         except:
             first_fixation = None
         try:
-            first_good_fixation = next(fixation for fixation in region_fixations if fixation['target'])
-            capture_delay_first = first_good_fixation['begin'].getTime() - start_trial_time
+            first_good_fixation = next(fixation for fixation in region_fixations if fixation.on_target)
+            capture_delay_first = first_good_fixation.getStartTimeFromStartTrial()
         except:
             first_good_fixation = None
             capture_delay_first = None
 
         # Time on target and distractors
-        total_eye_fixation_time = sum(x['time'] for x in region_fixations if x['target'])
+        total_eye_fixation_time = sum(x.duration() for x in region_fixations if x.on_target)
         # if total_eye_fixation_time == 0:
         #     total_eye_fixation_time = None
-        total_faceNotEye_fixation_time = sum(x['time'] for x in region_fixations if not x['target'])
+        total_faceNotEye_fixation_time = sum(x.duration() for x in region_fixations if not x.on_target)
         total_fixation_time = total_eye_fixation_time + total_faceNotEye_fixation_time
         if total_fixation_time != 0:
             percent_eye = total_eye_fixation_time/total_fixation_time*100
@@ -240,7 +240,7 @@ class Gaze_contingent(Experiment):
             blink_category = "No blink"
         else:
             if region_fixations != {}:
-                if trial.blinks[0].getStartTime() < region_fixation[0]['begin'].getTime():
+                if trial.blinks[0].getStartTime() < region_fixations[0].getStartTime():
                     blink_category = "early capture"
                 else:
                     blink_category = "late"

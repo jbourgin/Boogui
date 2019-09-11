@@ -230,26 +230,26 @@ class Visual_search(Experiment):
 
         # First and last good fixations
         try:
-            first_good_fixation = next(fixation for fixation in region_fixations if fixation['target'])
-            last_good_fixation = next(fixation for fixation in reversed(region_fixations) if fixation['target'])
-            response_delay_last = response_time - (last_good_fixation['begin'].getTime() - start_trial_time)
+            first_good_fixation = next(fixation for fixation in region_fixations if fixation.on_target)
+            last_good_fixation = next(fixation for fixation in reversed(region_fixations) if fixation.on_target)
+            response_delay_last = response_time - (last_good_fixation.getStartTimeFromStartTrial())
             # Delay of capture to the first good fixation
-            capture_delay_first = first_good_fixation['begin'].getTime() - start_trial_time
+            capture_delay_first = first_good_fixation.getStartTimeFromStartTrial()
         except:
             first_good_fixation = None
             last_good_fixation = None
             response_delay_last = None
             capture_delay_first = None
         try:
-            last_fixation = region_fixations[-1]['target']
+            last_fixation = region_fixations[-1].on_target
         except:
             last_fixation = None
 
         # Time on target and distractors
-        total_target_fixation_time = sum(x['time'] for x in region_fixations if x['target'])
+        total_target_fixation_time = sum(x.duration() for x in region_fixations if x.on_target)
         if total_target_fixation_time == 0:
             total_target_fixation_time = None
-        total_distractor_fixation_time = sum(x['time'] for x in region_fixations if not x['target'])
+        total_distractor_fixation_time = sum(x.duration() for x in region_fixations if not x.on_target)
         if total_distractor_fixation_time == 0:
             total_distractor_fixation_time = None
 
@@ -257,7 +257,7 @@ class Visual_search(Experiment):
         if trial.blinks == []:
             blink_category = "No blink"
         else:
-            if first_good_fixation != None and trial.blinks[0].getStartTime() < first_good_fixation['begin'].getTime():
+            if first_good_fixation != None and trial.blinks[0].getStartTime() < first_good_fixation.getStartTime():
                 blink_category = "early capture"
             else:
                 blink_category = "late"
