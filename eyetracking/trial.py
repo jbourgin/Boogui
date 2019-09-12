@@ -314,7 +314,7 @@ class Trial:
         def set_type_fixation(fix):
             fix.type = "WRONG"
             if fix.duration() > 0:
-                if fix.duration() < 80:
+                if fix.duration() < 30: #80
                     fix.type = "SHORT"
                 else:
                     fix.type = "NORMAL"
@@ -362,8 +362,8 @@ class Trial:
                     current_region_fixation.end = fixation.getEnd()
 
                 # If we already have a fixation and are still in it, we continue it and just change the ending point.
-            elif current_region_fixation.begin != None and watched_region == current_region_fixation.region:
-                current_region_fixation.end = fixation.getEnd()
+                elif current_region_fixation.begin != None and watched_region == current_region_fixation.region:
+                    current_region_fixation.end = fixation.getEnd()
 
         # For the last region_fixation
         if current_region_fixation.begin != None:
@@ -377,8 +377,7 @@ class Trial:
 
         if len(region_fixations) > 0:
             result = [region_fixations[0]]
-            for i in range(1,len(region_fixations)):
-                reg = region_fixations[i]
+            for reg in region_fixations[1:]:
                 if result[-1].region == reg.region:
                     result[-1].merge(reg)
                 else:

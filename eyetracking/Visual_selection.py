@@ -16,7 +16,7 @@ class Make_Eyelink(Eyelink):
 
         # Initializing regions of interest
         self.half_width = 200 #200
-        self.half_height = 150 #150
+        self.half_height = 200 #150
 
         self.setupStandard()
 
@@ -129,8 +129,12 @@ class Visual_selection(Experiment):
 
         response_entry = trial.getResponse()
 
-        region_fixations = trial.getFixationTime(regions, emo_position)
+        if trial.features['arrow'] ==  trial.features['target_side']:
+            first_image_to_look = 'EMO'
+        elif trial.features['arrow'] !=  trial.features['target_side']:
+            first_image_to_look = 'NEU'
 
+        region_fixations = trial.getFixationTime(regions, emo_position)
         # First fixations
         try:
             first_fixation = next(fixation for fixation in region_fixations)
@@ -153,10 +157,15 @@ class Visual_selection(Experiment):
 
         # Time on target and distractors
         total_emo_fixation_time = sum(x.duration() for x in region_fixations if x.on_target)
+        percent_emo_fixation_time = None
         total_neu_fixation_time = sum(x.duration() for x in region_fixations if not x.on_target)
+        percent_neu_fixation_time = None
+        total_target_fixation_time = sum(x.duration() for x in region_fixations if ((x.on_target and first_image_to_look == "EMO") or (not x.on_target and first_image_to_look == "NEU") ))
+        percent_target_fixation_time = None
         if total_emo_fixation_time != 0 or total_neu_fixation_time != 0:
             percent_emo_fixation_time = total_emo_fixation_time/(total_neu_fixation_time+total_emo_fixation_time)*100
             percent_neu_fixation_time = total_neu_fixation_time/(total_neu_fixation_time+total_emo_fixation_time)*100
+            percent_target_fixation_time = total_target_fixation_time/(total_neu_fixation_time+total_emo_fixation_time)*100
         # if total_emo_fixation_time == 0:
         #     total_emo_fixation_time = None
         #     percent_emo_fixation_time = None
@@ -176,25 +185,32 @@ class Visual_selection(Experiment):
             else:
                 blink_category = None
 
-        if trial.features['arrow'] ==  trial.features['target_side']:
-            first_image_to_look = 'EMO'
-        elif trial.features['arrow'] !=  trial.features['target_side']:
-            first_image_to_look = 'NEU'
+
+        try:
+            first_target_fixation = next(fixation for fixation in region_fixations if ((fixation.on_target and first_image_to_look == 'EMO') or (not fixation.on_target and first_image_to_look == 'NEU')))
+            capture_delay_target_first = first_target_fixation.getStartTimeFromStartTrial()
+        except:
+            first_target_fixation = None
+            capture_delay_target_first = None
 
         # Error :
         if not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)[0]:
             error = "Not valid start"
+            error_sac = "Not valid start"
         # elif (total_neu_fixation_time+total_emo_fixation_time) < 4000:
         #     error = "Low fixation"
         # Add sac amplitude ?
         elif blink_category == 'early capture':
             error = "Early blink"
+            error_sac = "Early blink"
         elif first_fixation is None:
             error = "No fixation"
-        elif first_fixation < 100:
+            error_sac = "No fixation"
+        elif first_fixation.getStartTimeFromStartTrial() < 100:
              error = "Anticipation saccade"
+             error_sac = "Anticipation saccade"
         # elif first_saccade <= 80:
-        #     error = "Anticipation saccade"
+        #      error_sac = "Anticipation saccade"
         # elif first_saccade > 700:
         #     error = "Saccade too long"
         else:
@@ -203,10 +219,13 @@ class Visual_selection(Experiment):
             else:
                 if ((first_fixation.on_target and trial.features['arrow'] == trial.features['target_side'])
                     or (not first_fixation.on_target and trial.features['arrow'] != trial.features['target_side'])):
-                #if first_saccade_pos == trial.features['arrow']:
                     error = '0'
                 else:
                     error = '1'
+                if first_saccade_pos == trial.features['arrow']:
+                    error_sac = '0'
+                else:
+                    error_sac = '1'
 
         # Writing data in result csv file
         s = [str(subject.id) + "-E", # Subject name
@@ -230,7 +249,11 @@ class Visual_selection(Experiment):
             str(percent_emo_fixation_time).replace('.',','),
             str(percent_neu_fixation_time).replace('.',','),
             blink_category,
-            first_saccade]
+            first_saccade,
+            capture_delay_target_first,
+            error_sac,
+            total_target_fixation_time,
+            str(percent_target_fixation_time).replace('.',',')]
 
         if filename is None:
             f = open(getResultsFile(), 'a')
@@ -267,7 +290,7 @@ class Visual_selection(Experiment):
                 set output 'plots/%s_%s.png'
                 set yrange [-0.5:0.5]
                 set datafile separator ";"
-                plot '%s.csv' smooth bezier w filledcurves
+                plot '%s.csv' smooth bezier w filledcurves above
                 ''' % (subject.id, emotion, emotion)
             )
             f.close()
@@ -358,17 +381,17 @@ class Visual_selection(Experiment):
             d['error'] = line[13]
             d['blink'] = line[20]
             try:
-                d['first_emo'] = float(line[14])
-            except:
-                d['first_emo'] = line[14]
-            try:
-                d['first_neu'] = float(line[15])
-            except:
-                d['first_neu'] = line[15]
-            try:
                 d['first_sac'] = float(line[21])
             except:
                 d['first_sac'] = line[21]
+            try:
+                d['first_target'] = float(line[22])
+            except:
+                d['first_target'] = line[22]
+            try:
+                d['total_target'] = float(line[24])
+            except:
+                d['total_target'] = line[24]
             return d
 
         with open(filename) as datafile:
@@ -379,14 +402,14 @@ class Visual_selection(Experiment):
         subject = "Subject"
         sequence = []
         data_seq = []
-        list_scores = ['first_emo', 'first_neu', 'first_sac']
+        list_scores = ['first_sac', 'first_target', 'total_target']
 
         for line in data:
             if line[0] == "Subject":
                 new_line = line
-                new_line.append('First fixation emo sorting')
-                new_line.append('First fixation neu sorting')
                 new_line.append('First saccade sorting')
+                new_line.append('First fixation target sorting')
+                new_line.append('Total fixation target sorting')
                 s = ";".join([str(e) for e in new_line]) + "\n"
                 data_modified.write(s)
             if line[0] != subject:
@@ -419,12 +442,12 @@ class Visual_selection(Experiment):
                     for element in list_scores:
                         elements_list[code][element] = []
                         mean_dic[code][element] = None
-                if dic_variables['first_emo'] != 'None' and "early" not in dic_variables['blink']:
-                    elements_list[code]['first_emo'].append(dic_variables['first_emo'])
-                if dic_variables['first_neu'] != 'None' and "early" not in dic_variables['blink']:
-                    elements_list[code]['first_neu'].append(dic_variables['first_neu'])
-                if dic_variables['first_sac'] != 'None' and "early" not in dic_variables['blink']:
+                if dic_variables['first_sac'] != 'None' and "early" not in dic_variables['blink'] and ("0" in dic_variables['error'] or "1" in dic_variables['error']):
                     elements_list[code]['first_sac'].append(dic_variables['first_sac'])
+                if dic_variables['first_target'] != 'None' and "early" not in dic_variables['blink'] and ("0" in dic_variables['error'] or "1" in dic_variables['error']):
+                    elements_list[code]['first_target'].append(dic_variables['first_target'])
+                if dic_variables['total_target'] != 'None' and "early" not in dic_variables['blink'] and ("0" in dic_variables['error'] or "1" in dic_variables['error']):
+                    elements_list[code]['total_target'].append(dic_variables['total_target'])
 
             for code in mean_dic:
                 for key in mean_dic[code]:
@@ -440,12 +463,12 @@ class Visual_selection(Experiment):
                     for element in list_scores:
                         square_dic[code][element] = []
                         SD_dic[code][element] = None
-                if dic_variables['first_emo'] != "None" and "early" not in dic_variables['blink']:
-                    square_dic[code]['first_emo'].append(squareSum(dic_variables['first_emo'], mean_dic[code]['first_emo']))
-                if dic_variables['first_neu'] != "None" and "early" not in dic_variables['blink']:
-                    square_dic[code]['first_neu'].append(squareSum(dic_variables['first_neu'], mean_dic[code]['first_neu']))
-                if dic_variables['first_sac'] != "None" and "early" not in dic_variables['blink']:
+                if dic_variables['first_sac'] != "None" and "early" not in dic_variables['blink'] and ("0" in dic_variables['error'] or "1" in dic_variables['error']):
                     square_dic[code]['first_sac'].append(squareSum(dic_variables['first_sac'], mean_dic[code]['first_sac']))
+                if dic_variables['first_target'] != "None" and "early" not in dic_variables['blink'] and ("0" in dic_variables['error'] or "1" in dic_variables['error']):
+                    square_dic[code]['first_target'].append(squareSum(dic_variables['first_target'], mean_dic[code]['first_target']))
+                if dic_variables['total_target'] != "None" and "early" not in dic_variables['blink'] and ("0" in dic_variables['error'] or "1" in dic_variables['error']):
+                    square_dic[code]['total_target'].append(squareSum(dic_variables['total_target'], mean_dic[code]['total_target']))
 
                 for code in SD_dic:
                     for key in SD_dic[code]:
@@ -460,13 +483,13 @@ class Visual_selection(Experiment):
                 code = dic_variables['first_image_to_look'] + dic_variables['emotion']
                 new_line = line
                 for key in mean_dic[code]:
-                    if key == 'first_emo':
-                        score = dic_variables['first_emo']
-                    elif key == 'first_neu':
-                        score = dic_variables['first_neu']
-                    elif key == 'first_sac':
+                    if key == 'first_sac':
                         score = dic_variables['first_sac']
-                    if SD_dic[code][key] != None and score != "None" and "early" not in dic_variables['blink']:
+                    elif key == 'first_target':
+                        score = dic_variables['first_target']
+                    elif key == 'total_target':
+                        score = dic_variables['total_target']
+                    if SD_dic[code][key] != None and score != "None" and "early" not in dic_variables['blink'] and ("0" in dic_variables['error'] or "1" in dic_variables['error']):
                         current_mean = mean_dic[code][key]
                         current_SD = SD_dic[code][key]
                         if (float(score) > (float(current_mean) + 3*float(current_SD)) or float(score) < (float(current_mean) - 3*float(current_SD))):
@@ -519,7 +542,11 @@ class Visual_selection(Experiment):
             '% fixation time on emotional target',
             '% fixation time on neutral target',
             'First blink type',
-            'First saccade'
+            'First saccade',
+            'Capture delay target first',
+            'Errors saccade',
+            'Total fixation time on target',
+            '% fixation time on target'
         ]))
         f.write('\n')
         f.close()
