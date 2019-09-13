@@ -6,6 +6,7 @@ from eyetracking.interest_region import *
 from eyetracking.scanpath import *
 import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import QApplication
+from matplotlib.offsetbox import OffsetImage
 
 class Make_Eyelink(Eyelink):
     def __init__(self):
@@ -17,13 +18,13 @@ class Make_Eyelink(Eyelink):
         self.valid_distance_center = 100 #3 degres of visual angle 95 (+ marge)
 
         # Initializing regions of interest
-        self.half_width = 250 #200
-        self.half_height_face = 300 #268
-        self.half_height_eye = 45 #45
+        self.half_width = 200
+        self.half_height_face = 268
+        self.half_height_eye = 30 #45
 
         # frames
-        self.right_gaze = RectangleRegion((self.screen_center[0]*(1+1/3), self.screen_center[1]+10), self.half_width, self.half_height_eye)
-        self.left_gaze = RectangleRegion((self.screen_center[0]-(self.screen_center[0]/3), self.screen_center[1]+10), self.half_width, self.half_height_eye)
+        self.right_gaze = RectangleRegion((self.screen_center[0]*(1+1/3), self.screen_center[1]), self.half_width, self.half_height_eye)
+        self.left_gaze = RectangleRegion((self.screen_center[0]-(self.screen_center[0]/3), self.screen_center[1]), self.half_width, self.half_height_eye)
         self.right_ellipse = EllipseRegion((self.screen_center[0]*(1+1/3), self.screen_center[1]), self.half_width, self.half_height_face)
         self.left_ellipse = EllipseRegion((self.screen_center[0]-(self.screen_center[0]/3), self.screen_center[1]), self.half_width, self.half_height_face)
         self.right_face = DifferenceRegion(self.right_ellipse, self.right_gaze)
@@ -157,14 +158,23 @@ class Gaze_contingent(Experiment):
         for i in range(4):
             means_left = k_clusters(gaze_positions[i]['left'], 3, [cluster1_left, cluster2_left, cluster3_left])
             means_right = k_clusters(gaze_positions[i]['right'], 3, [cluster1_right, cluster2_right, cluster3_right])
+            # shift_vec_left = (
+            #     self.eyetracker.left_ellipse.center[0] - means_left[1].getGazePosition()[0],
+            #     (self.eyetracker.left_ellipse.center[1] + 100)
+            #     - means_left[1].getGazePosition()[1],
+            # )
+            # shift_vec_right = (
+            #     self.eyetracker.right_ellipse.center[0] - means_right[1].getGazePosition()[0],
+            #     (self.eyetracker.right_ellipse.center[1] + 100) - means_right[1].getGazePosition()[1],
+            # )
             shift_vec_left = (
-                self.eyetracker.left_ellipse.center[0] - means_left[1].getGazePosition()[0],
-                (self.eyetracker.left_ellipse.center[1] + 100)
-                - means_left[1].getGazePosition()[1],
+                0,
+                self.eyetracker.left_ellipse.center[1]
+                - means_left[0].getGazePosition()[1]
             )
             shift_vec_right = (
-                self.eyetracker.right_ellipse.center[0] - means_right[1].getGazePosition()[0],
-                (self.eyetracker.right_ellipse.center[1] + 100) - means_right[1].getGazePosition()[1],
+                0,
+                self.eyetracker.right_ellipse.center[1] - means_right[0].getGazePosition()[1]
             )
             for trial in subject.trials[i*24 : (i+1)*24]:
                 if trial.features['target_side'] == 'Left':
@@ -496,11 +506,32 @@ class Gaze_contingent(Experiment):
         plt.gca().invert_yaxis()
         plt.axis('off')
 
+        # Plotting image
+        image_name = os.path.join(
+            '/home/jessica/Task/',
+            trial.getStimulus().split('.')[0] + '.png'
+        )
+        if os.path.isfile(image_name):
+            image = plt.imread(image_name, format = 'png')
+        img_width = self.eyetracker.half_width
+        img_height = self.eyetracker.half_height_face
         # Plotting frames
         if trial.features['target_side'] == 'Left':
+            plt.imshow(image, extent=[
+                self.eyetracker.left_ellipse.center[0] - img_width,
+                self.eyetracker.left_ellipse.center[0] + img_width,
+                self.eyetracker.left_ellipse.center[1] + img_height,
+                self.eyetracker.left_ellipse.center[1] - img_height
+            ])
             plotRegion(self.eyetracker.left_ellipse, frame_color)
             plotRegion(self.eyetracker.left_gaze, frame_color)
         elif trial.features['target_side'] == 'Right':
+            plt.imshow(image, extent=[
+                self.eyetracker.right_ellipse.center[0] - img_width,
+                self.eyetracker.right_ellipse.center[0] + img_width,
+                self.eyetracker.right_ellipse.center[1] + img_height,
+                self.eyetracker.right_ellipse.center[1] - img_height
+            ])
             plotRegion(self.eyetracker.right_ellipse, frame_color)
             plotRegion(self.eyetracker.right_gaze, frame_color)
 
