@@ -5,6 +5,10 @@ from eyetracking.experiment import *
 from eyetracking.interest_region import *
 from eyetracking.scanpath import *
 import matplotlib.pyplot as plt
+import scipy.optimize
+import scipy.interpolate
+import scipy.integrate
+import numpy
 from PyQt5.QtWidgets import QApplication
 
 class Make_Eyelink(Eyelink):
@@ -280,21 +284,28 @@ class Visual_selection(Experiment):
                     res[time] = -1
         return res
 
+    def make_gnuplot_script(self, subject, emotion):
+        f = open('plots/make_plot', 'w')
+        f.write(
+            '''
+            set term 'png'
+            set output 'plots/%s_%s.png'
+            set yrange [-0.5:0.5]
+            set datafile separator ";"
+            plot '%s.csv'
+            ''' % (subject.id, emotion, emotion) # smooth bezier w filledcurves above
+        )
+        f.close()
+
+    def plotCurve(self, subject, curve, name):
+        f = open('%s.csv' % name, 'w')
+        for i in range(len(curve)):
+            f.write('%i ; %s\n' % (i, str(curve[i])))
+        f.close()
+        self.make_gnuplot_script(subject, name)
+        os.system('gnuplot plots/make_plot')
+
     def computeCurve(self, subject):
-
-        def make_gnuplot_script(emotion):
-            f = open('plots/make_plot', 'w')
-            f.write(
-                '''
-                set term 'png'
-                set output 'plots/%s_%s.png'
-                set yrange [-0.5:0.5]
-                set datafile separator ";"
-                plot '%s.csv' smooth bezier w filledcurves above
-                ''' % (subject.id, emotion, emotion)
-            )
-            f.close()
-
         def add_curves(x,y):
             res = [a + b for (a,b) in zip(x,y)]
             if len(x) < len(y):
@@ -347,28 +358,78 @@ class Visual_selection(Experiment):
         for i in range(len(neg_curve)):
             neg_curve[i] /= n_neg
 
-        f = open('pos.csv', 'w')
-        for i in range(len(pos_curve)):
-            f.write('%i ; %s\n' % (i, str(pos_curve[i])))
-        f.close()
-
-        f = open('neg.csv', 'w')
-        for i in range(len(neg_curve)):
-            f.write('%i ; %s\n' % (i, str(neg_curve[i])))
-        f.close()
+        self.plotCurve(subject, pos_curve, 'pos')
+        self.plotCurve(subject, neg_curve, 'neg')
 
         diff_curve = diff_curves(pos_curve, neg_curve)
-        f = open('diff.csv', 'w')
-        for i in range(len(diff_curve)):
-            f.write('%i ; %s\n' % (i, str(diff_curve[i])))
-        f.close()
+        self.plotCurve(subject, diff_curve, 'diff')
+        return diff_curve
 
-        make_gnuplot_script('pos')
-        os.system('gnuplot plots/make_plot')
-        make_gnuplot_script('neg')
-        os.system('gnuplot plots/make_plot')
-        make_gnuplot_script('diff')
-        os.system('gnuplot plots/make_plot')
+    def evolutionScore(self, subject):
+        def group_curve(x, e):
+            i = 0
+            res = []
+            while i <= len(x):
+                s = sum(y for y in x[i:i+e])
+                res.append(s/e)
+                i += e
+            return res
+        diff_curve = self.computeCurve(subject)
+
+        diff2 = group_curve(diff_curve, 2)
+        self.plotCurve(subject, diff2, 'diff2')
+
+        diff20 = group_curve(diff_curve, 20)
+        self.plotCurve(subject, diff20, 'diff20')
+
+        final_curve = diff20
+        xs = [i for i in range(len(final_curve))]
+        #interpol_curve = scipy.interpolate.interp1d(xs, diff20, kind='cubic', fill_value = 'extrapolate')
+        #interpol_curve = scipy.interpolate.BarycentricInterpolator(xs, diff20)
+
+        # Smoothing
+        interpol_curve = scipy.interpolate.BSpline(xs, final_curve, 2)
+
+        ys = [interpol_curve(x) for x in xs]
+        self.plotCurve(subject, ys, 'interpol')
+
+        roots = [scipy.optimize.fsolve(interpol_curve, i)[0]
+            for i in range(0,len(final_curve), int(len(final_curve)/10))
+        ]
+        print(roots)
+
+        # removing duplicates:
+        roots2 = []
+        epsilon = 1
+        for root in roots:
+            add = True
+            for root2 in roots2:
+                if abs(root - root2) < epsilon:
+                    add = False
+                    break
+            if add:
+                roots2.append(root)
+
+        # adding beginning and ending
+        roots2 = [0] + roots2 + [xs[-1]]
+        roots2.sort()
+        print(roots2)
+
+        # integration
+        integral_curve = []
+        for i in range(len(roots2)-1):
+            a = roots2[i]
+            b = roots2[i+1]
+            ys = [final_curve[x] for x in xs if x >= a and x <= b]
+            integral_curve.append((
+                (a + b)/2,
+                scipy.integrate.trapz(ys)
+            ))
+
+        # integral curve
+        xs = [x[0] for x in integral_curve]
+        ys = [x[1] for x in integral_curve]
+        print('coeff', numpy.corrcoef(xs, ys))
 
 
 
@@ -695,5 +756,5 @@ class Visual_selection(Experiment):
             (n_subject, subject_cat) = subject_data
             subject = Subject(self, data, n_subject, subject_cat, progress)
 
-            self.computeCurve(subject)
+            self.evolutionScore(subject)
             return subject
