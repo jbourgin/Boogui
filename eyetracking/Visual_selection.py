@@ -376,11 +376,14 @@ class Visual_selection(Experiment):
             return res
         diff_curve = self.computeCurve(subject)
 
+
         diff2 = group_curve(diff_curve, 2)
         self.plotCurve(subject, diff2, 'diff2')
 
         diff20 = group_curve(diff_curve, 20)
         self.plotCurve(subject, diff20, 'diff20')
+        xs = [i for i in range(len(diff20))]
+        coeff_depart = numpy.polyfit(xs, diff20, 1)[0]
 
         final_curve = diff20
         xs = [i for i in range(len(final_curve))]
@@ -426,11 +429,35 @@ class Visual_selection(Experiment):
                 scipy.integrate.trapz(ys)
             ))
 
+        print(integral_curve)
         # integral curve
         xs = [x[0] for x in integral_curve]
         ys = [x[1] for x in integral_curve]
-        print('coeff', numpy.corrcoef(xs, ys))
+        coeff_fin = numpy.polyfit(xs, ys, 1)[0]
 
+        j = 0
+        for curve in [
+            [coeff_depart * x for x in xs],
+            [coeff_fin * x for x in xs],
+            ys
+        ]:
+            j += 1
+            name = 'omg%i' % j
+            f = open('%s.csv' % name, 'w')
+            for i in range(len(curve)):
+                f.write('%i ; %s\n' % (xs[i], str(curve[i])))
+            f.close()
+        f = open('plots/make_plot', 'w')
+        f.write(
+            '''
+            set term 'png'
+            set output 'plots/cul.png'
+            set datafile separator ";"
+            plot 'omg1.csv' smooth bezier, 'omg2.csv' smooth bezier, 'omg3.csv' smooth bezier
+            '''
+        )
+        f.close()
+        os.system('gnuplot plots/make_plot')
 
 
     def postProcess(self, filename: str):

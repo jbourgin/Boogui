@@ -221,8 +221,13 @@ class Gaze_contingent(Experiment):
         # First and last good fixations
         try:
             first_fixation = next(fixation for fixation in region_fixations)
+            if first_fixation.on_target:
+                first_area = 1
+            else:
+                first_area = 0
         except:
             first_fixation = None
+            first_area = None
         try:
             first_good_fixation = next(fixation for fixation in region_fixations if fixation.on_target)
             capture_delay_first = first_good_fixation.getStartTimeFromStartTrial()
@@ -303,7 +308,8 @@ class Gaze_contingent(Experiment):
             str(percent_face).replace('.',','),
             blink_category,
             total_fixation_time,
-            first_saccade]
+            first_saccade,
+            first_area]
 
         if filename is None:
             f = open(getResultsFile(), 'a')
@@ -487,7 +493,8 @@ class Gaze_contingent(Experiment):
             'Percent time on face',
             'First blink type',
             'Total fixation time on image',
-            'First saccade'
+            'First saccade',
+            'First area looked (1 for face)'
         ]))
         f.write('\n')
         f.close()
