@@ -305,7 +305,7 @@ class Visual_selection(Experiment):
         self.make_gnuplot_script(subject, name)
         os.system('gnuplot plots/make_plot')
 
-    def computeCurve(self, subject):
+    def computeCurves(self, subject):
         def add_curves(x,y):
             res = [a + b for (a,b) in zip(x,y)]
             if len(x) < len(y):
@@ -322,50 +322,6 @@ class Visual_selection(Experiment):
                 res += x[len(y):]
             return res
 
-        if subject.id <= 3:
-            self.eyetracker.setupFirstSubjects()
-
-        n_pos = 0
-        n_neg = 0
-        pos_curve = []
-        neg_curve = []
-        for trial in subject.trials:
-
-            if trial.isTraining():
-                emo_position = self.eyetracker.left
-                neu_position = self.eyetracker.right
-            else:
-                if 'left' in trial.features['target_side']:
-                    emo_position = self.eyetracker.left
-                    neu_position = self.eyetracker.right
-                elif 'right' in trial.features['target_side']:
-                    emo_position = self.eyetracker.right
-                    neu_position = self.eyetracker.left
-            regions = InterestRegionList([emo_position, neu_position])
-
-            region_fixations = trial.getFixationTime(regions, emo_position)
-
-            res = self.computeCurveTrial(trial, region_fixations)
-            if trial.features['emotion'] == 'pos':
-                pos_curve = add_curves(pos_curve, res)
-                n_pos += 1
-            else:
-                neg_curve = add_curves(neg_curve, res)
-                n_neg += 1
-
-        for i in range(len(pos_curve)):
-            pos_curve[i] /= n_pos
-        for i in range(len(neg_curve)):
-            neg_curve[i] /= n_neg
-
-        self.plotCurve(subject, pos_curve, 'pos')
-        self.plotCurve(subject, neg_curve, 'neg')
-
-        diff_curve = diff_curves(pos_curve, neg_curve)
-        self.plotCurve(subject, diff_curve, 'diff')
-        return diff_curve
-
-    def evolutionScore(self, subject):
         def group_curve(x, e):
             i = 0
             res = []
@@ -374,62 +330,208 @@ class Visual_selection(Experiment):
                 res.append(s/e)
                 i += e
             return res
-        diff_curve = self.computeCurve(subject)
 
-        diff2 = group_curve(diff_curve, 2)
-        self.plotCurve(subject, diff2, 'diff2')
+        if subject.id <= 3:
+            self.eyetracker.setupFirstSubjects()
 
-        diff20 = group_curve(diff_curve, 20)
-        self.plotCurve(subject, diff20, 'diff20')
+        n = {
+            'pos_target': 0,
+            'pos': 0,
+            'neg_target': 0,
+            'neg': 0
+        }
+        curves = {
+            'pos_target': [],
+            'pos': [],
+            'neg_target': [],
+            'neg': []
+        }
 
-        final_curve = diff20
-        xs = [i for i in range(len(final_curve))]
-        #interpol_curve = scipy.interpolate.interp1d(xs, diff20, kind='cubic', fill_value = 'extrapolate')
-        #interpol_curve = scipy.interpolate.BarycentricInterpolator(xs, diff20)
+        for trial in subject.trials:
+            if trial.isTraining():
+                continue
+            if 'left' in trial.features['target_side']:
+                emo_position = self.eyetracker.left
+                neu_position = self.eyetracker.right
+            elif 'right' in trial.features['target_side']:
+                emo_position = self.eyetracker.right
+                neu_position = self.eyetracker.left
+            target_emo = trial.features['arrow'] ==  trial.features['target_side']
 
-        # Smoothing
-        interpol_curve = scipy.interpolate.BSpline(xs, final_curve, 2)
+            regions = InterestRegionList([emo_position, neu_position])
 
-        ys = [interpol_curve(x) for x in xs]
-        self.plotCurve(subject, ys, 'interpol')
+            region_fixations = trial.getFixationTime(regions, emo_position)
 
-        roots = [scipy.optimize.fsolve(interpol_curve, i)[0]
-            for i in range(0,len(final_curve), int(len(final_curve)/10))
-        ]
-        print(roots)
+            res = self.computeCurveTrial(trial, region_fixations)
+            s = trial.features['emotion']
+            if target_emo:
+                s += '_target'
+            n[s] += 1
+            curves[s] = add_curves(curves[s], res)
 
-        # removing duplicates:
-        roots2 = []
-        epsilon = 1
-        for root in roots:
-            add = True
-            for root2 in roots2:
-                if abs(root - root2) < epsilon:
-                    add = False
-                    break
-            if add:
-                roots2.append(root)
+        for s in curves:
+            for i in range(len(curves[s])):
+                curves[s][i] /= n[s]
+            curves[s] = group_curve(curves[s], 20)
+            self.plotCurve(subject, curves[s], s)
 
-        # adding beginning and ending
-        roots2 = [0] + roots2 + [xs[-1]]
-        roots2.sort()
-        print(roots2)
+        # diff_curve = diff_curves(curves['pos_target'], curves['neg_target'])
+        # self.plotCurve(subject, diff_curve, 'diff')
+        return curves
 
-        # integration
-        integral_curve = []
-        for i in range(len(roots2)-1):
-            a = roots2[i]
-            b = roots2[i+1]
-            ys = [final_curve[x] for x in xs if x >= a and x <= b]
-            integral_curve.append((
-                (a + b)/2,
-                scipy.integrate.trapz(ys)
-            ))
+    # def leastSquares(curve1, curve2):
+    #     """
+    #     Computes the least square difference between the two curves.
+    #     """
+    #
 
-        # integral curve
-        xs = [x[0] for x in integral_curve]
-        ys = [x[1] for x in integral_curve]
-        print('coeff', numpy.corrcoef(xs, ys))
+#    def fit(curve, target):
+
+    def evolutionScore(self, subject):
+        # def masuperbecourbe(shift):
+        #     a1 = shift[0] # scaling for the first part
+        #     a2 = shift[1] # scaling for the second part
+        #     b1 = shift[2]
+        #     b2 = shift[3]
+        #     m = shift[4] # middle
+        #
+        #     def f(i):
+        #         if i < m:
+        #             return a1 * ((i - m/2)/100)**2 + b1
+        #         else:
+        #             return a2 * ((i - 3*m/2)/100)**2 + b2
+        #
+        #     return numpy.vectorize(f)
+
+        def parabols(shift, n_parabols, n_x):
+            def f(i):
+                i_parabol = 0
+                while i_parabol < n_parabols - 1:
+                    if i < shift[3*i_parabol+2]:
+                        break
+                    i_parabol += 1
+                a = shift[3*i_parabol]
+                b = shift[3*i_parabol+1]
+                if i_parabol == 0:
+                    m = shift[2]/2
+                elif i_parabol == n_parabols - 1:
+                    m = (n_x + shift[3*(i_parabol-1)+2])/2
+                else:
+                    m = (shift[3*i_parabol+2] + shift[3*(i_parabol-1)+2])/2
+                return a * ((i - m)/100)**2 + b
+            return numpy.vectorize(f)
+
+        def get_coeff_of_curve(curve, name):
+
+            n_parabols = 4
+
+            t_train = numpy.array([x for x in range(len(curve))])
+
+            def residu(shift, t, y):
+                f_vec = parabols(shift, n_parabols, len(curve))
+                return f_vec(t) - y
+
+            shift_0 =[]
+            for i in range(n_parabols):
+                shift_0 += [1.0,0.0,int((i+1)*len(curve)/n_parabols)]
+            shift_0 = numpy.array(shift_0)
+            # [
+            #     1.0, # parabol 1: a
+            #     0.0, # parabol 1: b
+            #     int(len(curve)/3), #sep 1
+            #     -1.0, # parabol 2: a
+            #     0.0, #parabol 2: b
+            #    2*int(len(curve)/3), #sep 2
+            #    1.0, # parabol 3: a
+            #    0.0, #parabol 3: b
+            # ])
+            res = scipy.optimize.least_squares(residu, shift_0, args = (t_train, curve), loss='cauchy')
+            print(res)
+
+            # Plotting result
+            self.plotCurve(subject, curve, name)
+            f_vec = parabols(shift_0, n_parabols, len(curve))
+            expected = f_vec(t_train)
+            self.plotCurve(subject, expected, name + '_expected')
+            f_vec = parabols(res.x, n_parabols, len(curve))
+            result = f_vec(t_train)
+            self.plotCurve(subject, result, name + '_result')
+
+        curves = self.computeCurves(subject)
+        for (name, curve) in curves.items():
+            get_coeff_of_curve(curve, name)
+        #
+        # t_min = 0
+        # t_max = 1
+        # n_points = 100
+        # rnd = numpy.random.RandomState(0)
+        # t_train = numpy.linspace(t_min, t_max, n_points)
+        # y_train = numpy.sin(0.2 * t_train) + 1.15 + rnd.randn(t_train.size)
+        #
+        # def residu(shift, t, y):
+        #     return  numpy.sin(shift[0] * t) + shift[1] - y
+        #
+        # shift_0 = numpy.array([1.0, 0.0])
+        #
+        # res = scipy.optimize.least_squares(residu, shift_0, args = (t_train, y_train))
+        # print(res)
+
+        # diff_curve = self.computeCurve(subject)
+        #
+        # diff2 = group_curve(diff_curve, 2)
+        # self.plotCurve(subject, diff2, 'diff2')
+        #
+        # diff20 = group_curve(diff_curve, 20)
+        # self.plotCurve(subject, diff20, 'diff20')
+        #
+        # final_curve = diff20
+        # xs = [i for i in range(len(final_curve))]
+        # #interpol_curve = scipy.interpolate.interp1d(xs, diff20, kind='cubic', fill_value = 'extrapolate')
+        # #interpol_curve = scipy.interpolate.BarycentricInterpolator(xs, diff20)
+        #
+        # # Smoothing
+        # interpol_curve = scipy.interpolate.BSpline(xs, final_curve, 2)
+        #
+        # ys = [interpol_curve(x) for x in xs]
+        # self.plotCurve(subject, ys, 'interpol')
+        #
+        # roots = [scipy.optimize.fsolve(interpol_curve, i)[0]
+        #     for i in range(0,len(final_curve), int(len(final_curve)/10))
+        # ]
+        # print(roots)
+        #
+        # # removing duplicates:
+        # roots2 = []
+        # epsilon = 1
+        # for root in roots:
+        #     add = True
+        #     for root2 in roots2:
+        #         if abs(root - root2) < epsilon:
+        #             add = False
+        #             break
+        #     if add:
+        #         roots2.append(root)
+        #
+        # # adding beginning and ending
+        # roots2 = [0] + roots2 + [xs[-1]]
+        # roots2.sort()
+        # print(roots2)
+        #
+        # # integration
+        # integral_curve = []
+        # for i in range(len(roots2)-1):
+        #     a = roots2[i]
+        #     b = roots2[i+1]
+        #     ys = [final_curve[x] for x in xs if x >= a and x <= b]
+        #     integral_curve.append((
+        #         (a + b)/2,
+        #         scipy.integrate.trapz(ys)
+        #     ))
+        #
+        # # integral curve
+        # xs = [x[0] for x in integral_curve]
+        # ys = [x[1] for x in integral_curve]
+        # print('coeff', numpy.corrcoef(xs, ys))
 
 
 
