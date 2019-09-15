@@ -388,7 +388,6 @@ class Visual_selection(Experiment):
 #    def fit(curve, target):
 
     def evolutionScore(self, subject):
-<<<<<<< HEAD
         # def masuperbecourbe(shift):
         #     a1 = shift[0] # scaling for the first part
         #     a2 = shift[1] # scaling for the second part
@@ -534,100 +533,6 @@ class Visual_selection(Experiment):
         # ys = [x[1] for x in integral_curve]
         # print('coeff', numpy.corrcoef(xs, ys))
 
-=======
-        def group_curve(x, e):
-            i = 0
-            res = []
-            while i <= len(x):
-                s = sum(y for y in x[i:i+e])
-                res.append(s/e)
-                i += e
-            return res
-        diff_curve = self.computeCurve(subject)
-
-
-        diff2 = group_curve(diff_curve, 2)
-        self.plotCurve(subject, diff2, 'diff2')
-
-        diff20 = group_curve(diff_curve, 20)
-        self.plotCurve(subject, diff20, 'diff20')
-        xs = [i for i in range(len(diff20))]
-        coeff_depart = numpy.polyfit(xs, diff20, 1)[0]
-
-        final_curve = diff20
-        xs = [i for i in range(len(final_curve))]
-        #interpol_curve = scipy.interpolate.interp1d(xs, diff20, kind='cubic', fill_value = 'extrapolate')
-        #interpol_curve = scipy.interpolate.BarycentricInterpolator(xs, diff20)
-
-        # Smoothing
-        interpol_curve = scipy.interpolate.BSpline(xs, final_curve, 2)
-
-        ys = [interpol_curve(x) for x in xs]
-        self.plotCurve(subject, ys, 'interpol')
-
-        roots = [scipy.optimize.fsolve(interpol_curve, i)[0]
-            for i in range(0,len(final_curve), int(len(final_curve)/10))
-        ]
-        print(roots)
-
-        # removing duplicates:
-        roots2 = []
-        epsilon = 1
-        for root in roots:
-            add = True
-            for root2 in roots2:
-                if abs(root - root2) < epsilon:
-                    add = False
-                    break
-            if add:
-                roots2.append(root)
-
-        # adding beginning and ending
-        roots2 = [0] + roots2 + [xs[-1]]
-        roots2.sort()
-        print(roots2)
-
-        # integration
-        integral_curve = []
-        for i in range(len(roots2)-1):
-            a = roots2[i]
-            b = roots2[i+1]
-            ys = [final_curve[x] for x in xs if x >= a and x <= b]
-            integral_curve.append((
-                (a + b)/2,
-                scipy.integrate.trapz(ys)
-            ))
-
-        print(integral_curve)
-        # integral curve
-        xs = [x[0] for x in integral_curve]
-        ys = [x[1] for x in integral_curve]
-        coeff_fin = numpy.polyfit(xs, ys, 1)[0]
-
-        j = 0
-        for curve in [
-            [coeff_depart * x for x in xs],
-            [coeff_fin * x for x in xs],
-            ys
-        ]:
-            j += 1
-            name = 'omg%i' % j
-            f = open('%s.csv' % name, 'w')
-            for i in range(len(curve)):
-                f.write('%i ; %s\n' % (xs[i], str(curve[i])))
-            f.close()
-        f = open('plots/make_plot', 'w')
-        f.write(
-            '''
-            set term 'png'
-            set output 'plots/cul.png'
-            set datafile separator ";"
-            plot 'omg1.csv' smooth bezier, 'omg2.csv' smooth bezier, 'omg3.csv' smooth bezier
-            '''
-        )
-        f.close()
-        os.system('gnuplot plots/make_plot')
->>>>>>> e53d1bd22657dc556885085132afabc2cd2f8934
 
 
     def postProcess(self, filename: str):
