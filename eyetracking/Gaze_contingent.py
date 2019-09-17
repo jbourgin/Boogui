@@ -118,6 +118,8 @@ class Gaze_contingent(Experiment):
 
         i = 0
         for (n_trial, trial) in enumerate(subject.trials):
+            if trial.discarded:
+                continue
             for fixation in trial.fixations:
                 x = [
                     fixation.getEntry(i)
@@ -177,6 +179,8 @@ class Gaze_contingent(Experiment):
                 self.eyetracker.right_ellipse.center[1] - means_right[0].getGazePosition()[1]
             )
             for trial in subject.trials[i*24 : (i+1)*24]:
+                if trial.discarded:
+                    continue
                 if trial.features['target_side'] == 'Left':
                     shift(trial, shift_vec_left)
                 else:
@@ -187,129 +191,136 @@ class Gaze_contingent(Experiment):
     def processTrial(self, subject, trial, filename = None):
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
         trial_number = trial.getTrialId()
-        print("Subject %i, trial %i" %(subject.id,trial_number))
-        print("eyetracker")
-        print(self.eyetracker)
-        #if len(line) >= 5 and 'response' in line[3] and 'screen' in line[4]:
-        start_trial_time = trial.getStartTrial().getTime()
-
-        if trial.saccades == []:
-            logTrace ("Subject %i has no saccades at trial %i !" %(subject.id,trial_number), Precision.DETAIL)
-            first_saccade = None
+        if trial.discarded:
+            s = [str(subject.id) + "-E", # Subject name
+                subject.group,
+                trial_number,
+                'DISCARDED'
+            ]
         else:
-            first_saccade = trial.saccades[0].getStartTimeFromStartTrial()
+            print("Subject %i, trial %i" %(subject.id,trial_number))
+            print("eyetracker")
+            print(self.eyetracker)
+            #if len(line) >= 5 and 'response' in line[3] and 'screen' in line[4]:
+            start_trial_time = trial.getStartTrial().getTime()
 
-        if trial.features['target_side'] == 'Left':
-            eye_position = self.eyetracker.left_gaze
-            face_position = self.eyetracker.left_face
-            start_point = (self.eyetracker.screen_center[0]*(1+1/3), self.eyetracker.screen_center[1]+150)
-        elif trial.features['target_side'] == 'Right':
-            eye_position = self.eyetracker.right_gaze
-            face_position = self.eyetracker.right_face
-            start_point = (self.eyetracker.screen_center[0]-(self.eyetracker.screen_center[0]/3), self.eyetracker.screen_center[1]+150)
-        regions = InterestRegionList([eye_position, face_position])
-
-        targetname = trial.getStimulus()
-        targetname = targetname.split('.')[0]
-
-        end_line = self.returnStopImageEntry(trial)
-
-        response_entry = trial.getResponse()
-
-        region_fixations = trial.getFixationTime(regions, eye_position, end_line)
-
-        # First and last good fixations
-        try:
-            first_fixation = next(fixation for fixation in region_fixations)
-            if first_fixation.on_target:
-                first_area = 1
+            if trial.saccades == []:
+                logTrace ("Subject %i has no saccades at trial %i !" %(subject.id,trial_number), Precision.DETAIL)
+                first_saccade = None
             else:
-                first_area = 0
-        except:
-            first_fixation = None
-            first_area = None
-        try:
-            first_good_fixation = next(fixation for fixation in region_fixations if fixation.on_target)
-            capture_delay_first = first_good_fixation.getStartTimeFromStartTrial()
-        except:
-            first_good_fixation = None
-            capture_delay_first = None
+                first_saccade = trial.saccades[0].getStartTimeFromStartTrial()
 
-        # Time on target and distractors
-        total_eye_fixation_time = sum(x.duration() for x in region_fixations if x.on_target)
-        # if total_eye_fixation_time == 0:
-        #     total_eye_fixation_time = None
-        total_faceNotEye_fixation_time = sum(x.duration() for x in region_fixations if not x.on_target)
-        total_fixation_time = total_eye_fixation_time + total_faceNotEye_fixation_time
-        if total_fixation_time != 0:
-            percent_eye = total_eye_fixation_time/total_fixation_time*100
-            percent_face = total_faceNotEye_fixation_time/total_fixation_time*100
-        else:
-            percent_eye = None
-            percent_face = None
-        # if total_faceNotEye_fixation_time == 0:
-        #     total_faceNotEye_fixation_time = None
+            if trial.features['target_side'] == 'Left':
+                eye_position = self.eyetracker.left_gaze
+                face_position = self.eyetracker.left_face
+                start_point = (self.eyetracker.screen_center[0]*(1+1/3), self.eyetracker.screen_center[1]+150)
+            elif trial.features['target_side'] == 'Right':
+                eye_position = self.eyetracker.right_gaze
+                face_position = self.eyetracker.right_face
+                start_point = (self.eyetracker.screen_center[0]-(self.eyetracker.screen_center[0]/3), self.eyetracker.screen_center[1]+150)
+            regions = InterestRegionList([eye_position, face_position])
 
-        # Determining blink category
-        if trial.blinks == []:
-            blink_category = "No blink"
-        else:
-            if region_fixations != []:
-                if trial.blinks[0].getStartTime() < region_fixations[0].getStartTime():
-                    blink_category = "early capture"
+            targetname = trial.getStimulus()
+            targetname = targetname.split('.')[0]
+
+            end_line = self.returnStopImageEntry(trial)
+
+            response_entry = trial.getResponse()
+
+            region_fixations = trial.getFixationTime(regions, eye_position, end_line)
+
+            # First and last good fixations
+            try:
+                first_fixation = next(fixation for fixation in region_fixations)
+                if first_fixation.on_target:
+                    first_area = 1
                 else:
-                    blink_category = "late"
+                    first_area = 0
+            except:
+                first_fixation = None
+                first_area = None
+            try:
+                first_good_fixation = next(fixation for fixation in region_fixations if fixation.on_target)
+                capture_delay_first = first_good_fixation.getStartTimeFromStartTrial()
+            except:
+                first_good_fixation = None
+                capture_delay_first = None
+
+            # Time on target and distractors
+            total_eye_fixation_time = sum(x.duration() for x in region_fixations if x.on_target)
+            # if total_eye_fixation_time == 0:
+            #     total_eye_fixation_time = None
+            total_faceNotEye_fixation_time = sum(x.duration() for x in region_fixations if not x.on_target)
+            total_fixation_time = total_eye_fixation_time + total_faceNotEye_fixation_time
+            if total_fixation_time != 0:
+                percent_eye = total_eye_fixation_time/total_fixation_time*100
+                percent_face = total_faceNotEye_fixation_time/total_fixation_time*100
             else:
-                blink_category = None
+                percent_eye = None
+                percent_face = None
+            # if total_faceNotEye_fixation_time == 0:
+            #     total_faceNotEye_fixation_time = None
 
-        # Error :
-
-        # if not trial.isStartValid(start_point, self.eyetracker.valid_distance_center)[0]:
-        #     error = "Not valid start"
-        if trial.features['response'] == 'None':
-            error = "No subject response"
-        elif total_fixation_time < 2000:
-            error = "Low fixation time"
-        elif blink_category == 'early capture':
-            error = "Early blink"
-        elif first_fixation is None:
-            error = "No fixation"
-        elif first_saccade < 100:
-            error = "Anticipation saccade"
-        # elif first_saccade > 700:
-        #     error = "Saccade too long"
-        else:
-            if trial.features['cor_resp'] != trial.features['response']:
-                error = '1'
+            # Determining blink category
+            if trial.blinks == []:
+                blink_category = "No blink"
             else:
-                error = '0'
+                if region_fixations != {}:
+                    if trial.blinks[0].getStartTime() < region_fixations[0].getStartTime():
+                        blink_category = "early capture"
+                    else:
+                        blink_category = "late"
+                else:
+                    blink_category = None
 
-        # Writing data in result csv file
-        s = [str(subject.id) + "-E", # Subject name
-            subject.group,
-            trial_number,
-            trial.features['session'],
-            trial.features['training'],
-            trial.features['global_task'],
-            trial.eye,
-            trial.features['emotion'],
-            trial.features['gender'],
-            targetname,
-            trial.features['target_side'],
-            trial.features['cor_resp'],
-            trial.features['response'],
-            error,
-            trial.features['response_time'],
-            trial.isStartValid(start_point, self.eyetracker.valid_distance_center)[1],
-            capture_delay_first,
-            total_eye_fixation_time,
-            total_faceNotEye_fixation_time,
-            str(percent_eye).replace('.',','),
-            str(percent_face).replace('.',','),
-            blink_category,
-            total_fixation_time,
-            first_saccade,
-            first_area]
+            # Error :
+
+            # if not trial.isStartValid(start_point, self.eyetracker.valid_distance_center)[0]:
+            #     error = "Not valid start"
+            if trial.features['response'] == 'None':
+                error = "No subject response"
+            elif total_fixation_time < 2000:
+                error = "Low fixation time"
+            elif blink_category == 'early capture':
+                error = "Early blink"
+            elif first_fixation is None:
+                error = "No fixation"
+            elif first_saccade < 100:
+                error = "Anticipation saccade"
+            # elif first_saccade > 700:
+            #     error = "Saccade too long"
+            else:
+                if trial.features['cor_resp'] != trial.features['response']:
+                    error = '1'
+                else:
+                    error = '0'
+
+            # Writing data in result csv file
+            s = [str(subject.id) + "-E", # Subject name
+                subject.group,
+                trial_number,
+                trial.features['session'],
+                trial.features['training'],
+                trial.features['global_task'],
+                trial.eye,
+                trial.features['emotion'],
+                trial.features['gender'],
+                targetname,
+                trial.features['target_side'],
+                trial.features['cor_resp'],
+                trial.features['response'],
+                error,
+                trial.features['response_time'],
+                trial.isStartValid(start_point, self.eyetracker.valid_distance_center)[1],
+                capture_delay_first,
+                total_eye_fixation_time,
+                total_faceNotEye_fixation_time,
+                str(percent_eye).replace('.',','),
+                str(percent_face).replace('.',','),
+                blink_category,
+                total_fixation_time,
+                first_saccade,
+                first_area]
 
         if filename is None:
             f = open(getResultsFile(), 'a')
@@ -352,6 +363,8 @@ class Gaze_contingent(Experiment):
         list_scores = ['first_saccade', 'response_time', 'total_fixation_time']
 
         for line in data:
+            if len(line) >= 4 and line[3] == 'DISCARDED':
+                continue
             if line[0] == "Subject":
                 new_line = line
                 new_line.append('First saccade sorting')

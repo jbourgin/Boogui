@@ -32,6 +32,9 @@ class Trial:
         # Either "Left" or "Right"
         self.eye = None
 
+        # Is the trial discarded
+        self.discarded = False
+
         self.is_training = False
 
     def __str__(self):
@@ -254,6 +257,10 @@ class Trial:
             def _(_): return None
 
         return getId(self.getStartTrial())
+
+    def discard(self, b) -> None:
+        print('Discarding trial %i' % self.getTrialId())
+        self.discarded = b
 
     def getStartTrial(self) -> Entry:
         return self.entries[0]
