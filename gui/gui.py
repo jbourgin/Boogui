@@ -108,7 +108,7 @@ class Main(QMainWindow):
         self.scrollArea = QScrollArea()
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setWidget(self.scrollWidget)
-        self.scrollArea.setFixedWidth(self.scrollLayouWidth)
+        self.scrollArea.setFixedWidth(self.scrollLayouWidth + 25)
 
         self.mainLayout.addWidget(self.scrollArea)
 
@@ -445,20 +445,6 @@ class Main(QMainWindow):
             self.setup_trials(n_subject)
         return choose_subject
 
-    def deleteTrial(self, subject_data, trial, button):
-        def f():
-            i_trial = 0
-            for t in subject_data.subject.trials:
-                if trial == t:
-                    break
-                i_trial += 1
-            subject_data.subject.trials.pop(i_trial)
-            subject_data.trial_datas.pop(i_trial)
-            # Deleting trial button
-            self.trialScrollLayout.removeWidget(button)
-            button.deleteLater()
-        return f
-
     # Setups the Trial scroller components after selecting a subject
     def setup_trials(self, n_subject):
         # Clearing layouts
@@ -481,19 +467,31 @@ class Main(QMainWindow):
 
         i = 0
         for trial in subject.trials:
+            widget = QWidget()
+            layout = QHBoxLayout()
+            widget.setLayout(layout)
+
             button = QPushButton('Trial %i' % i, self)
             button.setCheckable(True)
             self.buttonGroup.addButton(button)
-            self.trialScrollLayout.addWidget(button)
             button.clicked.connect(self.make_choose_trial(n_subject, i, trial))
-            # set button context menu policy
-            button.setContextMenuPolicy(Qt.ActionsContextMenu)
-            # create context menu
-            #popMenu = QtWidgets.QMenu(self)
-            a = QAction('Delete', self)
-            a.triggered.connect(self.deleteTrial(subject_data, trial, button))
-            button.addAction(a)
+
+            checkbox = QtWidgets.QCheckBox(self)
+            checkbox.setChecked(trial.discarded)
+
+            #checkbox.stateChanged.connect(lambda t=trial,box=checkbox: t.discard(box.isChecked()))
+            checkbox.stateChanged.connect(self.discardTrial(trial, checkbox))
+            layout.addWidget(button)
+            layout.addWidget(checkbox)
+
+            self.trialScrollLayout.addWidget(widget)
+
             i += 1
+
+    def discardTrial(self, trial, box):
+        def f():
+            trial.discard(box.isChecked())
+        return f
 
     def make_choose_trial(self, n_subject, n_trial, trial):
         def choose_trial():
