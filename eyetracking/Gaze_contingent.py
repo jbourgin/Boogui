@@ -525,7 +525,7 @@ class Gaze_contingent(Experiment):
         img_height = self.eyetracker.half_height_face
         # Plotting frames
         if trial.features['target_side'] == 'Left':
-            if image != None:
+            if image is not None:
                 plt.imshow(image, extent=[
                     self.eyetracker.left_ellipse.center[0] - img_width,
                     self.eyetracker.left_ellipse.center[0] + img_width,
@@ -535,7 +535,7 @@ class Gaze_contingent(Experiment):
             plotRegion(self.eyetracker.left_ellipse, frame_color)
             plotRegion(self.eyetracker.left_gaze, frame_color)
         elif trial.features['target_side'] == 'Right':
-            if image != None:
+            if image is not None:
                 plt.imshow(image, extent=[
                     self.eyetracker.right_ellipse.center[0] - img_width,
                     self.eyetracker.right_ellipse.center[0] + img_width,
