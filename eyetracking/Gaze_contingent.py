@@ -518,27 +518,30 @@ class Gaze_contingent(Experiment):
             '/home/jessica/Task/',
             trial.getStimulus().split('.')[0] + '.png'
         )
+        image = None
         if os.path.isfile(image_name):
             image = plt.imread(image_name, format = 'png')
         img_width = self.eyetracker.half_width
         img_height = self.eyetracker.half_height_face
         # Plotting frames
         if trial.features['target_side'] == 'Left':
-            plt.imshow(image, extent=[
-                self.eyetracker.left_ellipse.center[0] - img_width,
-                self.eyetracker.left_ellipse.center[0] + img_width,
-                self.eyetracker.left_ellipse.center[1] + img_height,
-                self.eyetracker.left_ellipse.center[1] - img_height
-            ])
+            if image != None:
+                plt.imshow(image, extent=[
+                    self.eyetracker.left_ellipse.center[0] - img_width,
+                    self.eyetracker.left_ellipse.center[0] + img_width,
+                    self.eyetracker.left_ellipse.center[1] + img_height,
+                    self.eyetracker.left_ellipse.center[1] - img_height
+                ])
             plotRegion(self.eyetracker.left_ellipse, frame_color)
             plotRegion(self.eyetracker.left_gaze, frame_color)
         elif trial.features['target_side'] == 'Right':
-            plt.imshow(image, extent=[
-                self.eyetracker.right_ellipse.center[0] - img_width,
-                self.eyetracker.right_ellipse.center[0] + img_width,
-                self.eyetracker.right_ellipse.center[1] + img_height,
-                self.eyetracker.right_ellipse.center[1] - img_height
-            ])
+            if image != None:
+                plt.imshow(image, extent=[
+                    self.eyetracker.right_ellipse.center[0] - img_width,
+                    self.eyetracker.right_ellipse.center[0] + img_width,
+                    self.eyetracker.right_ellipse.center[1] + img_height,
+                    self.eyetracker.right_ellipse.center[1] - img_height
+                ])
             plotRegion(self.eyetracker.right_ellipse, frame_color)
             plotRegion(self.eyetracker.right_gaze, frame_color)
 

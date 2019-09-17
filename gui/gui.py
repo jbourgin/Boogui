@@ -71,11 +71,12 @@ class Main(QMainWindow):
         shortcut = QShortcut(QKeySequence("Ctrl+F"), self)
         shortcut.activated.connect(self.open_search)
 
-    def getTrialData(self, n_subject, n_trial, is_training):
-        if is_training:
-            return self.subject_datas[n_subject].training_trial_datas[n_trial]
+    def getTrialData(self, n_subject, trial):
+        if trial.isTraining():
+            return next(
+                t for t in self.subject_datas[n_subject].training_trial_datas if t.trial == trial)
         else:
-            return self.subject_datas[n_subject].trial_datas[n_trial]
+            return next(t for t in self.subject_datas[n_subject].trial_datas if t.trial == trial)
 
     def set_subject_scroller(self):
         # scroll area widget contents - layout
@@ -431,10 +432,10 @@ class Main(QMainWindow):
     ###########################
     ######## CALLBACKS ########
     ###########################
-    def make_compute_video(self, n_subject, n_trial, is_training):
+    def make_compute_video(self, n_subject, trial):
         def compute_video():
             logTrace ('computing video', Precision.NORMAL)
-            vid_path = self.getTrialData(n_subject, n_trial, is_training).getVideo(self)
+            vid_path = self.getTrialData(n_subject, trial).getVideo(self)
             self.video_widget.setVideo(vid_path)
 
         return compute_video
@@ -504,18 +505,18 @@ class Main(QMainWindow):
             sb = self.logOutput.verticalScrollBar()
             sb.setValue(sb.minimum())
 
-            image_name = joinPaths(getTmpFolder(), self.getTrialData(n_subject, n_trial, trial.isTraining()).getImage())
+            image_name = joinPaths(getTmpFolder(), self.getTrialData(n_subject, trial).getImage())
             pixmap = QPixmap(image_name)
             self.previsu_image.setPixmap(pixmap)
             self.previsu_image.adjustSize()
             self.previsu_image.show()
 
-            vid_name = self.getTrialData(n_subject, n_trial, trial.isTraining()).video
+            vid_name = self.getTrialData(n_subject, trial).video
 
             if vid_name is None:
-                self.video_widget.setButton(self.make_compute_video(n_subject, n_trial, trial.isTraining()))
+                self.video_widget.setButton(self.make_compute_video(n_subject, trial))
             else:
-                self.video_widget.setVideo(self.getTrialData(n_subject, n_trial, trial.isTraining()).getVideo(self))
+                self.video_widget.setVideo(self.getTrialData(n_subject, trial).getVideo(self))
 
             self.video_widget.show()
         return choose_trial
