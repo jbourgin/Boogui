@@ -444,10 +444,15 @@ class Main(QMainWindow):
             self.setup_trials(n_subject)
         return choose_subject
 
-    def deleteTrial(self, subject_data, n_trial, button):
+    def deleteTrial(self, subject_data, trial, button):
         def f():
-            subject_data.subject.trials.pop(n_trial)
-            subject_data.trial_datas.pop(n_trial)
+            i_trial = 0
+            for t in subject_data.subject.trials:
+                if trial == t:
+                    break
+                i_trial += 1
+            subject_data.subject.trials.pop(i_trial)
+            subject_data.trial_datas.pop(i_trial)
             # Deleting trial button
             self.trialScrollLayout.removeWidget(button)
             button.deleteLater()
@@ -485,7 +490,7 @@ class Main(QMainWindow):
             # create context menu
             #popMenu = QtWidgets.QMenu(self)
             a = QAction('Delete', self)
-            a.triggered.connect(self.deleteTrial(subject_data, i, button))
+            a.triggered.connect(self.deleteTrial(subject_data, trial, button))
             button.addAction(a)
             i += 1
 
