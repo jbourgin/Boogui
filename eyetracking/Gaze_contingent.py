@@ -20,11 +20,11 @@ class Make_Eyelink(Eyelink):
         # Initializing regions of interest
         self.half_width = 200
         self.half_height_face = 268
-        self.half_height_eye = 30 #45
+        self.half_height_eye = 42 #45
 
         # frames
-        self.right_gaze = RectangleRegion((self.screen_center[0]*(1+1/3), self.screen_center[1]), self.half_width, self.half_height_eye)
-        self.left_gaze = RectangleRegion((self.screen_center[0]-(self.screen_center[0]/3), self.screen_center[1]), self.half_width, self.half_height_eye)
+        self.right_gaze = RectangleRegion((self.screen_center[0]*(1+1/3), self.screen_center[1]-6), self.half_width, self.half_height_eye)
+        self.left_gaze = RectangleRegion((self.screen_center[0]-(self.screen_center[0]/3), self.screen_center[1]-6), self.half_width, self.half_height_eye)
         self.right_ellipse = EllipseRegion((self.screen_center[0]*(1+1/3), self.screen_center[1]), self.half_width, self.half_height_face)
         self.left_ellipse = EllipseRegion((self.screen_center[0]-(self.screen_center[0]/3), self.screen_center[1]), self.half_width, self.half_height_face)
         self.right_face = DifferenceRegion(self.right_ellipse, self.right_gaze)
@@ -254,7 +254,7 @@ class Gaze_contingent(Experiment):
         if trial.blinks == []:
             blink_category = "No blink"
         else:
-            if region_fixations != {}:
+            if region_fixations != []:
                 if trial.blinks[0].getStartTime() < region_fixations[0].getStartTime():
                     blink_category = "early capture"
                 else:

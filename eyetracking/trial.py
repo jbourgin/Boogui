@@ -314,7 +314,7 @@ class Trial:
         def set_type_fixation(fix):
             fix.type = "WRONG"
             if fix.duration() > 0:
-                if fix.duration() < 30: #80
+                if fix.duration() < 80: #30 for visual scenes, awaiting better with saccades
                     fix.type = "SHORT"
                 else:
                     fix.type = "NORMAL"

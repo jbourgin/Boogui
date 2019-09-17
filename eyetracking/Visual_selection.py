@@ -117,26 +117,32 @@ class Visual_selection(Experiment):
                 neu_position = self.eyetracker.left
         regions = InterestRegionList([emo_position, neu_position])
 
+        if trial.features['arrow'] ==  trial.features['target_side']:
+            first_image_to_look = 'EMO'
+            region_to_look = emo_position
+            region_not_to_look = neu_position
+        elif trial.features['arrow'] !=  trial.features['target_side']:
+            first_image_to_look = 'NEU'
+            region_to_look = neu_position
+            region_not_to_look = emo_position
+
         if trial.saccades == []:
             logTrace ("Subject %i has no saccades at trial %i !" %(subject.id,trial_number), Precision.DETAIL)
             first_saccade = None
             first_saccade_pos = None
         else:
             first_saccade = trial.saccades[0].getStartTimeFromStartTrial()
-            if trial.saccades[0].getLastGazePosition()[0] > self.eyetracker.screen_center[0]:
-                first_saccade_pos = 'right'
+            if region_to_look.point_inside(trial.saccades[0].getLastGazePosition()):
+                first_saccade_pos = 'Correct'
+            elif region_not_to_look.point_inside(trial.saccades[0].getLastGazePosition()):
+                first_saccade_pos = 'Incorrect'
             else:
-                first_saccade_pos = 'left'
+                first_saccade_pos = 'Miss'
 
 
         targetname = trial.features['stim1']
 
         response_entry = trial.getResponse()
-
-        if trial.features['arrow'] ==  trial.features['target_side']:
-            first_image_to_look = 'EMO'
-        elif trial.features['arrow'] !=  trial.features['target_side']:
-            first_image_to_look = 'NEU'
 
         region_fixations = trial.getFixationTime(regions, emo_position)
         # First fixations
@@ -226,10 +232,12 @@ class Visual_selection(Experiment):
                     error = '0'
                 else:
                     error = '1'
-                if first_saccade_pos == trial.features['arrow']:
+                if first_saccade_pos == 'Correct':
                     error_sac = '0'
-                else:
+                elif first_saccade_pos == 'Incorrect':
                     error_sac = '1'
+                elif first_saccade_pos == 'Miss':
+                    error_sac = 'Miss'
 
         # Writing data in result csv file
         s = [str(subject.id) + "-E", # Subject name
