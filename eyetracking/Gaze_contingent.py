@@ -15,16 +15,16 @@ class Make_Eyelink(Eyelink):
         self.screen_center = (683,384)
         # Minimal distance at which we consider the subject is looking at the
         # fixation cross at the trial beginning
-        self.valid_distance_center = 100 #3 degres of visual angle 95 (+ marge)
+        self.valid_distance_center = 220 #3 degres of visual angle 95 (+ marge)
 
         # Initializing regions of interest
-        self.half_width = 200
-        self.half_height_face = 268
-        self.half_height_eye = 42 #45
+        self.half_width = 210 #200
+        self.half_height_face = 278 #268
+        self.half_height_eye = 52 #45
 
         # frames
-        self.right_gaze = RectangleRegion((self.screen_center[0]*(1+1/3), self.screen_center[1]-6), self.half_width, self.half_height_eye)
-        self.left_gaze = RectangleRegion((self.screen_center[0]-(self.screen_center[0]/3), self.screen_center[1]-6), self.half_width, self.half_height_eye)
+        self.right_gaze = RectangleRegion((self.screen_center[0]*(1+1/3), self.screen_center[1]-10), self.half_width, self.half_height_eye)
+        self.left_gaze = RectangleRegion((self.screen_center[0]-(self.screen_center[0]/3), self.screen_center[1]-10), self.half_width, self.half_height_eye)
         self.right_ellipse = EllipseRegion((self.screen_center[0]*(1+1/3), self.screen_center[1]), self.half_width, self.half_height_face)
         self.left_ellipse = EllipseRegion((self.screen_center[0]-(self.screen_center[0]/3), self.screen_center[1]), self.half_width, self.half_height_face)
         self.right_face = DifferenceRegion(self.right_ellipse, self.right_gaze)
@@ -158,6 +158,7 @@ class Gaze_contingent(Experiment):
             self.eyetracker.screen_center[1] + 150
         )
         for i in range(4):
+            print(i)
             means_left = k_clusters(gaze_positions[i]['left'], 3, [cluster1_left, cluster2_left, cluster3_left])
             means_right = k_clusters(gaze_positions[i]['right'], 3, [cluster1_right, cluster2_right, cluster3_right])
             # shift_vec_left = (
@@ -231,6 +232,10 @@ class Gaze_contingent(Experiment):
 
             # First and last good fixations
             try:
+                print(region_fixations)
+                for fixation in region_fixations:
+                    print(fixation.on_target)
+                    print(fixation.region)
                 first_fixation = next(fixation for fixation in region_fixations)
                 if first_fixation.on_target:
                     first_area = 1
@@ -275,9 +280,9 @@ class Gaze_contingent(Experiment):
 
             # Error :
 
-            # if not trial.isStartValid(start_point, self.eyetracker.valid_distance_center)[0]:
-            #     error = "Not valid start"
-            if trial.features['response'] == 'None':
+            if not trial.isStartValid(start_point, self.eyetracker.valid_distance_center)[0]:
+                 error = "Not valid start"
+            elif trial.features['response'] == 'None':
                 error = "No subject response"
             elif total_fixation_time < 2000:
                 error = "Low fixation time"
@@ -285,7 +290,7 @@ class Gaze_contingent(Experiment):
                 error = "Early blink"
             elif first_fixation is None:
                 error = "No fixation"
-            elif first_saccade < 100:
+            elif first_saccade < 50:
                 error = "Anticipation saccade"
             # elif first_saccade > 700:
             #     error = "Saccade too long"
@@ -449,8 +454,8 @@ class Gaze_contingent(Experiment):
                         score = dic_variables['response_time']
                     elif key == 'total_fixation_time':
                         score = dic_variables['total_fixation_time']
-                    print(key)
-                    print(score)
+                    # print(key)
+                    # print(score)
                     if SD_dic[code][key] != None and dic_variables['error'] == "0" and score != "None" and score != "" and "early" not in dic_variables['blink'] and dic_variables["error"] == "0":
                         current_mean = mean_dic[code][key]
                         current_SD = SD_dic[code][key]

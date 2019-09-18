@@ -343,6 +343,9 @@ class Blink(EntryList):
     def __str__(self):
         return 'Blink: %i' % self.duration()
 
+    def isBlinkValid(self):
+        return self.duration() >= 50
+
     def check(self) -> None:
         @match(Entry)
         class checkStart(object):

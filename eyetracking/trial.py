@@ -184,7 +184,9 @@ class Trial:
                         self.fixations.append(Fixation(self, begin_fixation, len(self.entries) - 1))
                         begin_fixation = None
                     elif begin_blink is not None and isBlinkEnding(entry):
-                        self.blinks.append(Blink(self, begin_blink, len(self.entries) - 1))
+                        current_blink = Blink(self, begin_blink, len(self.entries) - 1)
+                        if current_blink.isBlinkValid():
+                            self.blinks.append(current_blink)
                         begin_blink = None
         return []
 
@@ -321,7 +323,7 @@ class Trial:
         def set_type_fixation(fix):
             fix.type = "WRONG"
             if fix.duration() > 0:
-                if fix.duration() < 80: #30 for visual scenes, awaiting better with saccades
+                if fix.duration() < 50: #30 for visual scenes, awaiting better with saccades
                     fix.type = "SHORT"
                 else:
                     fix.type = "NORMAL"
