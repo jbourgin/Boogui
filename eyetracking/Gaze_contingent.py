@@ -118,18 +118,17 @@ class Gaze_contingent(Experiment):
 
         i = 0
         for (n_trial, trial) in enumerate(subject.trials):
-            if trial.discarded:
-                continue
-            for fixation in trial.fixations:
-                x = [
-                    fixation.getEntry(i)
-                    for i in range(fixation.getBegin(), fixation.getEnd())
-                    if getGazePosition(fixation.getEntry(i)) != None
-                ]
-                if trial.features['target_side'] == 'Left':
-                    gaze_positions[i]['left'] += x
-                elif trial.features['target_side'] == 'Right':
-                    gaze_positions[i]['right'] += x
+            if not trial.discarded:
+                for fixation in trial.fixations:
+                    x = [
+                        fixation.getEntry(i)
+                        for i in range(fixation.getBegin(), fixation.getEnd())
+                        if getGazePosition(fixation.getEntry(i)) != None
+                    ]
+                    if trial.features['target_side'] == 'Left':
+                        gaze_positions[i]['left'] += x
+                    elif trial.features['target_side'] == 'Right':
+                        gaze_positions[i]['right'] += x
             if (n_trial + 1) % 24 == 0:
                 i += 1
 
