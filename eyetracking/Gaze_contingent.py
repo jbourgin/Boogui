@@ -195,6 +195,18 @@ class Gaze_contingent(Experiment):
             s = [str(subject.id) + "-E", # Subject name
                 subject.group,
                 trial_number,
+                trial.features['session'],
+                trial.features['training'],
+                trial.features['global_task'],
+                trial.eye,
+                trial.features['emotion'],
+                trial.features['gender'],
+                trial.getStimulus().split('.')[0],
+                trial.features['target_side'],
+                trial.features['cor_resp'],
+                trial.features['response'],
+                '1' if trial.features['cor_resp'] != trial.features['response'] else '0',
+                trial.features['response_time'],
                 'DISCARDED'
             ]
         else:
@@ -269,7 +281,7 @@ class Gaze_contingent(Experiment):
             if trial.blinks == []:
                 blink_category = "No blink"
             else:
-                if region_fixations != {}:
+                if region_fixations != []:
                     if trial.blinks[0].getStartTime() < region_fixations[0].getStartTime():
                         blink_category = "early capture"
                     else:
@@ -366,8 +378,10 @@ class Gaze_contingent(Experiment):
         data_seq = []
         list_scores = ['first_saccade', 'response_time', 'total_fixation_time']
 
+        lines_error = []
         for line in data:
-            if len(line) >= 4 and line[3] == 'DISCARDED':
+            if len(line) >= 16 and line[15] == 'DISCARDED':
+                lines_error.append(line)
                 continue
             if line[0] == "Subject":
                 new_line = line
@@ -472,6 +486,8 @@ class Gaze_contingent(Experiment):
                         new_line.append("%s not relevant" %key)
                 s = ";".join([str(e) for e in new_line]) + "\n"
                 data_modified.write(s)
+        for line in lines_error:
+            data_modified.write(';'.join(line) + '\n')
         data_modified.close()
 
     @staticmethod

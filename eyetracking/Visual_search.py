@@ -634,6 +634,10 @@ class Visual_search(Experiment):
         except:
             return None
 
+    default_subject_id = 1
+    default_category = 'Not defined'
+    #default_category = 'SAS'
+
     def parseSubject(self, input_file : str, progress = None) -> Subject:
 
         self.selectEyetracker(input_file)
@@ -646,22 +650,23 @@ class Visual_search(Experiment):
         subject_data = self.getSubjectData(first_line)
 
         if subject_data is None:
-            raise ExperimentException('Subject number and category could not be found')
+            logTrace ('Subject number and category could not be found', Precision.ERROR)
+            subject_data = (Visual_search.default_subject_id, Visual_search.default_category)
+            Visual_search.default_subject_id += 1
 
+        result_file = "results.txt"
+        is_processed = self.eyetracker.preprocess(input_file, result_file, progress)
+        if is_processed:
+            datafile = open(joinPaths(getTmpFolder(), result_file), "r")
         else:
-            result_file = "results.txt"
-            is_processed = self.eyetracker.preprocess(input_file, result_file, progress)
-            if is_processed:
-                datafile = open(joinPaths(getTmpFolder(), result_file), "r")
-            else:
-                datafile = open(input_file, "r")
+            datafile = open(input_file, "r")
 
-            #File conversion in list.
-            data = datafile.read()
-            data = list(data.splitlines())
+        #File conversion in list.
+        data = datafile.read()
+        data = list(data.splitlines())
 
-            #We add a tabulation and space separator.
-            data = [re.split("[\t ]+",line) for line in data]
+        #We add a tabulation and space separator.
+        data = [re.split("[\t ]+",line) for line in data]
 
-            (n_subject, subject_cat) = subject_data
-            return Subject(self, data, n_subject, subject_cat, progress)
+        (n_subject, subject_cat) = subject_data
+        return Subject(self, data, n_subject, subject_cat, progress)
