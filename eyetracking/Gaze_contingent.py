@@ -548,7 +548,7 @@ class Gaze_contingent(Experiment):
 
         # Plotting image
         image_name = os.path.join(
-            '/home/jessica/Task/',
+            'E:\\Task\\',
             trial.getStimulus().split('.')[0] + '.png'
         )
         image = None
@@ -596,6 +596,17 @@ class Gaze_contingent(Experiment):
         frame_color = (0,0,0)
         point_color = (1,1,0)
 
+        # Plotting image
+        image_name = os.path.join(
+            'E:\\Task\\',
+            trial.getStimulus().split('.')[0] + '.png'
+        )
+        image = None
+        if os.path.isfile(image_name):
+            image = plt.imread(image_name, format = 'png')
+        img_width = self.eyetracker.half_width
+        img_height = self.eyetracker.half_height_face
+
         # Taking frequency into account
         point_list_f = []
         for i in range(0,len(point_list)-frequency,frequency):
@@ -625,11 +636,25 @@ class Gaze_contingent(Experiment):
             point_color = (1, point_color[1] - 1.0/nb_points , 0)
 
             if trial.features['target_side'] == 'Left':
-                plotRegion(self.eyetracker.left_ellipse, frame_color)
-                plotRegion(self.eyetracker.left_gaze, frame_color)
+                if image is not None:
+                    plt.imshow(image, extent=[
+                        self.eyetracker.left_ellipse.center[0] - img_width,
+                        self.eyetracker.left_ellipse.center[0] + img_width,
+                        self.eyetracker.left_ellipse.center[1] + img_height,
+                        self.eyetracker.left_ellipse.center[1] - img_height
+                    ])
+                # plotRegion(self.eyetracker.left_ellipse, frame_color)
+                # plotRegion(self.eyetracker.left_gaze, frame_color)
             elif trial.features['target_side'] == 'Right':
-                plotRegion(self.eyetracker.right_ellipse, frame_color)
-                plotRegion(self.eyetracker.right_gaze, frame_color)
+                if image is not None:
+                    plt.imshow(image, extent=[
+                        self.eyetracker.left_ellipse.center[0] - img_width,
+                        self.eyetracker.left_ellipse.center[0] + img_width,
+                        self.eyetracker.left_ellipse.center[1] + img_height,
+                        self.eyetracker.left_ellipse.center[1] - img_height
+                    ])
+                # plotRegion(self.eyetracker.right_ellipse, frame_color)
+                # plotRegion(self.eyetracker.right_gaze, frame_color)
 
             image_name = '%i.png' % elem
             saveImage(getTmpFolder(), image_name)
