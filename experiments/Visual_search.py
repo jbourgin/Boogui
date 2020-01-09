@@ -150,14 +150,7 @@ class Make_Smi(Smi):
     def isTraining(self, trial) -> bool:
         return 'face' in trial.getStimulus()
 
-class ExperimentException(Exception):
-    def __init__(self, message):
-
-        # Call the base class constructor with the parameters it needs
-        super().__init__(message)
-
-
-class Visual_search(Experiment):
+class Exp(Experiment):
 
     def __init__(self):
         super().__init__(None)

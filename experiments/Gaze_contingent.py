@@ -76,7 +76,7 @@ class Make_Eyelink(Eyelink):
     def isTraining(self, trial) -> bool:
         return 'Training' in trial.features['training']
 
-class Gaze_contingent(Experiment):
+class Exp(Experiment):
 
     def __init__(self):
         super().__init__(None)

@@ -8,11 +8,12 @@ from PyQt5.QtMultimedia import QSound
 from PyQt5.QtCore import Qt, pyqtSlot
 
 from eyetracking.smi import *
-from eyetracking.Visual_search import *
-from eyetracking.Gaze_contingent import *
-from eyetracking.Visual_selection import *
-from eyetracking.Prosaccade import *
-from eyetracking.Antisaccade import *
+from eyetracking.subject import Subject
+# from eyetracking.Visual_search import *
+# from eyetracking.Gaze_contingent import *
+# from eyetracking.Visual_selection import *
+# from eyetracking.Prosaccade import *
+# from eyetracking.Antisaccade import *
 from gui.utils import *
 from gui.subject import *
 from gui.progress_widget import ProgressWidget
@@ -37,6 +38,9 @@ class Main(QMainWindow):
 
         self.subject_buttons = QButtonGroup()
         self.subject_buttons.setExclusive(True)
+
+        print('loading dynamic experiments')
+        self.experiments = loadExperiments()
 
         # The main window widget
         self.main_wid = None
@@ -191,39 +195,16 @@ class Main(QMainWindow):
         # Experiment menu
         ag = QActionGroup(self, exclusive=True)
         self.experiment_menu = menubar.addMenu('&Experiment')
-        # Visual search
-        setVisualSearch = QAction('&Visual search', self, checkable = True)
-        setVisualSearch.triggered.connect(self.setVisualSearch)
-        a = ag.addAction(setVisualSearch)
-        self.experiment_menu.addAction(a)
 
-        # GazeContingent
-        setGazeContingent = QAction('&Gaze Contingent', self, checkable = True)
-        setGazeContingent.triggered.connect(self.setGazeContingent)
-        b = ag.addAction(setGazeContingent)
-        self.experiment_menu.addAction(b)
+        for exp_name in self.experiments:
+            setExp = QAction('&' + exp_name, self, checkable = True)
+            setExp.triggered.connect(self.setExperiment(exp_name))
+            a = ag.addAction(setExp)
+            self.experiment_menu.addAction(a)
 
-        # Visual selection
-        setVisualSelection = QAction('&Visual selection', self, checkable = True)
-        setVisualSelection.triggered.connect(self.setVisualSelection)
-        c = ag.addAction(setVisualSelection)
-        self.experiment_menu.addAction(c)
-
-        # Prosaccade
-        setProsaccade = QAction('Prosaccade', self, checkable = True)
-        setProsaccade.triggered.connect(self.setProsaccade)
-        d = ag.addAction(setProsaccade)
-        self.experiment_menu.addAction(d)
-
-        # Antisaccade
-        setAntisaccade = QAction('Antisaccade', self, checkable = True)
-        setAntisaccade.triggered.connect(self.setAntisaccade)
-        e = ag.addAction(setAntisaccade)
-        self.experiment_menu.addAction(e)
-
-        #Default experiment
-        setVisualSearch.setChecked(True)
-        self.setVisualSearch()
+        #Default experiment: the last one
+        setExp.setChecked(True)
+        self.setExperiment(exp_name)()
 
         # Config menu
         self.config_menu = menubar.addMenu('&Config')
@@ -299,32 +280,13 @@ class Main(QMainWindow):
     ####### Experiments #######
     ###########################
     def getExperiment(self):
-        return self.make_experiment
+        return self.experiment
 
-    def setVisualSearch(self):
-        def set():
-            return Visual_search()
-        self.make_experiment = set
-
-    def setGazeContingent(self):
-        def set():
-            return Gaze_contingent()
-        self.make_experiment = set
-
-    def setVisualSelection(self):
-        def set():
-            return Visual_selection()
-        self.make_experiment = set
-
-    def setProsaccade(self):
-        def set():
-            return Prosaccade()
-        self.make_experiment = set
-
-    def setAntisaccade(self):
-        def set():
-            return Antisaccade()
-        self.make_experiment = set
+    def setExperiment(self, name: str):
+        def f():
+            logTrace ('Setting experiment %s' % name, Precision.TITLE)
+            self.experiment = self.experiments[name]
+        return f
 
     def setFrequency(self, frequency : int):
         def set():
@@ -356,10 +318,9 @@ class Main(QMainWindow):
             progress.setMaximum(0, len(filenames))
             for filename in filenames:
                 logTrace ('Reading subject file %s' % filename, Precision.INPUT)
-                selected_experiment = self.getExperiment()
 
                 try:
-                    subject = SubjectData(selected_experiment(), filename, self.frequency, progress)
+                    subject = SubjectData(self.getExperiment(), filename, self.frequency, progress)
                     self.subject_datas.append(subject)
 
                     # Adding subject button
@@ -412,8 +373,7 @@ class Main(QMainWindow):
                 progress.setText(0, 'Exporting Subjects')
                 progress.setMaximum(0, len(self.subject_datas))
 
-                selected_experiment = self.getExperiment()
-                selected_experiment().makeResultFile(filename)
+                self.getExperiment().makeResultFile(filename)
                 for subjectData in self.subject_datas:
                     progress.increment(0)
                     progress.setText(1, 'Exporting Trials')
@@ -421,7 +381,7 @@ class Main(QMainWindow):
                     for trial in subjectData.subject.trials:
                         progress.increment(1)
                         subjectData.experiment.processTrial(subjectData.subject, trial, filename = filename)
-                selected_experiment().postProcess(filename)
+                self.getExperiment().postProcess(filename)
 
             except Exception as e:
                 self.raiseWarning(e, 'Error while exporting to file %s: \n%s' % (filename, str(e)))

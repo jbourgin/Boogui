@@ -64,7 +64,7 @@ class Make_Eyelink(Eyelink):
                 pass
         return None
 
-class Prosaccade(Experiment):
+class Exp(Experiment):
 
     def __init__(self):
         super().__init__(None)

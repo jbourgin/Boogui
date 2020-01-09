@@ -53,3 +53,25 @@ def logTrace(message, precision):
 
 def skip():
     1
+
+def loadExperiments():
+    """
+    Dynamically loads all experiments from the experiments folder
+    Returns a dictionary associating filenames to Experiment objects
+    """
+    path = 'experiments'
+    files = [f for f in os.listdir(path)
+        if (os.path.isfile(os.path.join(path, f)) and
+            '.py' in f and
+            '__init__' not in f
+        )]
+
+    experiments = dict()
+    for file in files:
+        filename = file.split('.')[0] # Filename without .py extension
+        module_name = 'experiments.' + filename
+        logTrace('Loading experiment' + module_name, Precision.NORMAL)
+        mod = __import__(module_name, fromlist=['Exp'])
+        klass = getattr(mod, 'Exp')
+        experiments[filename] = klass()
+    return experiments
