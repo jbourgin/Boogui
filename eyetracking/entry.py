@@ -400,6 +400,8 @@ def k_clusters(entries, k, means = None, epsilon = 0.5):
         # Computing new means
         new_means = []
         for i in range(k):
+            if len(clusters[i]) == 0:
+                continue
             mean = [0.0,0.0]
             for entry in clusters[i]:
                 mean[0] += entry.getGazePosition()[0]

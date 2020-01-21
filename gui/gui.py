@@ -34,6 +34,8 @@ class Main(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        sys.excepthook = self.raiseWarning
+
         self.subject_datas = []
 
         self.subject_buttons = QButtonGroup()
@@ -54,6 +56,18 @@ class Main(QMainWindow):
 
         quit = QAction("Quit", self)
         quit.triggered.connect(self.close)
+
+
+    def raiseWarning(self, type, value, traceback):
+        error_dialog = QtWidgets.QMessageBox()
+        fname = os.path.split(traceback.tb_frame.f_code.co_filename)[1]
+        s = 'file: %s, line: %i\n%s: %s' % (
+            fname,
+            traceback.tb_lineno,
+            type,
+            value
+        )
+        error_dialog.warning(self, 'Error', s)
 
     ###########################
     ######### UI INIT #########
@@ -269,12 +283,12 @@ class Main(QMainWindow):
             self.trialScrollLayout.itemAt(i).widget().setParent(None)
 
         self.clear_layouts()
-
-    def raiseWarning(self, e, error_message: str) -> None:
-        sound = QSound(get_ressources_file('error.wav'))
-        sound.play()
-        error_dialog = QMessageBox()
-        error_dialog.warning(self, 'Error', traceback.format_exc())
+    #
+    # def raiseWarning(self, e, error_message: str) -> None:
+    #     sound = QSound(get_ressources_file('error.wav'))
+    #     sound.play()
+    #     error_dialog = QMessageBox()
+    #     error_dialog.warning(self, 'Error', traceback.format_exc())
 
     ###########################
     ####### Experiments #######
@@ -340,7 +354,7 @@ class Main(QMainWindow):
                     progress.increment(0)
 
                 except Exception as e:
-                    self.raiseWarning(e, 'File %s could not be read:\n%s' % (filename, str(e)))
+                    raise Exception('File %s could not be read:\n%s' % (filename, str(e)))
 
             #closing message box
             progress.close()
@@ -384,7 +398,7 @@ class Main(QMainWindow):
                 self.getExperiment().postProcess(filename)
 
             except Exception as e:
-                self.raiseWarning(e, 'Error while exporting to file %s: \n%s' % (filename, str(e)))
+                raise Exception('Error while exporting to file %s: \n%s' % (filename, str(e)))
 
             # Closing progress bar
             progress.close()
