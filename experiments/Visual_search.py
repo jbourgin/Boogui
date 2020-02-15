@@ -466,7 +466,7 @@ class Exp(Experiment):
     @staticmethod
     def makeResultFile() -> None:
         createResultsFolder()
-        Visual_search.makeResultFile(getDefaultResultsFile)
+        Exp.makeResultFile(getDefaultResultsFile)
 
     @staticmethod
     def makeResultFile(filename: str) -> None:
@@ -545,7 +545,7 @@ class Exp(Experiment):
 
         for frame in frame_list:
             if frame.isTarget((trial.features['target_hp'], trial.features['target_vp'])):
-                Visual_search.plotTarget(frame, trial.features['cor_resp'], target_color)
+                Exp.plotTarget(frame, trial.features['cor_resp'], target_color)
             else:
                 plotRegion(frame, frame_color)
 
@@ -604,7 +604,7 @@ class Exp(Experiment):
 
             for frame in frame_list:
                 if frame.isTarget((trial.features['target_hp'], trial.features['target_vp'])):
-                    Visual_search.plotTarget(frame, trial.features['cor_resp'], target_color)
+                    Exp.plotTarget(frame, trial.features['cor_resp'], target_color)
                 else:
                     plotRegion(frame, frame_color)
 
@@ -644,8 +644,8 @@ class Exp(Experiment):
 
         if subject_data is None:
             logTrace ('Subject number and category could not be found', Precision.ERROR)
-            subject_data = (Visual_search.default_subject_id, Visual_search.default_category)
-            Visual_search.default_subject_id += 1
+            subject_data = (Exp.default_subject_id, Exp.default_category)
+            Exp.default_subject_id += 1
 
         result_file = "results.txt"
         is_processed = self.eyetracker.preprocess(input_file, result_file, progress)

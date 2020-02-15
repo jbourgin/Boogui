@@ -300,6 +300,7 @@ class Main(QMainWindow):
         def f():
             logTrace ('Setting experiment %s' % name, Precision.TITLE)
             self.experiment = self.experiments[name]
+            logTrace ('Experiment %s loaded' % self.experiment, Precision.TITLE)
         return f
 
     def setFrequency(self, frequency : int):
