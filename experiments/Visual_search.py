@@ -598,7 +598,7 @@ class Exp(Experiment):
         n_elem_drawn = 20
         point_list = trial.getGazePoints()
         nb_points = len(point_list)
-        frame_color = (1,1,1)
+        frame_color = (0,0,0)
         target_color = (1,0,0)
         point_color = (1,1,0)
 
