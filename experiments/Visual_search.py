@@ -5,8 +5,11 @@ from eyetracking.experiment import *
 from eyetracking.interest_region import *
 from eyetracking.scanpath import *
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 from PyQt5.QtWidgets import QApplication
 import sys
+import random
+import numpy as np
 
 class Make_Eyelink(Eyelink):
     def __init__(self):
@@ -535,6 +538,21 @@ class Exp(Experiment):
         plt.gca().invert_yaxis()
         plt.axis('off')
 
+        # Plotting image
+        folder_image = 'E:\\Visualsearch\\'
+        image_name = os.path.join(
+            folder_image,
+            trial.getStimulus().split("\\")[-1].split('.')[0] + '.png'
+        )
+        image = None
+        listneutral = []
+
+        if os.path.isfile(image_name):
+            image = mpimg.imread(image_name, format = 'png')
+            for file in os.listdir(folder_image):
+                if file.startswith('neu'):
+                    listneutral.append(os.path.join(folder_image, file))
+
         # Plotting frames
         if trial.features['num_of_dis'] == 1:
             frame_list = self.eyetracker.frame_list_1.getRegions()
@@ -545,9 +563,26 @@ class Exp(Experiment):
 
         for frame in frame_list:
             if frame.isTarget((trial.features['target_hp'], trial.features['target_vp'])):
+                if image is not None:
+                    plt.imshow(image, cmap = plt.get_cmap('gray'), extent=[
+                        frame.center[0] - frame.half_width,
+                        frame.center[0] + frame.half_width,
+                        frame.center[1] + frame.half_height,
+                        frame.center[1] - frame.half_height
+                    ])
                 Exp.plotTarget(frame, trial.features['cor_resp'], target_color)
             else:
                 plotRegion(frame, frame_color)
+                if image is not None:
+                    neutral_stim = random.choice(listneutral)
+                    neutral_img = mpimg.imread(neutral_stim, format = 'png')
+                    listneutral.remove(neutral_stim)
+                    plt.imshow(neutral_img, cmap = plt.get_cmap('gray'), extent=[
+                        frame.center[0] - frame.half_width,
+                        frame.center[0] + frame.half_width,
+                        frame.center[1] + frame.half_height,
+                        frame.center[1] - frame.half_height
+                    ])
 
         # Plotting gaze positions
         trial.plot(frequency)
@@ -563,7 +598,7 @@ class Exp(Experiment):
         n_elem_drawn = 20
         point_list = trial.getGazePoints()
         nb_points = len(point_list)
-        frame_color = (0,0,0)
+        frame_color = (1,1,1)
         target_color = (1,0,0)
         point_color = (1,1,0)
 
@@ -571,6 +606,21 @@ class Exp(Experiment):
         point_list_f = []
         for i in range(0,len(point_list)-frequency,frequency):
             point_list_f.append(point_list[i])
+
+        # Plotting image
+        folder_image = 'E:\\Visualsearch\\'
+        image_name = os.path.join(
+            folder_image,
+            trial.getStimulus().split("\\")[-1].split('.')[0] + '.png'
+        )
+        image = None
+        listneutral = []
+
+        if os.path.isfile(image_name):
+            image = mpimg.imread(image_name, format = 'png')
+            for file in os.listdir(folder_image):
+                if file.startswith('neu'):
+                    listneutral.append(os.path.join(folder_image, file))
 
         image_list = []
         # Plotting frames
@@ -590,6 +640,13 @@ class Exp(Experiment):
             progress.setText(0, 'Loading frames')
             progress.setMaximum(0, len(point_list_f) - 1)
 
+        if image is not None:
+            final_listneutral = []
+            for frame_dis in range(len(frame_list)-1):
+                neutral_stim = random.choice(listneutral)
+                listneutral.remove(neutral_stim)
+                final_listneutral.append(neutral_stim)
+
         for elem in range(0,len(point_list_f)-1):
             if progress != None:
                 progress.increment(0)
@@ -602,11 +659,27 @@ class Exp(Experiment):
                 plotSegment(point_list_f[j], point_list_f[j+1], c = point_color)
             point_color = (1, point_color[1] - 1.0/nb_points , 0)
 
+            count_neutral = 0
             for frame in frame_list:
                 if frame.isTarget((trial.features['target_hp'], trial.features['target_vp'])):
+                    if image is not None:
+                        plt.imshow(image, cmap = plt.get_cmap('gray'), extent=[
+                            frame.center[0] - frame.half_width,
+                            frame.center[0] + frame.half_width,
+                            frame.center[1] + frame.half_height,
+                            frame.center[1] - frame.half_height
+                        ])
                     Exp.plotTarget(frame, trial.features['cor_resp'], target_color)
                 else:
                     plotRegion(frame, frame_color)
+                    neutral_img = mpimg.imread(final_listneutral[count_neutral], format = 'png')
+                    count_neutral += 1
+                    plt.imshow(neutral_img, cmap = plt.get_cmap('gray'), extent=[
+                        frame.center[0] - frame.half_width,
+                        frame.center[0] + frame.half_width,
+                        frame.center[1] + frame.half_height,
+                        frame.center[1] - frame.half_height
+                    ])
 
             image_name = '%i.png' % elem
             saveImage(getTmpFolder(), image_name)
