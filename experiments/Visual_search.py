@@ -539,7 +539,7 @@ class Exp(Experiment):
         plt.axis('off')
 
         # Plotting image
-        folder_image = 'E:\\Visualsearch\\'
+        folder_image = 'D:\\Visualsearch\\'
         image_name = os.path.join(
             folder_image,
             trial.getStimulus().split("\\")[-1].split('.')[0] + '.png'
@@ -608,7 +608,7 @@ class Exp(Experiment):
             point_list_f.append(point_list[i])
 
         # Plotting image
-        folder_image = 'E:\\Visualsearch\\'
+        folder_image = 'D:\\Visualsearch\\'
         image_name = os.path.join(
             folder_image,
             trial.getStimulus().split("\\")[-1].split('.')[0] + '.png'
@@ -672,9 +672,10 @@ class Exp(Experiment):
                     Exp.plotTarget(frame, trial.features['cor_resp'], target_color)
                 else:
                     plotRegion(frame, frame_color)
-                    neutral_img = mpimg.imread(final_listneutral[count_neutral], format = 'png')
-                    count_neutral += 1
-                    plt.imshow(neutral_img, cmap = plt.get_cmap('gray'), extent=[
+                    if image is not None:
+                        neutral_img = mpimg.imread(final_listneutral[count_neutral], format = 'png')
+                        count_neutral += 1
+                        plt.imshow(neutral_img, cmap = plt.get_cmap('gray'), extent=[
                         frame.center[0] - frame.half_width,
                         frame.center[0] + frame.half_width,
                         frame.center[1] + frame.half_height,

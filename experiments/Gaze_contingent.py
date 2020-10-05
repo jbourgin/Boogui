@@ -548,7 +548,7 @@ class Exp(Experiment):
 
         # Plotting image
         image_name = os.path.join(
-            'E:\\Task\\',
+            'D:\\ATEMMA\\Task\\',
             trial.getStimulus().split('.')[0] + '.png'
         )
         image = None
@@ -598,7 +598,7 @@ class Exp(Experiment):
 
         # Plotting image
         image_name = os.path.join(
-            'E:\\Task\\',
+            'D:\\ATEMMA\\Task\\',
             trial.getStimulus().split('.')[0] + '.png'
         )
         image = None
