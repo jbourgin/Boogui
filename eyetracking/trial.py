@@ -48,8 +48,6 @@ class Trial:
         logTrace ('Parsing entries', Precision.NORMAL)
         rest_lines = self.parseEntries(lines)
         if not self.isEmpty():
-            logTrace ('Checking trial validity', Precision.NORMAL)
-            self.checkValid()
             logTrace ('Setting trial features', Precision.NORMAL)
             self.setFeatures()
             logTrace ('Setting eye', Precision.NORMAL)
@@ -91,6 +89,13 @@ class Trial:
 
         checkStart(self.entries[0])
         checkEnd(self.entries[len(self.entries) - 1])
+
+        for saccade in self.saccades:
+            saccade.check()
+        for fixation in self.fixations:
+            fixation.check()
+        for blink in self.blinks:
+            blink.check()
 
     # Parses the given list of lines, to fill the entries attribute.
     # Return the rest of the lines

@@ -355,7 +355,7 @@ class Main(QMainWindow):
                     progress.increment(0)
 
                 except Exception as e:
-                    raise Exception('File %s could not be read:\n%s' % (filename, str(e)))
+                    raise Exception('File %s could not be read:\n%s' % (filename, traceback.format_exc()))
 
             #closing message box
             progress.close()
@@ -399,7 +399,7 @@ class Main(QMainWindow):
                 self.getExperiment().postProcess(filename)
 
             except Exception as e:
-                raise Exception('Error while exporting to file %s: \n%s' % (filename, str(e)))
+                raise Exception('Error while exporting to file %s: \n%s' % (filename, traceback.format_exc()))
 
             # Closing progress bar
             progress.close()

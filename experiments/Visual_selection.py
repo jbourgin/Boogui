@@ -866,5 +866,5 @@ class Exp(Experiment):
             (n_subject, subject_cat) = subject_data
             subject = Subject(self, data, n_subject, subject_cat, progress)
 
-            self.evolutionScore(subject)
+            # self.evolutionScore(subject)
             return subject

@@ -21,13 +21,20 @@ class Subject:
         while lines != []:
             trial = Trial(experiment)
             lines = trial.setEntries(lines)
-            if not trial.isEmpty():
-                if trial.isTraining():
-                    self.training_trials.append(trial)
-                else:
-                    self.trials.append(trial)
-                    if progress != None:
-                        progress.increment(1)
+            try:
+                logTrace ('Checking trial validity', Precision.NORMAL)
+                trial.checkValid()
+                if not trial.isEmpty():
+                    if trial.isTraining():
+                        self.training_trials.append(trial)
+                    else:
+                        self.trials.append(trial)
+                        if progress != None:
+                            progress.increment(1)
+            except:
+                print('%s skipped because of errors' % trial)
+                continue
+
 
     def getTrial(self, trial_number : int):
         for trial in self.trials:

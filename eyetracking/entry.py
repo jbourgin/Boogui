@@ -214,6 +214,10 @@ class EntryList:
         else:
             raise e
 
+    def checkLength(self) -> None:
+        if self.end - self.begin <= 1:
+            raise EntryListException("Entry list is too short")
+
     def checkTimes(self) -> None:
         # Time must increase for all lines except the first and last ones.
         for i in range(self.begin+1, self.end-2):
@@ -276,9 +280,6 @@ class Fixation(EntryList):
 
     def __init__(self, trial, begin = None, end = None):
         super().__init__(trial, begin, end)
-        if begin != None and end != None:
-            self.check()
-            self.checkTimes()
 
     def __str__(self):
         return 'Fixation starting at %i, ending at %i' % (self.getStartTime(), self.getEndTime())
@@ -293,6 +294,7 @@ class Fixation(EntryList):
             def End_fixation(_): pass
             def _(_): raise FixationException('Last entry is not a stop fixation')
 
+        self.checkLength()
         self.checkTimes()
         checkStart(self.getEntry(self.begin))
         checkEnd(self.getEntry(self.end))
@@ -307,8 +309,6 @@ class Saccade(EntryList):
 
     def __init__(self, trial, begin, end):
         super().__init__(trial, begin, end)
-        self.check()
-        self.checkTimes()
 
     def __str__(self):
         return 'Saccade: duration %i, starting at %i, trial %i' % (self.duration(), self.begin, self.trial.getTrialId())
@@ -323,6 +323,7 @@ class Saccade(EntryList):
             def End_saccade(_): pass
             def _(_): raise SaccadeException('Last entry is not a stop saccade')
 
+        self.checkLength()
         self.checkTimes()
         checkStart(self.getEntry(self.begin))
         checkEnd(self.getEntry(self.end))
@@ -337,7 +338,6 @@ class Blink(EntryList):
 
     def __init__(self, trial, begin, end):
         super().__init__(trial, begin, end)
-        self.check()
         # times are not checked for blinks
 
     def __str__(self):
