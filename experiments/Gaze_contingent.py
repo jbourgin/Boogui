@@ -527,7 +527,7 @@ class Exp(Experiment):
             'First blink type',
             'Total fixation time on image',
             'First saccade',
-            'First area looked (1 for face)'
+            'First area looked (1 for eyes)'
         ]))
         f.write('\n')
         f.close()
