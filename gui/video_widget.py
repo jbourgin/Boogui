@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QSlider, QStyle, 
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtCore import QUrl, Qt
+import sip
 
 from eyetracking.utils import *
 from gui.utils import *
@@ -10,7 +11,7 @@ from gui.utils import *
 class VideoWidget(QWidget):
 
     def __init__(self, parent):
-        super().__init__(parent)
+        super(VideoWidget, self).__init__(parent)
 
         self.media_player = QMediaPlayer(None, QMediaPlayer.VideoSurface)
         self.media_player.stateChanged.connect(self.mediaStateChanged)
@@ -33,9 +34,6 @@ class VideoWidget(QWidget):
     def setVideo(self, path: str) -> None:
         url = joinPaths(getTmpFolder(), path)
         self.clear()
-        self.play_button = QPushButton("Play")
-        self.play_button.clicked.connect(self.play)
-        self.play_button.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
 
         play_vlc = QPushButton("Play with VLC")
         def f():
@@ -44,15 +42,21 @@ class VideoWidget(QWidget):
         play_vlc.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
 
         self.position_slider = QSlider(Qt.Horizontal)
-        self.position_slider.setRange(0, 0)
         self.position_slider.sliderMoved.connect(self.setPosition)
 
-        vid_wid = QVideoWidget()
+        self.play_button = QPushButton("Play")
+        self.play_button.clicked.connect(self.play)
+        self.play_button.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
+
+        self.vid_wid = QVideoWidget()
+
+        self.media_player.setVideoOutput(self.vid_wid)
+
+        self.position_slider.setRange(0, 0)
 
         self.media_player.setMedia(QMediaContent(QUrl.fromLocalFile(url)))
-        self.media_player.setVideoOutput(vid_wid)
 
-        self.layout.addWidget(vid_wid)
+        self.layout.addWidget(self.vid_wid)
         self.layout.addWidget(self.position_slider)
         self.layout.addWidget(self.play_button)
         self.layout.addWidget(play_vlc)
@@ -74,8 +78,10 @@ class VideoWidget(QWidget):
             self.play_button.setIcon(
                     self.style().standardIcon(QStyle.SP_MediaPlay))
 
+    # https://stackoverflow.com/a/63019820
     def positionChanged(self, position):
-        self.position_slider.setValue(position)
+        if not sip.isdeleted(self.position_slider):
+            self.position_slider.setValue(position)
 
     def durationChanged(self, duration):
         self.position_slider.setRange(0, duration)
