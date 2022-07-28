@@ -19,8 +19,9 @@ class Make_Eyelink(Eyelink):
         self.valid_distance_center = 100 #3 degres of visual angle 95 (+ marge)
 
         # Initializing regions of interest
+        # We add 15% around the image to compensate for calibration errors. We don't add width margin because we need to leave separated drift area and image areas.
         self.half_width = 200 #200
-        self.half_height = 200 #150
+        self.half_height = 180 #150 # We put 200 in the first analysis of data in 2021, for an error margin but 100 px seems to much and anyway, even with calibration errors at the corners this should not impact the results in such proportions.
 
         self.setupStandard()
 
@@ -36,6 +37,13 @@ class Make_Eyelink(Eyelink):
         self.left_wide = RectangleRegion((self.screen_center[0]-300, self.screen_center[1]), self.half_width+10, self.half_height+10)
 
     def setupFirstSubjects(self):
+        # For subjects with resolution 1366 x 768 (this was the resolution for the first version of the experiment)
+        # At date 26/07/2022, subjects with resolution 1366 x 768 are :
+        # BD681 (0)
+        # DA02 (1)
+        # FC03 (2)
+        # RM01 (39)
+        # In Visual_selection file in Boogui, we need to update this list to [0,1,2,39] for data to be processed adequately for these subjects (note : videos and images will be shifted a little, since they use the default self.screen_center)
         # Center of the screen.
         self.screen_center = (683,384)
 
@@ -93,12 +101,21 @@ class Exp(Experiment):
         self.n_trials = 80
         self.expected_features = {'stim1', 'stim2', 'arrow', 'emotion', 'target_side', 'position_emo', 'position_neu'}
 
+        # We need to process these subjects differently, since their version of the experiment was different : resolution was 1366 x 768, not 1280x800. setupFirstSubjects is called for these participants when we export trials (see more info in this function).
+        self.first_subjects = [0,1,2,39]
+
     def selectEyetracker(self, input_file : str) -> None:
         logTrace ('Selecting Eyelink', Precision.NORMAL)
         self.eyetracker = Make_Eyelink()
 
+    # About on_target
+    # on_target in this task is very counter intuitive !!!!
+    # on_target refers to the emotional image (target side, whereas arrow orientation is the image the participant must look at at first)
+    # But error, capture delay target first, total fixation time target, % fixation time target refer to the image the participant must look at at first (it can be emotional or neutral depending on the trial
+    # This is why we do calculation like :
+    # total_target_fixation_time = sum(x.duration() for x in region_fixations if ((x.on_target and first_image_to_look == "EMO") or (not x.on_target and first_image_to_look == "NEU") ))
     def processTrial(self, subject, trial, filename = None):
-        if subject.id <= 3:
+        if subject.id in self.first_subjects:
             self.eyetracker.setupFirstSubjects()
 
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
@@ -339,7 +356,7 @@ class Exp(Experiment):
                 i += e
             return res
 
-        if subject.id <= 3:
+        if subject.id in self.first_subjects:
             self.eyetracker.setupFirstSubjects()
 
         n = {
