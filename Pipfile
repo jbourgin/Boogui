@@ -7,7 +7,7 @@ verify_ssl = true
 
 [packages]
 attr = "*"
-sumtypes = "==0.1a4"
+sumtypes = "*"
 matplotlib = "*"
 opencv-contrib-python = "*"
 pyqt5 = "*"
