@@ -207,7 +207,8 @@ class Main(QMainWindow):
         fileMenu.addAction(self.clear)
 
         # Experiment menu
-        ag = QActionGroup(self, exclusive=True)
+        ag = QActionGroup(self)
+        ag.setExclusive(True)
         self.experiment_menu = menubar.addMenu('&Experiment')
 
         for exp_name in self.experiments:
@@ -224,7 +225,8 @@ class Main(QMainWindow):
         self.config_menu = menubar.addMenu('&Config')
 
         # Frequency submenu
-        ag = QActionGroup(self, exclusive=True)
+        ag = QActionGroup(self)
+        ag.setExclusive(True)
         frequency_menu = self.config_menu.addMenu('&Frequency')
         # Visual search
         for i in [1,2,5,10]:

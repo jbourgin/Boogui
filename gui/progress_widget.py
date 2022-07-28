@@ -40,7 +40,7 @@ class ProgressWidget(QWidget):
         self.setLayout(self.layout)
 
         center = parent.rect().center()
-        self.move(center.x() - self.width/2, center.y() - self.height * n_bars/2)
+        self.move(int(center.x() - self.width/2), int(center.y() - self.height * n_bars/2))
         self.show()
 
         for i in range(n_bars):

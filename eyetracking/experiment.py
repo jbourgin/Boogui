@@ -58,6 +58,6 @@ class Experiment (ABC):
             return False
         features = subject.trials[0].features.keys()
         if self.expected_features != features:
-            logTrace('Excepted features %s, got %s for trial 0' % (self.expected_features, features), Precision.ERROR)
+            logTrace('Expected features %s, got %s for trial 0' % (self.expected_features, features), Precision.ERROR)
             return False
         return True
