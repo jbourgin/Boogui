@@ -1,4 +1,3 @@
-from sumtypes import sumtype, match, constructor
 from typing import Tuple, TypeVar, Union
 import math, random
 from eyetracking.utils import *
@@ -9,139 +8,105 @@ class EntryException(Exception):
         # Call the base class constructor with the parameters it needs
         super().__init__(message)
 
-# Type for entries
-Entry = TypeVar('Entry')
-
-# Class that represents a line in the trial
-# Each constructor has a time
-@sumtype
 class Entry:
+    def __init__(self, time):
+        self.time = time
 
-    # (x,y) : gaze position at the given time
-    Position = constructor('time', 'x', 'y')
-
-    # Fixation begins on the next entry
-    Start_fixation = constructor ('time')
-    # Fixation ended at the previous entry
-    End_fixation = constructor ('time')
-
-    # Saccade begins at the next entry
-    Start_saccade = constructor ('time')
-    # Saccade ended at the previous entry
-    End_saccade = constructor ('time')
-
-    # Blink begins at the next entry
-    Start_blink = constructor ('time')
-    # Blink ended at the previous entry
-    End_blink = constructor ('time')
-
-    # Subject response
-    Response = constructor ('time')
-
-    # Message
-    Message = constructor ('time', 'message')
-
-    # Trial features
-    Experiment_variables = constructor ('time', 'variables')
-
-    Start_trial = constructor('time', 'trial_number', 'stimulus')
-    Stop_trial = constructor ('time')
-
-    def __str__(self):
-        return entry_to_string(self)
+    def __str__(self) -> str:
+        return "%i\t%s" % (self.time, self.__class__.__name__)
 
     def check(self) -> None:
-        return checkEntry(self)
-
-    def getTime(self) -> int:
-        return getTime(self)
+        if type(self.time) != int:
+            raise EntryException('Time of Start_fixation is not int')
 
     def getGazePosition(self):
-        return getGazePosition(self)
+        return None
 
-@match(Entry)
-class entry_to_string(object):
-    def Position(time, x, y): return '%i\t%f\t%f' % (time, x, y)
-    def Start_fixation(time): return 'Start Fixation at %i' % time
-    def End_fixation(time): return 'End Fixation at %i' % time
+    def getTime(self) -> int:
+        return self.time
 
-    def Start_saccade(time): return 'Start Saccade at %i' % time
-    def End_saccade(time): return 'End Saccade at %i' % time
+class StartFixation(Entry):
+    "Fixation begins on the next entry"
 
-    def Start_blink(time): return 'Start Blink at %i' % time
-    def End_blink(time): return 'End Blink at %i' % time
+class EndFixation(Entry):
+    "Fixation ended at the previous entry"
 
-    def Response(time): return 'Response at %i' % time
+class StartSaccade(Entry):
+    "Saccade begins at the next entry"
 
-    def Message(time, message): return '%s at %i' % (message, time)
+class EndSaccade(Entry):
+    "Saccade ended at the previous entry"
 
-    def Experiment_variables(time, variables): return 'Variables at %i: %s' % (time, str(variables))
+class StartBlink(Entry):
+    "Blink begins at the next entry"
 
-    def Start_trial(time, trial_number, stimulus): return 'Start Trial number %i at %i: %s' % (trial_number, time, stimulus)
-    def Stop_trial(time): return 'Stop Trial at %i' % time
+class EndBlink(Entry):
+    "Blink ended at the previous entry"
 
-# Checks if attributes of each constructor have correct types
-@match(Entry)
-class checkEntry(object):
-    def Position(time, x, y):
-        if type(time) != int: raise EntryException('Time of Position is not int')
-        if type(x) != float: raise EntryException('Coordinate x at time %i is not float' % time)
-        if type(y) != float: raise EntryException('Coordinate y at time %i is not float' % time)
+class Response(Entry):
+    "Subject Response"
 
-    def Start_fixation(time):
-        if type(time) != int: raise EntryException('Time of Start_fixation is not int')
-    def End_fixation(time):
-        if type(time) != int: raise EntryException('Time of End_fixation is not int')
+class Position(Entry):
+    # (x,y) : gaze position at the given time
+    def __init__(self, time: int, x: float, y: float):
+        super().__init__(time)
+        self.x = x
+        self.y = y
 
-    def Start_saccade(time):
-        if type(time) != int: raise EntryException('Time of Start_saccade is not int')
-    def End_saccade(time):
-        if type(time) != int: raise EntryException('Time of End_saccade is not int')
+    def getGazePosition(self) -> Point:
+        return (self.x, self.y)
 
-    def Start_blink(time):
-        if type(time) != int: raise EntryException('Time of Start_blink is not int')
-    def End_blink(time):
-        if type(time) != int: raise EntryException('Time of End_blink is not int')
+    def check(self) -> None:
+        super().check()
+        if type(self.x) != float:
+            raise EntryException('Coordinate x at time %i is not float' % time)
+        if type(self.y) != float:
+            raise EntryException('Coordinate y at time %i is not float' % time)
 
-    def Response(time):
-        if type(time) != int: raise EntryException('Time of Response is not int')
+    def __str__(self):
+        return '%i\t%f\t%f' % (self.time, self.x, self.y)
 
-    def Message(time, message):
-        if type(message) != str: raise EntryException('Message is not string')
-        if type(time) != int: raise EntryException('Time of %s is not int' % message)
+class Message(Entry):
+    def __init__(self, time, message: str):
+        super().__init__(time)
+        self.message = message
 
-    # TODO: tester features
-    def Experiment_variables(time, variables):
-        if type(time) != int: raise EntryException('Time of Features is not int')
+    def check(self) -> None:
+        super().check()
+        if type(self.message) != str:
+            raise EntryException('Message is not string')
 
-    def Start_trial(time, trial_number, stimulus):
-        if type(time) != int: raise EntryException('Time of Start_trial is not int')
-        if type(trial_number) != int: raise EntryException('Trial_number of Start_trial is not int')
-        if type(stimulus) != str: raise EntryException('Stimulus of Start_trial is not str')
-    def Stop_trial(time):
-        if type(time) != int: raise EntryException('Time of Stop_trial is not int')
+    def __str__(self):
+        return '%i\t%s' % (self.time, self.message)
 
-# Returns the entry time (integer value)
-# The time is given in ms.
-@match(Entry)
-class getTime(object):
-    def Position(time, x, y): return time
-    def Start_fixation(time): return time
-    def End_fixation(time): return time
-    def Start_saccade(time): return time
-    def End_saccade(time): return time
-    def Start_blink(time): return time
-    def End_blink(time): return time
-    def Response(time): return time
-    def Message(time, message): return time
-    def Experiment_variables(time, variables): return time
-    def Start_trial(time, trial_number, stimulus): return time
-    def Stop_trial(time): return time
+class TrialFeatures(Entry):
+    #
+    def __init__(self, time, features):
+        super().__init__(time)
+        self.features = features
 
-@match(Entry)
-class getGazePosition(object):
-    def Position(time, x, y) -> Point: return (x,y)
-    def _(_): return None
+    def __str__(self):
+        return '%i\t%s' % (self.time, str(self.features))
+
+class StartTrial(Entry):
+    # (x,y) : gaze position at the given time
+    def __init__(self, time, trial_number: int, stimulus: str):
+        super().__init__(time)
+        self.trial_number = trial_number
+        self.stimulus = stimulus
+
+    def check(self) -> None:
+        super().check()
+        if type(self.trial_number) != int:
+            raise EntryException('Trial_number of Start_trial is not int')
+        if type(self.stimulus) != str:
+            raise EntryException('Stimulus of Start_trial is not str')
+
+    def __str__(self):
+        return '%i\tStart Trial %i\t%s' % (self.time, self.trial_number, self.stimulus)
+
+class StopTrial(Entry):
+    "Stop Trial"
 
 class EntryListException(Exception):
     def __init__(self, message):
@@ -153,7 +118,7 @@ class EntryList:
 
     ENTRYLISTEXCEPTION_WARNING = True
 
-    def __init__(self, trial, begin, end):
+    def __init__(self, trial: "Trial", begin: int, end: int):
         # Begin is the index of the first line, and end the index of the last line.
         self.trial = trial
         self.begin = begin
@@ -191,14 +156,14 @@ class EntryList:
 
     def getFirstGazePosition(self) -> Union[Point, None]:
         for i in range(self.begin + 1, self.end - 1):
-            p = getGazePosition(self.getEntry(i))
+            p = self.getEntry(i).getGazePosition()
             if p != None:
                 return p
         return None
 
     def getLastGazePosition(self) -> Union[Point, None]:
         for i in reversed(range(self.begin + 1, self.end - 1)):
-            p = getGazePosition(self.getEntry(i))
+            p = self.getEntry(i).getGazePosition()
             if p != None:
                 return p
         return None
@@ -285,19 +250,12 @@ class Fixation(EntryList):
         return 'Fixation starting at %i, ending at %i' % (self.getStartTime(), self.getEndTime())
 
     def check(self) -> None:
-        @match(Entry)
-        class checkStart(object):
-            def Start_fixation(_): pass
-            def _(_): raise FixationException('First entry is not a start fixation')
-        @match(Entry)
-        class checkEnd(object):
-            def End_fixation(_): pass
-            def _(_): raise FixationException('Last entry is not a stop fixation')
-
         self.checkLength()
         self.checkTimes()
-        checkStart(self.getEntry(self.begin))
-        checkEnd(self.getEntry(self.end))
+        if not isinstance(self.getEntry(self.begin), StartFixation):
+            raise FixationException('First entry is not a start fixation')
+        if not isinstance(self.getEntry(self.end), EndFixation):
+            raise FixationException('Last entry is not a stop fixation')
 
 class SaccadeException(Exception):
     def __init__(self, message):
@@ -314,19 +272,12 @@ class Saccade(EntryList):
         return 'Saccade: duration %i, starting at %i, trial %i' % (self.duration(), self.begin, self.trial.getTrialId())
 
     def check(self) -> None:
-        @match(Entry)
-        class checkStart(object):
-            def Start_saccade(_): pass
-            def _(_): raise SaccadeException('First entry is not a start saccade: %s' % str(self))
-        @match(Entry)
-        class checkEnd(object):
-            def End_saccade(_): pass
-            def _(_): raise SaccadeException('Last entry is not a stop saccade')
-
         self.checkLength()
         self.checkTimes()
-        checkStart(self.getEntry(self.begin))
-        checkEnd(self.getEntry(self.end))
+        if not isinstance(self.getEntry(self.begin), StartSaccade):
+            raise SaccadeException('First entry is not a start saccade')
+        if not isinstance(self.getEntry(self.end), EndSaccade):
+            raise SaccadeException('Last entry is not a stop saccade')
 
 class BlinkException(Exception):
     def __init__(self, message):
@@ -347,19 +298,12 @@ class Blink(EntryList):
         return self.duration() >= 50
 
     def check(self) -> None:
-        @match(Entry)
-        class checkStart(object):
-            def Start_blink(_): pass
-            def _(_): raise BlinkException('First entry is not a start blink: %s' % str(self))
-        @match(Entry)
-        class checkEnd(object):
-            def End_blink(_): pass
-            def _(_): raise BlinkException('Last entry is not a stop blink')
-
         # À corriger
         #self.checkTimes()
-        checkStart(self.getEntry(self.begin))
-        checkEnd(self.getEntry(self.end))
+        if not isinstance(self.getEntry(self.begin), StartBlink):
+            raise BlinkException('First entry is not a start blink')
+        if not isinstance(self.getEntry(self.end), EndBlink):
+            raise BlinkException('Last entry is not a stop blink')
 
 def k_clusters(entries, k, means = None, epsilon = 0.5):
     print('k_clusters')
@@ -391,7 +335,6 @@ def k_clusters(entries, k, means = None, epsilon = 0.5):
             raise "K clusters: means length is not k"
 
     while True:
-        print(means)
         clusters = [[] for i in range(k)]
         for entry in entries:
             norms = [norm(mean, entry) for mean in means]
@@ -406,7 +349,7 @@ def k_clusters(entries, k, means = None, epsilon = 0.5):
             for entry in clusters[i]:
                 mean[0] += entry.getGazePosition()[0]
                 mean[1] += entry.getGazePosition()[1]
-            new_means.append(Entry.Position(0.0,
+            new_means.append(Position(0.0,
                 mean[0] / len(clusters[i]),
                 mean[1] / len(clusters[i])
             ))

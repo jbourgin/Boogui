@@ -65,7 +65,7 @@ class Make_Eyelink(Eyelink):
             try:
                 time = int(line[1])
                 message = 'End image showing'
-                return Entry.Message(time, message)
+                return Message(time, message)
             except:
                 pass
         return None
@@ -88,15 +88,8 @@ class Exp(Experiment):
         self.eyetracker = Make_Eyelink()
 
     def returnStopImageEntry(self, trial) -> int:
-        @match(Entry)
-        class checkMessage(object):
-            def Message(time, message):
-                return 'End image showing' in message
-            def _(_):
-                return False
-
         for count, entry in enumerate(trial.entries):
-            if checkMessage(entry):
+            if isinstance(entry, Message) and 'End image showing' in entry.message:
                 return count
         return None
 
@@ -106,7 +99,7 @@ class Exp(Experiment):
             for (i_entry,entry) in enumerate(trial.entries):
                 pos = getGazePosition(entry)
                 if pos != None:
-                    trial.entries[i_entry] = Entry.Position(
+                    trial.entries[i_entry] = Position(
                         getTime(entry),
                         pos[0] + vec[0],
                         pos[1] + vec[1]
@@ -132,27 +125,27 @@ class Exp(Experiment):
             if (n_trial + 1) % 24 == 0:
                 i += 1
 
-        cluster1_left = Entry.Position(0.0,
+        cluster1_left = Position(0.0,
             self.eyetracker.left_gaze.center[0],
             self.eyetracker.left_gaze.center[1] - 50
         )
-        cluster2_left = Entry.Position(0.0,
+        cluster2_left = Position(0.0,
             self.eyetracker.left_gaze.center[0],
             self.eyetracker.left_gaze.center[1] + 100
         )
-        cluster3_left = Entry.Position(0.0,
+        cluster3_left = Position(0.0,
             self.eyetracker.screen_center[0] * 4/3,
             self.eyetracker.screen_center[1] + 150
         )
-        cluster1_right = Entry.Position(0.0,
+        cluster1_right = Position(0.0,
             self.eyetracker.right_gaze.center[0],
             self.eyetracker.right_gaze.center[1] - 50
         )
-        cluster2_right = Entry.Position(0.0,
+        cluster2_right = Position(0.0,
             self.eyetracker.right_gaze.center[0],
             self.eyetracker.right_gaze.center[1] + 100
         )
-        cluster3_right = Entry.Position(0.0,
+        cluster3_right = Position(0.0,
             self.eyetracker.screen_center[0] * 2/3,
             self.eyetracker.screen_center[1] + 150
         )

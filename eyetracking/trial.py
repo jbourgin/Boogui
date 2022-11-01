@@ -57,12 +57,8 @@ class Trial:
         return rest_lines
 
     def isEmpty(self) -> bool:
-        @match(Entry)
-        class isPosition(object):
-            def Position(time,x,y): return True
-            def _(_): return False
         for entry in self.entries:
-            if isPosition(entry):
+            if isinstance(entry, Position):
                 return False
         return True
 
@@ -71,15 +67,6 @@ class Trial:
 
     # Raises an exception if one of the condition is not fulfilled.
     def checkValid(self) -> None:
-        @match(Entry)
-        class checkStart(object):
-            def Start_trial(a,b,c): pass
-            def _(_): raise TrialException('First entry is not a start trial')
-        @match(Entry)
-        class checkEnd(object):
-            def Stop_trial(_): pass
-            def _(_): raise TrialException('Last entry is not a stop trial')
-
         if self.entries == None:
             raise TrialException('Entries attribute is None')
         if type(self.entries) != list:
@@ -87,8 +74,10 @@ class Trial:
         if len(self.entries) < 2:
             raise TrialException('Entries attribute is too small')
 
-        checkStart(self.entries[0])
-        checkEnd(self.entries[len(self.entries) - 1])
+        if not isinstance(self.entries[0], StartTrial):
+            raise TrialException('First entry is not a start trial')
+        if not isinstance(self.entries[-1], StopTrial):
+            raise TrialException('Last entry is not a stop trial')
 
         for saccade in self.saccades:
             saccade.check()
@@ -100,46 +89,6 @@ class Trial:
     # Parses the given list of lines, to fill the entries attribute.
     # Return the rest of the lines
     def parseEntries(self, lines : List[Line]) -> List[Line]:
-        @match(Entry)
-        class start(object):
-            def Start_trial(a,b,c): return True
-            def _(_): return False
-
-        @match(Entry)
-        class stop(object):
-            def Stop_trial(_): return True
-            def _(_): return False
-
-        @match(Entry)
-        class isSaccadeBeginning(object):
-            def Start_saccade(_): return True
-            def _(_): return False
-
-        @match(Entry)
-        class isFixationBeginning(object):
-            def Start_fixation(_): return True
-            def _(_): return False
-
-        @match(Entry)
-        class isBlinkBeginning(object):
-            def Start_blink(_): return True
-            def _(_): return False
-
-        @match(Entry)
-        class isSaccadeEnding(object):
-            def End_saccade(_): return True
-            def _(_): return False
-
-        @match(Entry)
-        class isFixationEnding(object):
-            def End_fixation(_): return True
-            def _(_): return False
-
-        @match(Entry)
-        class isBlinkEnding(object):
-            def End_blink(_): return True
-            def _(_): return False
-
         #Number of entries
         begin_saccade = None
         begin_fixation = None
@@ -150,24 +99,24 @@ class Trial:
             i_line += 1
             entry = self.experiment.eyetracker.parseEntry(line)
             if entry != None:
-                if start(entry):
+                if isinstance(entry, StartTrial):
                     started = True
                 if started:
                     entry.check()
                     self.entries.append(entry)
                     #We are looking for entries with the same time as the stop trial entry
-                    if stop(entry):
+                    if isinstance(entry, StopTrial):
                         for line in lines[i_line + 1:]:
                             entry2 = self.experiment.eyetracker.parseEntry(line)
                             if entry2 != None and entry2.getTime() == entry.getTime():
                                 self.entries.insert(len(self.entries)-1, entry2)
-                                if begin_saccade is not None and isSaccadeEnding(entry2):
+                                if begin_saccade is not None and isinstance(entry2, EndSaccade):
                                     self.saccades.append(Saccade(self, begin_saccade, len(self.entries) - 2))
                                     begin_saccade = None
-                                elif begin_fixation is not None and isFixationEnding(entry2):
+                                elif begin_fixation is not None and isinstance(entry2, EndFixation):
                                     self.fixations.append(Fixation(self, begin_fixation, len(self.entries) - 2))
                                     begin_fixation = None
-                                elif begin_blink is not None and isBlinkEnding(entry2):
+                                elif begin_blink is not None and isinstance(entry2, EndBlink):
                                     self.blinks.append(Blink(self, begin_blink, len(self.entries) - 2))
                                     begin_blink = None
                             elif entry2 != None and entry2.getTime() != entry.getTime():
@@ -175,20 +124,20 @@ class Trial:
                             i_line += 1
                         return lines[i_line + 1:]
 
-                    if isSaccadeBeginning(entry):
+                    if isinstance(entry, StartSaccade):
                         begin_saccade = len(self.entries) - 1
-                    elif isFixationBeginning(entry):
+                    elif isinstance(entry, StartFixation):
                         begin_fixation = len(self.entries) - 1
-                    elif isBlinkBeginning(entry):
+                    elif isinstance(entry, StartBlink):
                         begin_blink = len(self.entries) - 1
 
-                    if begin_saccade is not None and isSaccadeEnding(entry):
+                    if begin_saccade is not None and isinstance(entry, EndSaccade):
                         self.saccades.append(Saccade(self, begin_saccade, len(self.entries) - 1))
                         begin_saccade = None
-                    elif begin_fixation is not None and isFixationEnding(entry):
+                    elif begin_fixation is not None and isinstance(entry, EndFixation):
                         self.fixations.append(Fixation(self, begin_fixation, len(self.entries) - 1))
                         begin_fixation = None
-                    elif begin_blink is not None and isBlinkEnding(entry):
+                    elif begin_blink is not None and isinstance(entry, EndBlink):
                         current_blink = Blink(self, begin_blink, len(self.entries) - 1)
                         if current_blink.isBlinkValid():
                             self.blinks.append(current_blink)
@@ -196,29 +145,17 @@ class Trial:
         return []
 
     def getFirstGazePosition(self) -> Union[Entry,None]:
-        @match(Entry)
-        class is_position(object):
-            def Position(time,x,y) : return True
-            def _(_) : return False
-
         for entry in self.entries:
-            if is_position(entry):
+            if isinstance(entry, Position):
                 return entry
-
         return None
 
     def setFeatures(self) -> None:
-        @match(Entry)
-        class getExperimentVariables(object):
-            def Experiment_variables(_,variables): return variables
-            def _(_): return None
-
         self.features = {}
         for entry in self.entries:
-            variables = getExperimentVariables(entry)
-            if variables != None:
-                for (key,value) in variables.items():
-                    self.features[key] = value
+            if isinstance(entry, TrialFeatures):
+                for (k,v) in entry.features.items():
+                    self.features[k] = v
 
     # Returns the Start_trial entry of the trial.
     # The trial is assumed to be valid (see checkValid()).
@@ -231,26 +168,12 @@ class Trial:
         return self.entries[-1]
 
     def getStimulus(self) -> str:
-        @match(Entry)
-        class get_stimulus(object):
-            def Start_trial(time, trial_number, stimulus): return stimulus
-            def _(_): return None
-
-        res = get_stimulus(self.getStartTrial())
-        if res == None:
-            raise TrialException('Trial has no stimulus')
-
-        return res
+        return self.getStartTrial().stimulus
 
     #Returns the line where the subject gives a manual response (or where the trial ends).
     def getResponse(self) -> Union[Entry, None]:
-        @match(Entry)
-        class isResponse(object):
-            def Response(_): return True
-            def _(_): return False
-
         for entry in self.entries:
-            if isResponse(entry):
+            if isinstance(entry, Response):
                 return entry
 
         return None
@@ -258,12 +181,7 @@ class Trial:
     # Returns the trial id
     # The trial is assumed to be valid (see checkValid()).
     def getTrialId(self) -> int:
-        @match(Entry)
-        class getId(object):
-            def Start_trial(time, trial_number, stimulus): return trial_number
-            def _(_): return None
-
-        return getId(self.getStartTrial())
+        return self.getStartTrial().trial_number
 
     def discard(self, b) -> None:
         print('Discarding trial %i' % self.getTrialId())
@@ -273,23 +191,14 @@ class Trial:
         return self.entries[0]
 
     def isStartValid(self, screen_center : Point, valid_distance_center : int) -> bool :
-        @match(Entry)
-        class is_end_saccade(object):
-            def End_saccade(time): return True
-            def _(_): return False
-        @match(Entry)
-        class is_position(object):
-            def Position(time, x, y): return True
-            def _(_): return False
-
         last_gaze_entry = None
         saccade_first = False
         # Check if a saccade had begun before the trial start
         for entry in self.entries[1:]:
-            if is_end_saccade(entry):
+            if isinstance(entry, EndSaccade):
                 saccade_first = True
                 break
-            elif is_position(entry):
+            elif isinstance(entry, Position):
                 last_gaze_entry = entry
             else:
                 break
@@ -401,16 +310,11 @@ class Trial:
             return []
 
     def getGazePoints(self, end_line = None) -> List[Point] :
-        @match(Entry)
-        class isResponse(object):
-            def Response(time) : return True
-            def _(_): return False
-
         point_list = []
         for count, entry in enumerate(self.entries):
             if end_line is not None and count >= end_line:
                 break
-            if isResponse(entry):
+            if isinstance(entry, Response):
                 break
             else:
                 point = entry.getGazePosition()

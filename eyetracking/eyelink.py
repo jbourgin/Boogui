@@ -37,7 +37,7 @@ class Eyelink (Eyetracker):
                 time = int(line[1])
                 trial_number = int(line[3])
                 stimulus = ''.join(line[4:])
-                return Entry.Start_trial(time, trial_number, stimulus)
+                return StartTrial(time, trial_number, stimulus)
             except:
                 pass
         return None
@@ -46,7 +46,7 @@ class Eyelink (Eyetracker):
         if len(line) >= 3 and line[2] == 'stop_trial':
             try:
                 time = int(line[1])
-                return Entry.Stop_trial(time)
+                return StopTrial(time)
             except:
                 pass
         return None
@@ -58,7 +58,7 @@ class Eyelink (Eyetracker):
                 time = int(line[0])
                 x = float(line[1])
                 y = float(line[2])
-                return Entry.Position(time, x, y)
+                return Position(time, x, y)
             except:
                 pass
         return None
@@ -68,7 +68,7 @@ class Eyelink (Eyetracker):
         if len(line) >= 3 and line[0] == 'SFIX':
             try:
                 time = int(line[2])
-                return Entry.Start_fixation(time)
+                return StartFixation(time)
             except:
                 pass
         return None
@@ -78,7 +78,7 @@ class Eyelink (Eyetracker):
         if len(line) >= 4 and line[0] == 'EFIX':
             try:
                 time = int(line[3])
-                return Entry.End_fixation(time)
+                return EndFixation(time)
             except:
                 pass
         return None
@@ -88,7 +88,7 @@ class Eyelink (Eyetracker):
         if len(line) >= 3 and line[0] == 'SBLINK':
             try:
                 time = int(line[2])
-                return Entry.Start_blink(time)
+                return StartBlink(time)
             except:
                 pass
         return None
@@ -98,7 +98,7 @@ class Eyelink (Eyetracker):
         if len(line) >= 4 and line[0] == 'EBLINK':
             try:
                 time = int(line[3])
-                return Entry.End_blink(time)
+                return EndBlink(time)
             except:
                 pass
         return None
@@ -108,7 +108,7 @@ class Eyelink (Eyetracker):
         if len(line) >= 3 and line[0] == 'SSACC':
             try:
                 time = int(line[2])
-                return Entry.Start_saccade(time)
+                return StartSaccade(time)
             except:
                 pass
         return None
@@ -118,7 +118,7 @@ class Eyelink (Eyetracker):
         if len(line) >= 4 and line[0] == 'ESACC':
             try:
                 time = int(line[3])
-                return Entry.End_saccade(time)
+                return EndSaccade(time)
             except:
                 pass
         return None
@@ -128,7 +128,7 @@ class Eyelink (Eyetracker):
         if self.isResponse(line):
             try:
                 time = int(line[1])
-                return Entry.Response(time)
+                return Response(time)
             except:
                 pass
         return None
@@ -143,7 +143,7 @@ class Eyelink (Eyetracker):
             time = int(line[1])
             variables = self.parseVariables(line)
             if variables != None:
-                return Entry.Experiment_variables(time, variables)
+                return TrialFeatures(time, variables)
             else:
                 return None
         except:
@@ -157,7 +157,7 @@ class Eyelink (Eyetracker):
         try:
             time = int(line[1])
             message = ' '.join(line[2:])
-            return Entry.Message(time, message)
+            return Message(time, message)
         except:
             return None
 

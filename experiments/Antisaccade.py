@@ -52,7 +52,7 @@ class Make_Eyelink(Eyelink):
                 time = int(line[1])
                 trial_number = int(line[-1])
                 stimulus = line[10]
-                return Entry.Start_trial(time, trial_number, stimulus)
+                return StartTrial(time, trial_number, stimulus)
             except:
                 pass
         return None
@@ -61,7 +61,7 @@ class Make_Eyelink(Eyelink):
         if len(line) >= 4 and line[2] == 'END' and line[3] == 'SEQUENCE':
             try:
                 time = int(line[1])
-                return Entry.Stop_trial(time)
+                return StopTrial(time)
             except:
                 pass
         return None

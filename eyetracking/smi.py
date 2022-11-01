@@ -40,7 +40,7 @@ class Smi (Eyetracker):
                 time = int(line[0])
                 trial_number = int(line[6])
                 stimulus = line[7] + line[8]
-                return Entry.Start_trial(time, trial_number, stimulus)
+                return StartTrial(time, trial_number, stimulus)
             except:
                 pass
         return None
@@ -49,7 +49,7 @@ class Smi (Eyetracker):
         if len(line) >= 6 and line[5] == 'stop_trial':
             try:
                 time = int(line[0])
-                return Entry.Stop_trial(time)
+                return StopTrial(time)
             except:
                 pass
         return None
@@ -60,7 +60,7 @@ class Smi (Eyetracker):
                 time = int(line[0])
                 x = float(line[3])
                 y = float(line[4])
-                return Entry.Position(time, x, y)
+                return Position(time, x, y)
             except:
                 pass
         return None
@@ -69,7 +69,7 @@ class Smi (Eyetracker):
         if len(line) >= 3 and line[0] == 'SFIX':
             try:
                 time = int(line[2])
-                return Entry.Start_fixation(time)
+                return StartFixation(time)
             except:
                 pass
         return None
@@ -78,7 +78,7 @@ class Smi (Eyetracker):
         if len(line) >= 4 and line[0] == 'EFIX':
             try:
                 time = int(line[3])
-                return Entry.End_fixation(time)
+                return EndFixation(time)
             except:
                 pass
         return None
@@ -87,7 +87,7 @@ class Smi (Eyetracker):
         if len(line) >= 3 and line[0] == 'SBLINK':
             try:
                 time = int(line[2])
-                return Entry.Start_blink(time)
+                return StartBlink(time)
             except:
                 pass
         return None
@@ -96,7 +96,7 @@ class Smi (Eyetracker):
         if len(line) >= 4 and line[0] == 'EBLINK':
             try:
                 time = int(line[3])
-                return Entry.End_blink(time)
+                return EndBlink(time)
             except:
                 pass
         return None
@@ -105,7 +105,7 @@ class Smi (Eyetracker):
         if len(line) >= 3 and line[0] == 'SSACC':
             try:
                 time = int(line[2])
-                return Entry.Start_saccade(time)
+                return StartSaccade(time)
             except:
                 pass
         return None
@@ -114,7 +114,7 @@ class Smi (Eyetracker):
         if len(line) >= 4 and line[0] == 'ESACC':
             try:
                 time = int(line[3])
-                return Entry.End_saccade(time)
+                return EndSaccade(time)
             except:
                 pass
         return None
@@ -123,7 +123,7 @@ class Smi (Eyetracker):
         if self.isResponse(line):
             try:
                 time = int(line[0])
-                return Entry.Response(time)
+                return Response(time)
             except:
                 pass
         return None
@@ -136,7 +136,7 @@ class Smi (Eyetracker):
         try:
             time = int(line[0])
             variables = self.parseVariables(line)
-            return Entry.Experiment_variables(time, variables)
+            return TrialFeatures(time, variables)
         except:
             return None
 
