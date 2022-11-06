@@ -12,7 +12,7 @@ class Eyetracker (ABC):
 
     # return True if the given file has been recorded with this eyetracker
     @abstractmethod
-    def isParsable(filename : str) -> bool:
+    def fits(input_file : str) -> bool:
         pass
 
     @abstractmethod

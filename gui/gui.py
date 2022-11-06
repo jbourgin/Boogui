@@ -68,6 +68,7 @@ class Main(QMainWindow):
             value
         )
         error_dialog.warning(self, 'Error', s)
+        logTrace("\n".join([type, value, traceback]), Precision.ERROR)
 
     ###########################
     ######### UI INIT #########

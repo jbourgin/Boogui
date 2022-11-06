@@ -16,18 +16,6 @@ class Smi (Eyetracker):
                 return "R"
         return None
 
-    @staticmethod
-    def isParsable(filename : str) -> bool:
-        with open(filename) as file:
-            line = file.readline()
-            n = 0
-            while line:
-                if n >= 100: return False
-                if 'IDF Converter' in line: return True
-                line = file.readline()
-                n += 1
-        return False
-
     #######################################
     ############ ENTRY PARSERS ############
     #######################################

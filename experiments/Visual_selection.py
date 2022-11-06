@@ -11,8 +11,10 @@ import scipy.integrate
 import numpy
 from PyQt5.QtWidgets import QApplication
 
+allowed_coordinates = [(683,384), (640,400)]
+
 class Make_Eyelink(Eyelink):
-    def __init__(self):
+    def __init__(self, center):
         super().__init__()
         # Minimal distance at which we consider the subject is looking at the
         # fixation cross at the trial beginning
@@ -23,12 +25,8 @@ class Make_Eyelink(Eyelink):
         self.half_width = 200 #200
         self.half_height = 180 #150 # We put 200 in the first analysis of data in 2021, for an error margin but 100 px seems to much and anyway, even with calibration errors at the corners this should not impact the results in such proportions.
 
-        self.setupStandard()
-
-
-    def setupStandard(self):
         # Center of the screen.
-        self.screen_center = (640,400)
+        self.screen_center = center
 
         # frames
         self.right = RectangleRegion((self.screen_center[0]+300, self.screen_center[1]), self.half_width, self.half_height)
@@ -36,22 +34,6 @@ class Make_Eyelink(Eyelink):
         self.right_wide = RectangleRegion((self.screen_center[0]+300, self.screen_center[1]), self.half_width+10, self.half_height+10)
         self.left_wide = RectangleRegion((self.screen_center[0]-300, self.screen_center[1]), self.half_width+10, self.half_height+10)
 
-    def setupFirstSubjects(self):
-        # For subjects with resolution 1366 x 768 (this was the resolution for the first version of the experiment)
-        # At date 26/07/2022, subjects with resolution 1366 x 768 are :
-        # BD681 (0)
-        # DA02 (1)
-        # FC03 (2)
-        # RM01 (39)
-        # In Visual_selection file in Boogui, we need to update this list to [0,1,2,39] for data to be processed adequately for these subjects (note : videos and images will be shifted a little, since they use the default self.screen_center)
-        # Center of the screen.
-        self.screen_center = (683,384)
-
-        # frames
-        self.right = RectangleRegion((self.screen_center[0]+300, self.screen_center[1]), self.half_width, self.half_height)
-        self.left = RectangleRegion((self.screen_center[0]-300, self.screen_center[1]), self.half_width, self.half_height)
-        self.right_wide = RectangleRegion((self.screen_center[0]+300, self.screen_center[1]), self.half_width+10, self.half_height+10)
-        self.left_wide = RectangleRegion((self.screen_center[0]-300, self.screen_center[1]), self.half_width+10, self.half_height+10)
 
     # Returns a dictionary of experiment variables
     def parseVariables(self, line: List[str]):
@@ -88,6 +70,18 @@ class Make_Eyelink(Eyelink):
                 pass
         return None
 
+    def fits(self, input_file : str) -> bool:
+        with open(input_file, "r") as file:
+            lines = file.readlines()
+            # First line is subject
+            screen_info = lines[1]
+            for coord in allowed_coordinates:
+                if "MSG SCREEN_CENTER_INFO %i %i"%(coord[0], coord[1]) in screen_info:
+                    if self.screen_center == coord:
+                        return True
+                    break
+            return False
+
     def isResponse(self, line: Line) -> bool :
         return len(line) >= 2 and 'END' in line[0] and 'SAMPLES' in line[2]
 
@@ -97,16 +91,28 @@ class Make_Eyelink(Eyelink):
 class Exp(Experiment):
 
     def __init__(self):
-        super().__init__(None)
+        super().__init__()
         self.n_trials = 80
         self.expected_features = {'stim1', 'stim2', 'arrow', 'emotion', 'target_side', 'position_emo', 'position_neu'}
 
-        # We need to process these subjects differently, since their version of the experiment was different : resolution was 1366 x 768, not 1280x800. setupFirstSubjects is called for these participants when we export trials (see more info in this function).
+        # For subjects with resolution 1366 x 768 (this was the resolution for the first version of the experiment)
+        # At date 26/07/2022, subjects with resolution 1366 x 768 are :
+        # BD681 (0)
+        # DA02 (1)
+        # FC03 (2)
+        # RM01 (39)
+        # In Visual_selection file in Boogui, we need to update this list to [0,1,2,39] for data to be processed adequately for these subjects (note : videos and images will be shifted a little, since they use the default self.screen_center)
+        # We need to process these subjects differently, since their version of the experiment was different : resolution was 1366 x 768, not 1280x800. We add line with SCREEN_CENTER_INFO in files to process subjects differently. This list is not used in the script but is kept there as reminder.
         self.first_subjects = [0,1,2,39]
 
-    def selectEyetracker(self, input_file : str) -> None:
-        logTrace ('Selecting Eyelink', Precision.NORMAL)
-        self.eyetracker = Make_Eyelink()
+    def createEyetracker(self, input_file : str) -> Eyetracker:
+        for coord in allowed_coordinates:
+            eyelink = Make_Eyelink(coord)
+            if eyelink.fits(input_file):
+                logTrace ('Selecting Eyelink with coord %i %i'%(coord[0], coord[1]), Precision.NORMAL)
+                return eyelink
+        logTrace ('No suitable eyetracker found for input file %s' % input_file, Precision.ERROR)
+        raise ExperimentException('No suitable eyetracker found for input file %s' % input_file)
 
     # About on_target
     # on_target in this task is very counter intuitive !!!!
@@ -114,24 +120,22 @@ class Exp(Experiment):
     # But error, capture delay target first, total fixation time target, % fixation time target refer to the image the participant must look at at first (it can be emotional or neutral depending on the trial
     # This is why we do calculation like :
     # total_target_fixation_time = sum(x.duration() for x in region_fixations if ((x.on_target and first_image_to_look == "EMO") or (not x.on_target and first_image_to_look == "NEU") ))
-    def processTrial(self, subject, trial, filename = None):
-        if subject.id in self.first_subjects:
-            self.eyetracker.setupFirstSubjects()
+    def processTrial(self, subject: Subject, trial, filename = None):
 
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
         trial_number = trial.getTrialId()
         start_trial_time = trial.getStartTrial().getTime()
 
         if trial.isTraining():
-            emo_position = self.eyetracker.left
-            neu_position = self.eyetracker.right
+            emo_position = subject.eyetracker.left
+            neu_position = subject.eyetracker.right
         else:
             if 'left' in trial.features['target_side']:
-                emo_position = self.eyetracker.left
-                neu_position = self.eyetracker.right
+                emo_position = subject.eyetracker.left
+                neu_position = subject.eyetracker.right
             elif 'right' in trial.features['target_side']:
-                emo_position = self.eyetracker.right
-                neu_position = self.eyetracker.left
+                emo_position = subject.eyetracker.right
+                neu_position = subject.eyetracker.left
         regions = InterestRegionList([emo_position, neu_position])
 
         if trial.features['arrow'] ==  trial.features['target_side']:
@@ -221,7 +225,7 @@ class Exp(Experiment):
             capture_delay_target_first = None
 
         # Error :
-        if not trial.isStartValid(self.eyetracker.screen_center, self.eyetracker.valid_distance_center)[0]:
+        if not trial.isStartValid(subject.eyetracker.screen_center, subject.eyetracker.valid_distance_center)[0]:
             error = "Not valid start"
             error_sac = "Not valid start"
         # elif (total_neu_fixation_time+total_emo_fixation_time) < 4000:
@@ -356,9 +360,6 @@ class Exp(Experiment):
                 i += e
             return res
 
-        if subject.id in self.first_subjects:
-            self.eyetracker.setupFirstSubjects()
-
         n = {
             'pos_target': 0,
             'pos': 0,
@@ -376,11 +377,11 @@ class Exp(Experiment):
             if trial.isTraining():
                 continue
             if 'left' in trial.features['target_side']:
-                emo_position = self.eyetracker.left
-                neu_position = self.eyetracker.right
+                emo_position = subject.eyetracker.left
+                neu_position = subject.eyetracker.right
             elif 'right' in trial.features['target_side']:
-                emo_position = self.eyetracker.right
-                neu_position = self.eyetracker.left
+                emo_position = subject.eyetracker.right
+                neu_position = subject.eyetracker.left
             target_emo = trial.features['arrow'] ==  trial.features['target_side']
 
             regions = InterestRegionList([emo_position, neu_position])
@@ -741,46 +742,46 @@ class Exp(Experiment):
 
 
     # Creates an image scanpath for one trial.
-    def scanpath(self, subject_id, trial, frequency : int):
+    def scanpath(self, subject: Subject, trial, frequency : int):
         plt.clf()
 
         frame_color = (0,0,0)
         emo_color = (1,0,0)
         target_color = (0,1,0)
-        x_axis = self.eyetracker.screen_center[0] * 2
-        y_axis = self.eyetracker.screen_center[1] * 2
+        x_axis = subject.eyetracker.screen_center[0] * 2
+        y_axis = subject.eyetracker.screen_center[1] * 2
         plt.axis([0, x_axis, 0, y_axis])
         plt.gca().invert_yaxis()
         plt.axis('off')
 
         # Plotting frames
         if trial.isTraining():
-            plotRegion(self.eyetracker.left, frame_color)
-            plotRegion(self.eyetracker.right, frame_color)
+            plotRegion(subject.eyetracker.left, frame_color)
+            plotRegion(subject.eyetracker.right, frame_color)
         else:
             if 'left' in trial.features['target_side']:
-                plotRegion(self.eyetracker.left, emo_color)
-                plotRegion(self.eyetracker.right, frame_color)
+                plotRegion(subject.eyetracker.left, emo_color)
+                plotRegion(subject.eyetracker.right, frame_color)
             elif 'right' in trial.features['target_side']:
-                plotRegion(self.eyetracker.left, frame_color)
-                plotRegion(self.eyetracker.right, emo_color)
+                plotRegion(subject.eyetracker.left, frame_color)
+                plotRegion(subject.eyetracker.right, emo_color)
 
         if 'left' in trial.features['arrow']:
-            plotRegion(self.eyetracker.left_wide, target_color)
+            plotRegion(subject.eyetracker.left_wide, target_color)
         elif 'right' in trial.features['arrow']:
-            plotRegion(self.eyetracker.right_wide, target_color)
+            plotRegion(subject.eyetracker.right_wide, target_color)
 
         # Plotting gaze positions
         trial.plot(frequency)
         if trial.isTraining():
-            image_name = 'subject_%i_training_%i.png' % (subject_id, trial.getTrialId())
+            image_name = 'subject_%i_training_%i.png' % (subject.id, trial.getTrialId())
         else:
-            image_name = 'subject_%i_trial_%i.png' % (subject_id, trial.getTrialId())
+            image_name = 'subject_%i_trial_%i.png' % (subject.id, trial.getTrialId())
         saveImage(getTmpFolder(), image_name)
         return image_name
 
     # Creates a video scanpath for one trial.
-    def scanpathVideo(self, subject_id, trial, frequency : int, progress = None):
+    def scanpathVideo(self, subject: Subject, trial, frequency : int, progress = None):
         n_elem_drawn = 20
         point_list = trial.getGazePoints()
         nb_points = len(point_list)
@@ -796,8 +797,8 @@ class Exp(Experiment):
 
         image_list = []
 
-        axis_x = self.eyetracker.screen_center[0]*2
-        axis_y = self.eyetracker.screen_center[1]*2
+        axis_x = subject.eyetracker.screen_center[0]*2
+        axis_y = subject.eyetracker.screen_center[1]*2
 
         logTrace ('Creating video frames', Precision.NORMAL)
 
@@ -818,28 +819,28 @@ class Exp(Experiment):
             point_color = (1, point_color[1] - 1.0/nb_points , 0)
 
             if trial.isTraining():
-                plotRegion(self.eyetracker.left, frame_color)
-                plotRegion(self.eyetracker.right, frame_color)
+                plotRegion(subject.eyetracker.left, frame_color)
+                plotRegion(subject.eyetracker.right, frame_color)
             else:
                 if 'left' in trial.features['target_side']:
-                    plotRegion(self.eyetracker.left, emo_color)
-                    plotRegion(self.eyetracker.right, frame_color)
+                    plotRegion(subject.eyetracker.left, emo_color)
+                    plotRegion(subject.eyetracker.right, frame_color)
                 elif 'right' in trial.features['target_side']:
-                    plotRegion(self.eyetracker.left, frame_color)
-                    plotRegion(self.eyetracker.right, emo_color)
+                    plotRegion(subject.eyetracker.left, frame_color)
+                    plotRegion(subject.eyetracker.right, emo_color)
 
             if 'left' in trial.features['arrow']:
-                plotRegion(self.eyetracker.left_wide, target_color)
+                plotRegion(subject.eyetracker.left_wide, target_color)
             elif 'right' in trial.features['arrow']:
-                plotRegion(self.eyetracker.right_wide, target_color)
+                plotRegion(subject.eyetracker.right_wide, target_color)
 
             image_name = '%i.png' % elem
             saveImage(getTmpFolder(), image_name)
             image_list.append(joinPaths(getTmpFolder(), image_name))
         if trial.isTraining():
-            vid_name = 'subject_%i_training_%s.avi' % (subject_id, trial.getTrialId())
+            vid_name = 'subject_%i_training_%s.avi' % (subject.id, trial.getTrialId())
         else:
-            vid_name = 'subject_%i_trial_%s.avi' % (subject_id, trial.getTrialId())
+            vid_name = 'subject_%i_trial_%s.avi' % (subject.id, trial.getTrialId())
         progress.setText(0, 'Loading frames')
         makeVideo(image_list, vid_name, fps=100/frequency)
         return vid_name
@@ -851,9 +852,7 @@ class Exp(Experiment):
         except:
             return None
 
-    def parseSubject(self, input_file : str, progress = None) -> Subject:
-
-        self.selectEyetracker(input_file)
+    def parseSubject(self, input_file : str, eyetracker: Eyetracker, progress = None) -> Subject:
 
         with open(input_file) as f:
             first_line = f.readline()
@@ -867,7 +866,7 @@ class Exp(Experiment):
 
         else:
             result_file = "results.txt"
-            is_processed = self.eyetracker.preprocess(input_file, result_file, progress)
+            is_processed = eyetracker.preprocess(input_file, result_file, progress)
             if is_processed:
                 datafile = open(joinPaths(getTmpFolder(), result_file), "r")
             else:
@@ -881,7 +880,7 @@ class Exp(Experiment):
             data = [re.split("[\t ]+",line) for line in data]
 
             (n_subject, subject_cat) = subject_data
-            subject = Subject(self, data, n_subject, subject_cat, progress)
+            subject = Subject(eyetracker, self.n_trials, data, n_subject, subject_cat, progress)
 
             # self.evolutionScore(subject)
             return subject

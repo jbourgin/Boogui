@@ -15,9 +15,9 @@ class TrialException(Exception):
 Line = List[str]
 
 class Trial:
-    def __init__(self, experiment):
-        # Experiment
-        self.experiment = experiment
+    def __init__(self, eyetracker):
+        # Eyetracker
+        self.eyetracker = eyetracker
         # List of entries
         self.entries = []
         # Dictionary of trial features
@@ -51,9 +51,9 @@ class Trial:
             logTrace ('Setting trial features', Precision.NORMAL)
             self.setFeatures()
             logTrace ('Setting eye', Precision.NORMAL)
-            self.eye = self.experiment.eyetracker.getEye(lines)
+            self.eye = self.eyetracker.getEye(lines)
             logTrace ('Setting if trial is training', Precision.NORMAL)
-            self.is_training = self.experiment.eyetracker.isTraining(self)
+            self.is_training = self.eyetracker.isTraining(self)
         return rest_lines
 
     def isEmpty(self) -> bool:
@@ -97,7 +97,7 @@ class Trial:
         i_line = -1
         for line in lines:
             i_line += 1
-            entry = self.experiment.eyetracker.parseEntry(line)
+            entry = self.eyetracker.parseEntry(line)
             if entry != None:
                 if isinstance(entry, StartTrial):
                     started = True
@@ -107,7 +107,7 @@ class Trial:
                     #We are looking for entries with the same time as the stop trial entry
                     if isinstance(entry, StopTrial):
                         for line in lines[i_line + 1:]:
-                            entry2 = self.experiment.eyetracker.parseEntry(line)
+                            entry2 = self.eyetracker.parseEntry(line)
                             if entry2 != None and entry2.getTime() == entry.getTime():
                                 self.entries.insert(len(self.entries)-1, entry2)
                                 if begin_saccade is not None and isinstance(entry2, EndSaccade):

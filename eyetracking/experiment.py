@@ -13,9 +13,9 @@ class ExperimentException(Exception):
 
 class Experiment (ABC):
 
-    def __init__(self, eyetracker):
-        self.eyetracker = eyetracker
+    def __init__(self):
         self.expected_features = set()
+        self.eyetrackers = []
 
     @abstractmethod
     def processTrial(self, subject : Subject, trial : Trial) -> None:
@@ -23,15 +23,28 @@ class Experiment (ABC):
 
     # Creates an image scanpath for one trial.
     @abstractmethod
-    def scanpath(self, subject_id : int, trial : Trial, frequency : int) -> str:
+    def scanpath(self, subject : Subject, trial : Trial, frequency : int) -> str:
         pass
 
     @abstractmethod
-    def scanpathVideo(self, subject_id : int, trial : Trial, frequency : int, progress = None) -> str:
+    def scanpathVideo(self, subject : Subject, trial : Trial, frequency : int, progress = None) -> str:
         pass
 
+    @abstractmethod
+    def createEyetracker(self, input_file: str) -> Eyetracker:
+        pass
+
+    def determineEyetracker(self, input_file: str) -> Eyetracker:
+        for eyetracker in self.eyetrackers:
+            if eyetracker.fits(input_file):
+                return eyetracker
+        eyetracker = self.createEyetracker(input_file)
+        self.eyetrackers.append(eyetracker)
+        return eyetracker
+
     def processSubject(self, input_file: str, progress_bar = None) -> Subject:
-        subject = self.parseSubject(input_file, progress_bar)
+        eyetracker = self.determineEyetracker(input_file)
+        subject = self.parseSubject(input_file, eyetracker, progress_bar)
         if self.isSubjectValid(subject):
             return subject
         else:

@@ -3,7 +3,8 @@ from eyetracking.utils import *
 
 class Subject:
 
-    def __init__(self, experiment, lines, id : int, group : str, progress = None):
+    def __init__(self, eyetracker: Eyetracker, n_trials: int, lines, id : int, group : str, progress = None):
+        self.eyetracker = eyetracker
         # list of training trials
         self.training_trials = []
         # list of trials
@@ -15,11 +16,11 @@ class Subject:
 
         if progress != None:
             progress.setText(1, 'Loading Trials: parsing entries')
-            progress.setMaximum(1, experiment.n_trials)
+            progress.setMaximum(1, n_trials)
 
         logTrace ('Parsing trials entries', Precision.TITLE)
         while lines != []:
-            trial = Trial(experiment)
+            trial = Trial(eyetracker)
             lines = trial.setEntries(lines)
             try:
                 logTrace ('Checking trial validity', Precision.NORMAL)

@@ -70,6 +70,10 @@ class Make_Eyelink(Eyelink):
                 pass
         return None
 
+    # returns always true since we only expect one eyelink
+    def fits(self, input_file: str) -> bool:
+        return True
+
     def isResponse(self, line: Line) -> bool :
         return len(line) >= 5 and 'responded' in line[4]
 
@@ -79,13 +83,13 @@ class Make_Eyelink(Eyelink):
 class Exp(Experiment):
 
     def __init__(self):
-        super().__init__(None)
+        super().__init__()
         self.n_trials = 96
         self.expected_features = {'training', 'session', 'global_task', 'emotion', 'gender', 'target_side', 'response', 'cor_resp', 'response_time'}
 
-    def selectEyetracker(self, input_file : str) -> None:
+    def createEyetracker(self, input_file : str) -> Eyetracker:
         logTrace ('Selecting Eyelink', Precision.NORMAL)
-        self.eyetracker = Make_Eyelink()
+        return Make_Eyelink()
 
     def returnStopImageEntry(self, trial) -> int:
         for count, entry in enumerate(trial.entries):
@@ -126,50 +130,50 @@ class Exp(Experiment):
                 i += 1
 
         cluster1_left = Position(0.0,
-            self.eyetracker.left_gaze.center[0],
-            self.eyetracker.left_gaze.center[1] - 50
+            subject.eyetracker.left_gaze.center[0],
+            subject.eyetracker.left_gaze.center[1] - 50
         )
         cluster2_left = Position(0.0,
-            self.eyetracker.left_gaze.center[0],
-            self.eyetracker.left_gaze.center[1] + 100
+            subject.eyetracker.left_gaze.center[0],
+            subject.eyetracker.left_gaze.center[1] + 100
         )
         cluster3_left = Position(0.0,
-            self.eyetracker.screen_center[0] * 4/3,
-            self.eyetracker.screen_center[1] + 150
+            subject.eyetracker.screen_center[0] * 4/3,
+            subject.eyetracker.screen_center[1] + 150
         )
         cluster1_right = Position(0.0,
-            self.eyetracker.right_gaze.center[0],
-            self.eyetracker.right_gaze.center[1] - 50
+            subject.eyetracker.right_gaze.center[0],
+            subject.eyetracker.right_gaze.center[1] - 50
         )
         cluster2_right = Position(0.0,
-            self.eyetracker.right_gaze.center[0],
-            self.eyetracker.right_gaze.center[1] + 100
+            subject.eyetracker.right_gaze.center[0],
+            subject.eyetracker.right_gaze.center[1] + 100
         )
         cluster3_right = Position(0.0,
-            self.eyetracker.screen_center[0] * 2/3,
-            self.eyetracker.screen_center[1] + 150
+            subject.eyetracker.screen_center[0] * 2/3,
+            subject.eyetracker.screen_center[1] + 150
         )
         for i in range(4):
             print(i)
             means_left = k_clusters(gaze_positions[i]['left'], 3, [cluster1_left, cluster2_left, cluster3_left])
             means_right = k_clusters(gaze_positions[i]['right'], 3, [cluster1_right, cluster2_right, cluster3_right])
             # shift_vec_left = (
-            #     self.eyetracker.left_ellipse.center[0] - means_left[1].getGazePosition()[0],
-            #     (self.eyetracker.left_ellipse.center[1] + 100)
+            #     subject.eyetracker.left_ellipse.center[0] - means_left[1].getGazePosition()[0],
+            #     (subject.eyetracker.left_ellipse.center[1] + 100)
             #     - means_left[1].getGazePosition()[1],
             # )
             # shift_vec_right = (
-            #     self.eyetracker.right_ellipse.center[0] - means_right[1].getGazePosition()[0],
-            #     (self.eyetracker.right_ellipse.center[1] + 100) - means_right[1].getGazePosition()[1],
+            #     subject.eyetracker.right_ellipse.center[0] - means_right[1].getGazePosition()[0],
+            #     (subject.eyetracker.right_ellipse.center[1] + 100) - means_right[1].getGazePosition()[1],
             # )
             shift_vec_left = (
                 0,
-                self.eyetracker.left_ellipse.center[1]
+                subject.eyetracker.left_ellipse.center[1]
                 - means_left[0].getGazePosition()[1]
             )
             shift_vec_right = (
                 0,
-                self.eyetracker.right_ellipse.center[1] - means_right[0].getGazePosition()[1]
+                subject.eyetracker.right_ellipse.center[1] - means_right[0].getGazePosition()[1]
             )
             for trial in subject.trials[i*24 : (i+1)*24]:
                 if trial.discarded:
@@ -181,7 +185,7 @@ class Exp(Experiment):
             if progress != None:
                 progress[0].increment(progress[1])
 
-    def processTrial(self, subject, trial, filename = None):
+    def processTrial(self, subject: Subject, trial, filename = None):
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
         trial_number = trial.getTrialId()
         if trial.discarded:
@@ -205,7 +209,7 @@ class Exp(Experiment):
         else:
             print("Subject %i, trial %i" %(subject.id,trial_number))
             print("eyetracker")
-            print(self.eyetracker)
+            print(subject.eyetracker)
             #if len(line) >= 5 and 'response' in line[3] and 'screen' in line[4]:
             start_trial_time = trial.getStartTrial().getTime()
 
@@ -216,13 +220,13 @@ class Exp(Experiment):
                 first_saccade = trial.saccades[0].getStartTimeFromStartTrial()
 
             if trial.features['target_side'] == 'Left':
-                eye_position = self.eyetracker.left_gaze
-                face_position = self.eyetracker.left_face
-                start_point = (self.eyetracker.screen_center[0]*(1+1/3), self.eyetracker.screen_center[1]+150)
+                eye_position = subject.eyetracker.left_gaze
+                face_position = subject.eyetracker.left_face
+                start_point = (subject.eyetracker.screen_center[0]*(1+1/3), subject.eyetracker.screen_center[1]+150)
             elif trial.features['target_side'] == 'Right':
-                eye_position = self.eyetracker.right_gaze
-                face_position = self.eyetracker.right_face
-                start_point = (self.eyetracker.screen_center[0]-(self.eyetracker.screen_center[0]/3), self.eyetracker.screen_center[1]+150)
+                eye_position = subject.eyetracker.right_gaze
+                face_position = subject.eyetracker.right_face
+                start_point = (subject.eyetracker.screen_center[0]-(subject.eyetracker.screen_center[0]/3), subject.eyetracker.screen_center[1]+150)
             regions = InterestRegionList([eye_position, face_position])
 
             targetname = trial.getStimulus()
@@ -284,7 +288,7 @@ class Exp(Experiment):
 
             # Error :
 
-            if not trial.isStartValid(start_point, self.eyetracker.valid_distance_center)[0]:
+            if not trial.isStartValid(start_point, subject.eyetracker.valid_distance_center)[0]:
                  error = "Not valid start"
             elif trial.features['response'] == 'None':
                 error = "No subject response"
@@ -320,7 +324,7 @@ class Exp(Experiment):
                 trial.features['response'],
                 error,
                 trial.features['response_time'],
-                trial.isStartValid(start_point, self.eyetracker.valid_distance_center)[1],
+                trial.isStartValid(start_point, subject.eyetracker.valid_distance_center)[1],
                 capture_delay_first,
                 total_eye_fixation_time,
                 total_faceNotEye_fixation_time,
@@ -527,14 +531,14 @@ class Exp(Experiment):
 
 
     # Creates an image scanpath for one trial.
-    def scanpath(self, subject_id, trial, frequency : int):
+    def scanpath(self, subject: Subject, trial, frequency : int):
         plt.clf()
 
         end_line = self.returnStopImageEntry(trial)
 
         frame_color = (0,0,0)
-        x_axis = self.eyetracker.screen_center[0] * 2
-        y_axis = self.eyetracker.screen_center[1] * 2
+        x_axis = subject.eyetracker.screen_center[0] * 2
+        y_axis = subject.eyetracker.screen_center[1] * 2
         plt.axis([0, x_axis, 0, y_axis])
         plt.gca().invert_yaxis()
         plt.axis('off')
@@ -547,41 +551,41 @@ class Exp(Experiment):
         image = None
         if os.path.isfile(image_name):
             image = plt.imread(image_name, format = 'png')
-        img_width = self.eyetracker.half_width
-        img_height = self.eyetracker.half_height_face
+        img_width = subject.eyetracker.half_width
+        img_height = subject.eyetracker.half_height_face
         # Plotting frames
         if trial.features['target_side'] == 'Left':
             if image is not None:
                 plt.imshow(image, extent=[
-                    self.eyetracker.left_ellipse.center[0] - img_width,
-                    self.eyetracker.left_ellipse.center[0] + img_width,
-                    self.eyetracker.left_ellipse.center[1] + img_height,
-                    self.eyetracker.left_ellipse.center[1] - img_height
+                    subject.eyetracker.left_ellipse.center[0] - img_width,
+                    subject.eyetracker.left_ellipse.center[0] + img_width,
+                    subject.eyetracker.left_ellipse.center[1] + img_height,
+                    subject.eyetracker.left_ellipse.center[1] - img_height
                 ])
-            plotRegion(self.eyetracker.left_ellipse, frame_color)
-            plotRegion(self.eyetracker.left_gaze, frame_color)
+            plotRegion(subject.eyetracker.left_ellipse, frame_color)
+            plotRegion(subject.eyetracker.left_gaze, frame_color)
         elif trial.features['target_side'] == 'Right':
             if image is not None:
                 plt.imshow(image, extent=[
-                    self.eyetracker.right_ellipse.center[0] - img_width,
-                    self.eyetracker.right_ellipse.center[0] + img_width,
-                    self.eyetracker.right_ellipse.center[1] + img_height,
-                    self.eyetracker.right_ellipse.center[1] - img_height
+                    subject.eyetracker.right_ellipse.center[0] - img_width,
+                    subject.eyetracker.right_ellipse.center[0] + img_width,
+                    subject.eyetracker.right_ellipse.center[1] + img_height,
+                    subject.eyetracker.right_ellipse.center[1] - img_height
                 ])
-            plotRegion(self.eyetracker.right_ellipse, frame_color)
-            plotRegion(self.eyetracker.right_gaze, frame_color)
+            plotRegion(subject.eyetracker.right_ellipse, frame_color)
+            plotRegion(subject.eyetracker.right_gaze, frame_color)
 
         # Plotting gaze positions
         trial.plot(frequency, end_line)
         if trial.isTraining():
-            image_name = 'subject_%i_training_%i.png' % (subject_id, trial.getTrialId())
+            image_name = 'subject_%i_training_%i.png' % (subject.id, trial.getTrialId())
         else:
-            image_name = 'subject_%i_trial_%i.png' % (subject_id, trial.getTrialId())
+            image_name = 'subject_%i_trial_%i.png' % (subject.id, trial.getTrialId())
         saveImage(getTmpFolder(), image_name)
         return image_name
 
     # Creates a video scanpath for one trial.
-    def scanpathVideo(self, subject_id, trial, frequency : int, progress = None):
+    def scanpathVideo(self, subject: Subject, trial, frequency : int, progress = None):
         n_elem_drawn = 20
         end_line = self.returnStopImageEntry(trial)
         point_list = trial.getGazePoints(end_line)
@@ -597,8 +601,8 @@ class Exp(Experiment):
         image = None
         if os.path.isfile(image_name):
             image = plt.imread(image_name, format = 'png')
-        img_width = self.eyetracker.half_width
-        img_height = self.eyetracker.half_height_face
+        img_width = subject.eyetracker.half_width
+        img_height = subject.eyetracker.half_height_face
 
         # Taking frequency into account
         point_list_f = []
@@ -607,8 +611,8 @@ class Exp(Experiment):
 
         image_list = []
 
-        axis_x = self.eyetracker.screen_center[0]*2
-        axis_y = self.eyetracker.screen_center[1]*2
+        axis_x = subject.eyetracker.screen_center[0]*2
+        axis_y = subject.eyetracker.screen_center[1]*2
 
         logTrace ('Creating video frames', Precision.NORMAL)
 
@@ -631,31 +635,31 @@ class Exp(Experiment):
             if trial.features['target_side'] == 'Left':
                 if image is not None:
                     plt.imshow(image, extent=[
-                        self.eyetracker.left_ellipse.center[0] - img_width,
-                        self.eyetracker.left_ellipse.center[0] + img_width,
-                        self.eyetracker.left_ellipse.center[1] + img_height,
-                        self.eyetracker.left_ellipse.center[1] - img_height
+                        subject.eyetracker.left_ellipse.center[0] - img_width,
+                        subject.eyetracker.left_ellipse.center[0] + img_width,
+                        subject.eyetracker.left_ellipse.center[1] + img_height,
+                        subject.eyetracker.left_ellipse.center[1] - img_height
                     ])
-                # plotRegion(self.eyetracker.left_ellipse, frame_color)
-                # plotRegion(self.eyetracker.left_gaze, frame_color)
+                # plotRegion(subject.eyetracker.left_ellipse, frame_color)
+                # plotRegion(subject.eyetracker.left_gaze, frame_color)
             elif trial.features['target_side'] == 'Right':
                 if image is not None:
                     plt.imshow(image, extent=[
-                        self.eyetracker.left_ellipse.center[0] - img_width,
-                        self.eyetracker.left_ellipse.center[0] + img_width,
-                        self.eyetracker.left_ellipse.center[1] + img_height,
-                        self.eyetracker.left_ellipse.center[1] - img_height
+                        subject.eyetracker.left_ellipse.center[0] - img_width,
+                        subject.eyetracker.left_ellipse.center[0] + img_width,
+                        subject.eyetracker.left_ellipse.center[1] + img_height,
+                        subject.eyetracker.left_ellipse.center[1] - img_height
                     ])
-                # plotRegion(self.eyetracker.right_ellipse, frame_color)
-                # plotRegion(self.eyetracker.right_gaze, frame_color)
+                # plotRegion(subject.eyetracker.right_ellipse, frame_color)
+                # plotRegion(subject.eyetracker.right_gaze, frame_color)
 
             image_name = '%i.png' % elem
             saveImage(getTmpFolder(), image_name)
             image_list.append(joinPaths(getTmpFolder(), image_name))
         if trial.isTraining():
-            vid_name = 'subject_%i_training_%s.avi' % (subject_id, trial.getTrialId())
+            vid_name = 'subject_%i_training_%s.avi' % (subject.id, trial.getTrialId())
         else:
-            vid_name = 'subject_%i_trial_%s.avi' % (subject_id, trial.getTrialId())
+            vid_name = 'subject_%i_trial_%s.avi' % (subject.id, trial.getTrialId())
         progress.setText(0, 'Loading frames')
         makeVideo(image_list, vid_name, fps=100/frequency)
         return vid_name
@@ -667,9 +671,7 @@ class Exp(Experiment):
         except:
             return None
 
-    def parseSubject(self, input_file : str, progress = None) -> Subject:
-
-        self.selectEyetracker(input_file)
+    def parseSubject(self, input_file : str, eyetracker: Eyetracker, progress = None) -> Subject:
 
         with open(input_file) as f:
             first_line = f.readline()
@@ -683,7 +685,7 @@ class Exp(Experiment):
 
         else:
             result_file = "results.txt"
-            is_processed = self.eyetracker.preprocess(input_file, result_file, progress)
+            is_processed = eyetracker.preprocess(input_file, result_file, progress)
             if is_processed:
                 datafile = open(joinPaths(getTmpFolder(), result_file), "r")
             else:
@@ -697,4 +699,4 @@ class Exp(Experiment):
             data = [re.split("[\t ]+",line) for line in data]
 
             (n_subject, subject_cat) = subject_data
-            return Subject(self, data, n_subject, subject_cat, progress)
+            return Subject(eyetracker, self.n_trials, data, n_subject, subject_cat, progress)
