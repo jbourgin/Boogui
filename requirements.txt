@@ -1,0 +1,7 @@
+attr
+sumtypes
+matplotlib
+opencv-contrib-python
+pyqt5
+scipy
+io

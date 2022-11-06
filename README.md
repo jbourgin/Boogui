@@ -1,3 +1,7 @@
+````diff
+- WARNING: This tool is not currently intended for use by the general public. There is no documentation and it is currently intended to process data from specific protocols. You can still download it as is if you wish, but chances are it won't be of much help to you in processing your data :-)
+```
+
 # Boogui
 
 Boogui (named so after the great [Boo](https://baldursgate.fandom.com/wiki/Boo), who was always keen to "go for the eyes") is a software dedicated to viewing and processing gaze data recorded with [EyeLink](https://www.sr-research.com/) or [SMI](https://www.smivision.com/) eye trackers.
