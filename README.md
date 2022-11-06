@@ -1,4 +1,4 @@
-````diff
+```diff
 - WARNING: This tool is not currently intended for use by the general public. There is no documentation and it is currently intended to process data from specific protocols. You can still download it as is if you wish, but chances are it won't be of much help to you in processing your data :-)
 ```
 
