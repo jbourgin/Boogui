@@ -262,12 +262,12 @@ class Trial:
                         break
 
                 # If we find no corresponding frame, we determine the closer one. If its distance to the fixation is shorter enough, we take this frame.
-                if watched_region == None:
-                    closest_region = regions.find_minimal_distance(barycentre)
-                    # maximum distance allowed between a point and a region
-                    max_dist = sqrt(pow(closest_region.half_width, 2) + pow(closest_region.half_height,2)) + 10
-                    if distance(closest_region.center, barycentre) < max_dist:
-                        watched_region = closest_region
+                # if watched_region == None:
+                #     closest_region = regions.find_minimal_distance(barycentre)
+                #     # maximum distance allowed between a point and a region
+                #     max_dist = sqrt(pow(closest_region.half_width, 2) + pow(closest_region.half_height,2)) + 10
+                #     if distance(closest_region.center, barycentre) < max_dist:
+                #         watched_region = closest_region
 
                 # If we change of frame or encounter a blink, we end the previous fixation and add it to our list.
                 if current_region_fixation.begin != None and (watched_region != current_region_fixation.region or blink_encountered):
