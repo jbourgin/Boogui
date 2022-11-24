@@ -22,8 +22,8 @@ class Make_Eyelink(Eyelink):
 
         # Initializing regions of interest
         # We add 15% around the image to compensate for calibration errors. We don't add width margin because we need to leave separated drift area and image areas.
-        self.half_width = 200 #200
-        self.half_height = 180 #150 # We put 200 in the first analysis of data in 2021, for an error margin but 100 px seems to much and anyway, even with calibration errors at the corners this should not impact the results in such proportions.
+        self.half_width = 210 #200
+        self.half_height = 180 #150 # We put 200 in the first analysis of data in 2021, for an error margin but 100 px seems too much (and further we used the circle approximation to find closest region in getFixationTime, which resulted in errors !!) and anyway, even with calibration errors at the corners this should not impact the results in such proportions.
 
         # Center of the screen.
         self.screen_center = center
@@ -152,13 +152,22 @@ class Exp(Experiment):
             first_saccade = None
             first_saccade_pos = None
         else:
+            # Add a minimal amplitude ?
             first_saccade = trial.saccades[0].getStartTimeFromStartTrial()
-            if region_to_look.point_inside(trial.saccades[0].getLastGazePosition()):
+            if (
+                'left' in trial.features['arrow'] and (
+                    trial.saccades[0].getLastGazePosition()[0] - trial.saccades[0].getFirstGazePosition()[0]
+                ) < 0) or (
+                'right' in trial.features['arrow'] and (
+                    trial.saccades[0].getLastGazePosition()[0] - trial.saccades[0].getFirstGazePosition()[0]
+                ) > 0):
+            #if region_to_look.point_inside(trial.saccades[0].getLastGazePosition()):
                 first_saccade_pos = 'Correct'
-            elif region_not_to_look.point_inside(trial.saccades[0].getLastGazePosition()):
-                first_saccade_pos = 'Incorrect'
+            #elif region_not_to_look.point_inside(trial.saccades[0].getLastGazePosition()):
             else:
-                first_saccade_pos = 'Miss'
+                first_saccade_pos = 'Incorrect'
+            #else:
+            #    first_saccade_pos = 'Miss'
 
 
         targetname = trial.features['stim1']
@@ -237,7 +246,7 @@ class Exp(Experiment):
         elif first_fixation is None:
             error = "No fixation"
             error_sac = "No fixation"
-        elif first_fixation.getStartTimeFromStartTrial() < 100:
+        elif trial.saccades[0].getStartTimeFromStartTrial() <= 80:
              error = "Anticipation saccade"
              error_sac = "Anticipation saccade"
         # elif first_saccade <= 80:
