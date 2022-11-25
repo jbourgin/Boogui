@@ -206,6 +206,8 @@ class Exp(Experiment):
             percent_emo_fixation_time = total_emo_fixation_time/(total_neu_fixation_time+total_emo_fixation_time)*100
             percent_neu_fixation_time = total_neu_fixation_time/(total_neu_fixation_time+total_emo_fixation_time)*100
             percent_target_fixation_time = total_target_fixation_time/(total_neu_fixation_time+total_emo_fixation_time)*100
+        number_emo_fixations = len([x for x in region_fixations if x.on_target])
+        number_neu_fixations = len([x for x in region_fixations if not x.on_target])
         # if total_emo_fixation_time == 0:
         #     total_emo_fixation_time = None
         #     percent_emo_fixation_time = None
@@ -295,7 +297,9 @@ class Exp(Experiment):
             capture_delay_target_first,
             error_sac,
             total_target_fixation_time,
-            str(percent_target_fixation_time).replace('.',',')]
+            str(percent_target_fixation_time).replace('.',','),
+            str(number_emo_fixations),
+            str(number_neu_fixations)]
 
         if filename is None:
             f = open(getResultsFile(), 'a')
@@ -744,7 +748,9 @@ class Exp(Experiment):
             'Capture delay target first',
             'Errors saccade',
             'Total fixation time on target',
-            '% fixation time on target'
+            '% fixation time on target',
+            'Number of fixations on emotional target',
+            'Number of fixations on neutral target'
         ]))
         f.write('\n')
         f.close()
