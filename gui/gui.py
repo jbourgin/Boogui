@@ -59,6 +59,7 @@ class Main(QMainWindow):
 
 
     def raiseWarning(self, type, value, traceback):
+        ProgressWidget.destroy()
         error_dialog = QtWidgets.QMessageBox()
         fname = os.path.split(traceback.tb_frame.f_code.co_filename)[1]
         s = 'file: %s, line: %i\n%s: %s' % (

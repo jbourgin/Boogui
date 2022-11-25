@@ -10,11 +10,15 @@ class ProgressException(Exception):
 
 class ProgressWidget(QWidget):
 
+    instance = None
+
     def __init__(self, parent, n_bars):
         """
         @param n_bars number of progress bar
         """
         super().__init__(parent)
+
+        ProgressWidget.instance = self
 
         # Widget dimensions
         self.height = 75
@@ -73,3 +77,7 @@ class ProgressWidget(QWidget):
         self.progress_bars[i].setValue(self.counters[i])
         # To be sure that progress bars are updated
         QApplication.processEvents()
+
+    def destroy():
+        if ProgressWidget.instance is not None:
+            ProgressWidget.instance.close()
