@@ -268,25 +268,35 @@ class Main(QMainWindow):
         self.logOutput.clear()
 
     def clear_subjects(self):
-        self.subject_datas = []
-        self.subject_buttons = QButtonGroup()
-        self.subject_buttons.setExclusive(True)
-        # Disabling Save menu action
-        self.exportAct.setEnabled(False)
-        # Enabling change of experiment
-        self.experiment_menu.setEnabled(True)
-        # Disbaling clear menu action
-        self.clear.setEnabled(False)
+        messagebox = QMessageBox(QMessageBox.Question, "Are you sure you want to clear all subjects?",
+        "Boo will get angry for eyes...",
+        buttons = QMessageBox.Yes | QMessageBox.No,
+        parent = self)
+        messagebox.setDefaultButton(QMessageBox.No)
+        messagebox.setIconPixmap(QPixmap(get_ressources_file("angry_boo.png")))
+        sound = QSound(get_ressources_file('squeak.wav'))
+        sound.play()
+        reply = messagebox.exec_()
+        if reply == QMessageBox.Yes:
+            self.subject_datas = []
+            self.subject_buttons = QButtonGroup()
+            self.subject_buttons.setExclusive(True)
+            # Disabling Save menu action
+            self.exportAct.setEnabled(False)
+            # Enabling change of experiment
+            self.experiment_menu.setEnabled(True)
+            # Disbaling clear menu action
+            self.clear.setEnabled(False)
 
-        # Deleting subject buttons
-        for i in reversed(range(self.subjecttrialScrollLayout.count())):
-            self.subjecttrialScrollLayout.itemAt(i).widget().setParent(None)
+            # Deleting subject buttons
+            for i in reversed(range(self.subjecttrialScrollLayout.count())):
+                self.subjecttrialScrollLayout.itemAt(i).widget().setParent(None)
 
-        # Deleting trial buttons
-        for i in reversed(range(self.trialScrollLayout.count())):
-            self.trialScrollLayout.itemAt(i).widget().setParent(None)
+            # Deleting trial buttons
+            for i in reversed(range(self.trialScrollLayout.count())):
+                self.trialScrollLayout.itemAt(i).widget().setParent(None)
 
-        self.clear_layouts()
+            self.clear_layouts()
     #
     # def raiseWarning(self, e, error_message: str) -> None:
     #     sound = QSound(get_ressources_file('error.wav'))
