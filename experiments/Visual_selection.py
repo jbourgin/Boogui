@@ -240,8 +240,14 @@ class Exp(Experiment):
                 saccade_target_first = next(saccade.getStartTimeFromStartTrial() for saccade in reversed(trial.saccades) if saccade.getStartTimeFromStartTrial() < capture_delay_target_first)
             except:
                 saccade_target_first = None
+            # first target disengagement latency
+            try:
+                target_disengagement_saccade = next(saccade.getStartTimeFromStartTrial() for saccade in trial.saccades if saccade.getStartTimeFromStartTrial() > first_target_fixation.getEndTimeFromStartTrial())
+            except:
+                target_disengagement_saccade = None
         else:
             saccade_target_first = None
+            target_disengagement_saccade = None
 
         # Error :
         if not trial.isStartValid(subject.eyetracker.screen_center, subject.eyetracker.valid_distance_center)[0]:
@@ -308,7 +314,8 @@ class Exp(Experiment):
             str(percent_target_fixation_time).replace('.',','),
             str(number_emo_fixations),
             str(number_neu_fixations),
-            saccade_target_first]
+            saccade_target_first,
+            target_disengagement_saccade]
 
         if filename is None:
             f = open(getResultsFile(), 'a')
@@ -760,7 +767,8 @@ class Exp(Experiment):
             '% fixation time on target',
             'Number of fixations on emotional target',
             'Number of fixations on neutral target',
-            'Target saccadic latency' # start time of first saccade initiated toward target
+            'Target saccadic latency', # start time of first saccade initiated toward target
+            'Disengagement saccade latency'
         ]))
         f.write('\n')
         f.close()
