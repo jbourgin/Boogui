@@ -214,6 +214,18 @@ class Exp(Experiment):
         # if total_neu_fixation_time == 0:
         #     total_neu_fixation_time = None
         #     percent_neu_fixation_time = None
+        total_target_fix_times = dict()
+        for i in range(8):
+            my_fix_time = dict()
+            my_fix_time[1] = 0 # fix on emotional image
+            my_fix_time[0] = 0 # fix on neutral image
+            for fixation in region_fixations:
+                if fixation.getStartTimeFromStartTrial() <= (i+1)*1000 and fixation.getEndTimeFromStartTrial() >= i*1000:
+                    my_fix_time[fixation.on_target] += min((i+1)*1000, fixation.getEndTimeFromStartTrial()) - max(i*1000, fixation.getStartTimeFromStartTrial())
+            try:
+                total_target_fix_times[i] = my_fix_time[first_image_to_look == "EMO"]/(my_fix_time[0]+my_fix_time[1])*100
+            except ZeroDivisionError:
+                total_target_fix_times[i] = None
 
         # Determining blink category
         if trial.blinks == []:
@@ -315,7 +327,7 @@ class Exp(Experiment):
             str(number_emo_fixations),
             str(number_neu_fixations),
             saccade_target_first,
-            target_disengagement_saccade]
+            target_disengagement_saccade] + [total_target_fix_times[i] for i in range(len(total_target_fix_times.keys()))]
 
         if filename is None:
             f = open(getResultsFile(), 'a')
@@ -768,7 +780,8 @@ class Exp(Experiment):
             'Number of fixations on emotional target',
             'Number of fixations on neutral target',
             'Target saccadic latency', # start time of first saccade initiated toward target
-            'Disengagement saccade latency'
+            'Disengagement saccade latency'] + [
+            '%% fixation time on target - %i-%i'%(i, i+1) for i in range(8)
         ]))
         f.write('\n')
         f.close()
