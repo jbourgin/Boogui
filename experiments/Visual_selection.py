@@ -208,6 +208,9 @@ class Exp(Experiment):
             percent_target_fixation_time = total_target_fixation_time/(total_neu_fixation_time+total_emo_fixation_time)*100
         number_emo_fixations = len([x for x in region_fixations if x.on_target])
         number_neu_fixations = len([x for x in region_fixations if not x.on_target])
+        number_target_fixations = len([x for x in region_fixations if ((x.on_target and first_image_to_look == "EMO") or (not x.on_target and first_image_to_look == "NEU"))])
+        number_dis_fixations = len([x for x in region_fixations if ((not x.on_target and first_image_to_look == "EMO") or (x.on_target and first_image_to_look == "NEU"))])
+        number_fixations = len([x for x in region_fixations])
         # if total_emo_fixation_time == 0:
         #     total_emo_fixation_time = None
         #     percent_emo_fixation_time = None
@@ -326,6 +329,9 @@ class Exp(Experiment):
             str(percent_target_fixation_time).replace('.',','),
             str(number_emo_fixations),
             str(number_neu_fixations),
+            str(number_target_fixations),
+            str(number_dis_fixations),
+            str(number_fixations),
             saccade_target_first,
             target_disengagement_saccade] + [total_target_fix_times[i] for i in range(len(total_target_fix_times.keys()))]
 
@@ -610,6 +616,7 @@ class Exp(Experiment):
             d['first_image_to_look'] = line[6]
             d['error'] = line[13]
             d['blink'] = line[20]
+            d['error_sac'] = line[23]
             try:
                 d['first_sac'] = float(line[21])
             except:
@@ -622,6 +629,39 @@ class Exp(Experiment):
                 d['total_target'] = float(line[24])
             except:
                 d['total_target'] = line[24]
+            try:
+                d['number_emo_fix'] = float(line[26])
+            except:
+                d['number_emo_fix'] = line[26]
+            try:
+                d['number_neu_fix'] = float(line[27])
+            except:
+                d['number_neu_fix'] = line[27]
+            try:
+                d['number_target_fix'] = float(line[28])
+            except:
+                d['number_target_fix'] = line[28]
+            try:
+                d['number_dis_fix'] = float(line[29])
+            except:
+                d['number_dis_fix'] = line[29]
+            try:
+                d['number_fix'] = float(line[30])
+            except:
+                d['number_fix'] = line[30]
+            try:
+                d['first_sac_target'] = float(line[31])
+            except:
+                d['first_sac_target'] = line[31]
+            try:
+                d['target_disengt'] = float(line[32])
+            except:
+                d['target_disengt'] = line[32]
+            for i in range(8):
+                try:
+                    d['target_fix_time_%i'%i] = float(line[33+i])
+                except:
+                    d['target_fix_time_%i'%i] = line[33+i]
             return d
 
         with open(filename) as datafile:
@@ -632,7 +672,8 @@ class Exp(Experiment):
         subject = "Subject"
         sequence = []
         data_seq = []
-        list_scores = ['first_sac', 'first_target', 'total_target']
+        list_scores = ['first_sac', 'first_target', 'total_target', 'number_emo_fix', 'number_neu_fix', 'number_target_fix', 'number_dis_fix', 'number_fix', 'first_sac_target', 'target_disengt'] + ['target_fix_time_%i'%i for i in range(8)]
+        error_accepted_scores = ['first_sac']
 
         for line in data:
             if line[0] == "Subject":
@@ -640,6 +681,15 @@ class Exp(Experiment):
                 new_line.append('First saccade sorting')
                 new_line.append('First fixation target sorting')
                 new_line.append('Total fixation target sorting')
+                new_line.append('Number of fixations on emotional image sorting')
+                new_line.append('Number of fixations on neutral image sorting')
+                new_line.append('Number of fixations on target sorting')
+                new_line.append('Number of fixations on distractor sorting')
+                new_line.append('Number of fixations sorting')
+                new_line.append('First saccade on target sorting')
+                new_line.append('Disengagement saccade sorting')
+                for i in range(8):
+                    new_line.append('Fixation time on target %i-%i sorting'%(i, i+1))
                 s = ";".join([str(e) for e in new_line]) + "\n"
                 data_modified.write(s)
             if line[0] != subject:
@@ -672,12 +722,11 @@ class Exp(Experiment):
                     for element in list_scores:
                         elements_list[code][element] = []
                         mean_dic[code][element] = None
-                if dic_variables['first_sac'] != 'None' and "early" not in dic_variables['blink'] and ("0" in dic_variables['error'] or "1" in dic_variables['error']):
-                    elements_list[code]['first_sac'].append(dic_variables['first_sac'])
-                if dic_variables['first_target'] != 'None' and "early" not in dic_variables['blink'] and ("0" in dic_variables['error'] or "1" in dic_variables['error']):
-                    elements_list[code]['first_target'].append(dic_variables['first_target'])
-                if dic_variables['total_target'] != 'None' and "early" not in dic_variables['blink'] and ("0" in dic_variables['error'] or "1" in dic_variables['error']):
-                    elements_list[code]['total_target'].append(dic_variables['total_target'])
+                # We accept only trials with no error for most variables
+                for elt in list_scores:
+                    if dic_variables[elt] != 'None':
+                        if (elt in error_accepted_scores and ("0" in dic_variables['error_sac'] or "1" in dic_variables['error_sac'])) or "0" in dic_variables['error_sac']:
+                            elements_list[code][elt].append(dic_variables[elt])
 
             for code in mean_dic:
                 for key in mean_dic[code]:
@@ -693,12 +742,11 @@ class Exp(Experiment):
                     for element in list_scores:
                         square_dic[code][element] = []
                         SD_dic[code][element] = None
-                if dic_variables['first_sac'] != "None" and "early" not in dic_variables['blink'] and ("0" in dic_variables['error'] or "1" in dic_variables['error']):
-                    square_dic[code]['first_sac'].append(squareSum(dic_variables['first_sac'], mean_dic[code]['first_sac']))
-                if dic_variables['first_target'] != "None" and "early" not in dic_variables['blink'] and ("0" in dic_variables['error'] or "1" in dic_variables['error']):
-                    square_dic[code]['first_target'].append(squareSum(dic_variables['first_target'], mean_dic[code]['first_target']))
-                if dic_variables['total_target'] != "None" and "early" not in dic_variables['blink'] and ("0" in dic_variables['error'] or "1" in dic_variables['error']):
-                    square_dic[code]['total_target'].append(squareSum(dic_variables['total_target'], mean_dic[code]['total_target']))
+                # We accept only trials with no error for most variables
+                for elt in list_scores:
+                    if dic_variables[elt] != 'None':
+                        if (elt in error_accepted_scores and ("0" in dic_variables['error_sac'] or "1" in dic_variables['error_sac'])) or "0" in dic_variables['error_sac']:
+                            square_dic[code][elt].append(squareSum(dic_variables[elt], mean_dic[code][elt]))
 
                 for code in SD_dic:
                     for key in SD_dic[code]:
@@ -713,13 +761,8 @@ class Exp(Experiment):
                 code = dic_variables['first_image_to_look'] + dic_variables['emotion']
                 new_line = line
                 for key in mean_dic[code]:
-                    if key == 'first_sac':
-                        score = dic_variables['first_sac']
-                    elif key == 'first_target':
-                        score = dic_variables['first_target']
-                    elif key == 'total_target':
-                        score = dic_variables['total_target']
-                    if SD_dic[code][key] != None and score != "None" and "early" not in dic_variables['blink'] and ("0" in dic_variables['error'] or "1" in dic_variables['error']):
+                    score = dic_variables[key]
+                    if SD_dic[code][key] != None and score != "None" and ((key in error_accepted_scores and ("0" in dic_variables['error_sac'] or "1" in dic_variables['error_sac'])) or "0" in dic_variables['error_sac']):
                         current_mean = mean_dic[code][key]
                         current_SD = SD_dic[code][key]
                         if (float(score) > (float(current_mean) + 3*float(current_SD)) or float(score) < (float(current_mean) - 3*float(current_SD))):
@@ -779,6 +822,9 @@ class Exp(Experiment):
             '% fixation time on target',
             'Number of fixations on emotional target',
             'Number of fixations on neutral target',
+            'Number of fixations on target',
+            'Number of fixations on distractor',
+            'Number of fixations',
             'Target saccadic latency', # start time of first saccade initiated toward target
             'Disengagement saccade latency'] + [
             '%% fixation time on target - %i-%i'%(i, i+1) for i in range(8)
