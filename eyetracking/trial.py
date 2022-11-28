@@ -301,10 +301,11 @@ class Trial:
         if len(region_fixations) > 0:
             result = [region_fixations[0]]
             for reg in region_fixations[1:]:
-                if result[-1].region == reg.region:
-                    result[-1].merge(reg)
-                else:
-                    result.append(reg)
+                # Removed this part because fixations that we want merged are already merged before (fixations interspersed with saccades but all inside the same region). If we use the part below, it means that if two fixations on a same region are interspersed by a fixation that is not in an interest region (watched_region=None), they will be considered as the same fixation (e.g., AC06-7E trial 5)
+                # if result[-1].region == reg.region:
+                #     result[-1].merge(reg)
+                # else:
+                result.append(reg)
             return result
         else:
             return []
