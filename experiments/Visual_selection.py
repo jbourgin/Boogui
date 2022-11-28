@@ -255,9 +255,9 @@ class Exp(Experiment):
                 saccade_target_first = next(saccade.getStartTimeFromStartTrial() for saccade in reversed(trial.saccades) if saccade.getStartTimeFromStartTrial() < capture_delay_target_first)
             except:
                 saccade_target_first = None
-            # first target disengagement latency
+            # first target disengagement latency : start of disengagement saccade - start of first fixation on target
             try:
-                target_disengagement_saccade = next(saccade.getStartTimeFromStartTrial() for saccade in trial.saccades if saccade.getStartTimeFromStartTrial() > first_target_fixation.getEndTimeFromStartTrial())
+                target_disengagement_saccade = next((saccade.getStartTimeFromStartTrial() - first_target_fixation.getStartTimeFromStartTrial()) for saccade in trial.saccades if saccade.getStartTimeFromStartTrial() > first_target_fixation.getEndTimeFromStartTrial())
             except:
                 target_disengagement_saccade = None
         else:
@@ -333,7 +333,7 @@ class Exp(Experiment):
             str(number_dis_fixations),
             str(number_fixations),
             saccade_target_first,
-            target_disengagement_saccade] + [total_target_fix_times[i] for i in range(len(total_target_fix_times.keys()))]
+            target_disengagement_saccade] + [str(total_target_fix_times[i]).replace('.',',') for i in range(len(total_target_fix_times.keys()))]
 
         if filename is None:
             f = open(getResultsFile(), 'a')
@@ -659,7 +659,7 @@ class Exp(Experiment):
                 d['target_disengt'] = line[32]
             for i in range(8):
                 try:
-                    d['target_fix_time_%i'%i] = float(line[33+i])
+                    d['target_fix_time_%i'%i] = float(line[33+i].replace(",", "."))
                 except:
                     d['target_fix_time_%i'%i] = line[33+i]
             return d
@@ -681,11 +681,11 @@ class Exp(Experiment):
                 new_line.append('First saccade sorting')
                 new_line.append('First fixation target sorting')
                 new_line.append('Total fixation target sorting')
-                new_line.append('Number of fixations on emotional image sorting')
-                new_line.append('Number of fixations on neutral image sorting')
-                new_line.append('Number of fixations on target sorting')
-                new_line.append('Number of fixations on distractor sorting')
-                new_line.append('Number of fixations sorting')
+                new_line.append('Number of dwellings on emotional image sorting')
+                new_line.append('Number of dwellings on neutral image sorting')
+                new_line.append('Number of dwellings on target sorting')
+                new_line.append('Number of dwellings on distractor sorting')
+                new_line.append('Number of dwellings sorting')
                 new_line.append('First saccade on target sorting')
                 new_line.append('Disengagement saccade sorting')
                 for i in range(8):
@@ -820,13 +820,13 @@ class Exp(Experiment):
             'Errors saccade',
             'Total fixation time on target',
             '% fixation time on target',
-            'Number of fixations on emotional target',
-            'Number of fixations on neutral target',
-            'Number of fixations on target',
-            'Number of fixations on distractor',
-            'Number of fixations',
-            'Target saccadic latency', # start time of first saccade initiated toward target
-            'Disengagement saccade latency'] + [
+            'Number of dwellings on emotional image',
+            'Number of dwellings on neutral image',
+            'Number of dwellings on target',
+            'Number of dwellings on distractor',
+            'Number of dwellings',
+            'First saccade on target latency', # start time of first saccade initiated toward target
+            'Disengagement saccade latency'] + [ # difference between start of disengagement saccade and start of first fixation on target
             '%% fixation time on target - %i-%i'%(i, i+1) for i in range(8)
         ]))
         f.write('\n')
