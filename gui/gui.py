@@ -1,19 +1,12 @@
 import sys, os, time
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QMainWindow, QAction, QActionGroup, qApp, QWidget
-from PyQt5.QtWidgets import QFileDialog, QTextEdit, QScrollArea, QMessageBox, QButtonGroup
-from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout, QLabel, QLineEdit, QShortcut
-from PyQt5.QtGui import QPixmap, QIcon, QKeySequence, QCloseEvent
-from PyQt5.QtMultimedia import QSound
-from PyQt5.QtCore import Qt, pyqtSlot
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtMultimedia import*
+from PyQt5.QtCore import *
 
 from eyetracking.smi import *
 from eyetracking.subject import Subject
-# from eyetracking.Visual_search import *
-# from eyetracking.Gaze_contingent import *
-# from eyetracking.Visual_selection import *
-# from eyetracking.Prosaccade import *
-# from eyetracking.Antisaccade import *
 from gui.utils import *
 from gui.subject import *
 from gui.progress_widget import ProgressWidget
@@ -25,7 +18,7 @@ import traceback
 
 class Main(QMainWindow):
 
-    scrollLayouWidth = 125
+    scrollLayoutWidth = 125
     previsuAreaWidth = 700
 
     # folder where the "open" file dialog starts
@@ -98,7 +91,7 @@ class Main(QMainWindow):
         else:
             return next(t for t in self.subject_datas[n_subject].trial_datas if t.trial == trial)
 
-    def set_subject_scroller(self):
+    def get_subject_scroller(self):
         # scroll area widget contents - layout
         self.subjecttrialScrollLayout = QVBoxLayout()
         self.subjecttrialScrollLayout.setAlignment(Qt.AlignTop)
@@ -111,11 +104,11 @@ class Main(QMainWindow):
         self.subjectScrollArea = QScrollArea()
         self.subjectScrollArea.setWidgetResizable(True)
         self.subjectScrollArea.setWidget(self.subjectScrollWidget)
-        self.subjectScrollArea.setFixedWidth(self.scrollLayouWidth)
+        self.subjectScrollArea.setMinimumWidth(self.scrollLayoutWidth)
 
-        self.mainLayout.addWidget(self.subjectScrollArea)
+        return self.subjectScrollArea
 
-    def set_trial_scroller(self):
+    def get_trial_scroller(self):
         # scroll area widget contents - layout
         self.trialScrollLayout = QVBoxLayout()
         self.trialScrollLayout.setAlignment(Qt.AlignTop)
@@ -128,11 +121,11 @@ class Main(QMainWindow):
         self.scrollArea = QScrollArea()
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setWidget(self.scrollWidget)
-        self.scrollArea.setFixedWidth(self.scrollLayouWidth + 25)
+        self.scrollArea.setMinimumWidth(self.scrollLayoutWidth + 50)
 
-        self.mainLayout.addWidget(self.scrollArea)
+        return self.scrollArea
 
-    def set_text_area(self):
+    def get_text_area(self):
         # text area
         self.logOutput = QTextEdit()
         self.logOutput.setReadOnly(True)
@@ -142,9 +135,9 @@ class Main(QMainWindow):
         font.setFamily("Courier")
         font.setPointSize(10)
 
-        self.mainLayout.addWidget(self.logOutput)
+        return self.logOutput
 
-    def set_previsualizer(self):
+    def get_previsualizer(self):
         self.previsualizer = QWidget()
         previsualizer_layout = QVBoxLayout()
         self.previsualizer.setLayout(previsualizer_layout)
@@ -156,17 +149,18 @@ class Main(QMainWindow):
         previsualizer_layout.addWidget(self.video_widget)
         self.previsualizer.setFixedWidth(self.previsuAreaWidth)
 
-        self.mainLayout.addWidget(self.previsualizer)
+        return self.previsualizer
 
     def set_main_widget(self):
 
         # main layout
         self.mainLayout = QHBoxLayout()
-
-        self.set_subject_scroller()
-        self.set_trial_scroller()
-        self.set_text_area()
-        self.set_previsualizer()
+        splitter = QSplitter(Qt.Horizontal)
+        splitter.addWidget(self.get_subject_scroller())
+        splitter.addWidget(self.get_trial_scroller())
+        splitter.addWidget(self.get_text_area())
+        splitter.addWidget(self.get_previsualizer())
+        self.mainLayout.addWidget(splitter)
 
         # central widget
         self.centralWidget = QWidget()
@@ -297,12 +291,6 @@ class Main(QMainWindow):
                 self.trialScrollLayout.itemAt(i).widget().setParent(None)
 
             self.clear_layouts()
-    #
-    # def raiseWarning(self, e, error_message: str) -> None:
-    #     sound = QSound(get_ressources_file('error.wav'))
-    #     sound.play()
-    #     error_dialog = QMessageBox()
-    #     error_dialog.warning(self, 'Error', traceback.format_exc())
 
     ###########################
     ####### Experiments #######
