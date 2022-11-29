@@ -161,13 +161,13 @@ class Exp(Experiment):
                 'right' in trial.features['arrow'] and (
                     trial.saccades[0].getLastGazePosition()[0] - trial.saccades[0].getFirstGazePosition()[0]
                 ) > 0):
-            #if region_to_look.point_inside(trial.saccades[0].getLastGazePosition()):
                 first_saccade_pos = 'Correct'
-            #elif region_not_to_look.point_inside(trial.saccades[0].getLastGazePosition()):
             else:
                 first_saccade_pos = 'Incorrect'
-            #else:
-            #    first_saccade_pos = 'Miss'
+            if region_to_look.point_inside(trial.saccades[0].getLastGazePosition()) or region_not_to_look.point_inside(trial.saccades[0].getLastGazePosition()):
+                first_saccade_inside_region = True
+            else: # Miss : first saccade did not went on one of the two regions
+                first_saccade_inside_region = False
 
 
         targetname = trial.features['stim1']
@@ -258,11 +258,14 @@ class Exp(Experiment):
             # first target disengagement latency : start of disengagement saccade - start of first fixation on target
             try:
                 target_disengagement_saccade = next((saccade.getStartTimeFromStartTrial() - first_target_fixation.getStartTimeFromStartTrial()) for saccade in trial.saccades if saccade.getStartTimeFromStartTrial() > first_target_fixation.getEndTimeFromStartTrial())
+                target_disengagement_before_end = True
             except:
-                target_disengagement_saccade = None
+                target_disengagement_saccade = 8150 - first_target_fixation.getStartTimeFromStartTrial() # trial duration - first fixation init
+                target_disengagement_before_end = False
         else:
             saccade_target_first = None
             target_disengagement_saccade = None
+            target_disengagement_before_end = False
 
         # Error :
         if not trial.isStartValid(subject.eyetracker.screen_center, subject.eyetracker.valid_distance_center)[0]:
@@ -288,6 +291,7 @@ class Exp(Experiment):
             if trial.isTraining():
                 error = '0'
             else:
+                # Error can differ from error_sac with first_saccade_inside_region=True if the first fixation duration is lower than 50 ms (fixation threshold). This is notably the case for trial 53 in AC06-7 subject.
                 if ((first_fixation.on_target and trial.features['arrow'] == trial.features['target_side'])
                     or (not first_fixation.on_target and trial.features['arrow'] != trial.features['target_side'])):
                     error = '0'
@@ -333,7 +337,7 @@ class Exp(Experiment):
             str(number_dis_fixations),
             str(number_fixations),
             saccade_target_first,
-            target_disengagement_saccade] + [str(total_target_fix_times[i]).replace('.',',') for i in range(len(total_target_fix_times.keys()))]
+            target_disengagement_saccade] + [str(total_target_fix_times[i]).replace('.',',') for i in range(len(total_target_fix_times.keys()))] + [first_saccade_inside_region, target_disengagement_before_end]
 
         if filename is None:
             f = open(getResultsFile(), 'a')
@@ -828,6 +832,9 @@ class Exp(Experiment):
             'First saccade on target latency', # start time of first saccade initiated toward target
             'Disengagement saccade latency'] + [ # difference between start of disengagement saccade and start of first fixation on target
             '%% fixation time on target - %i-%i'%(i, i+1) for i in range(8)
+        ] + [
+            'First saccade is inside a region',
+            'Disengagement saccade occurs before trial end'
         ]))
         f.write('\n')
         f.close()
