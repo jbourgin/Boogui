@@ -45,6 +45,7 @@ class Make_Eyelink(Eyelink):
 
     def isResponse(self, line: Line) -> bool :
         return len(line) >= 5 and 'END' in line[2] and 'TRANSITION' in line[3] and 'TIMEOUT' in line[4]
+
     def isTraining(self, trial) -> bool:
         return 'App' in trial.features['training']
 
@@ -83,11 +84,10 @@ class Exp(Experiment):
         pass
 
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
-        trial_number = trial.getTrialId()
         targetname = trial.getStimulus()
 
         if trial.saccades == []:
-            logTrace ('Subject %i has no saccades at trial %i !' %(subject.id,trial_number), Precision.DETAIL)
+            logTrace ('Subject %i has no saccades at trial %i !' %(subject.id, trial.id), Precision.DETAIL)
         else:
             if trial.features['target_side'] == 'Gauche':
                 correct_position = 'Left'
@@ -155,7 +155,7 @@ class Exp(Experiment):
             # Writing data in result csv file
             s = [str(subject.id) + '-E', # Subject name
                 subject.group,
-                trial_number,
+                trial.id,
                 trial.features['training'],
                 trial.eye,
                 emotion,

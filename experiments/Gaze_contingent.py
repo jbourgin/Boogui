@@ -187,11 +187,10 @@ class Exp(Experiment):
 
     def processTrial(self, subject: Subject, trial, filename = None):
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
-        trial_number = trial.getTrialId()
         if trial.discarded:
             s = [str(subject.id) + "-E", # Subject name
                 subject.group,
-                trial_number,
+                trial.id,
                 trial.features['session'],
                 trial.features['training'],
                 trial.features['global_task'],
@@ -207,14 +206,14 @@ class Exp(Experiment):
                 'DISCARDED'
             ]
         else:
-            print("Subject %i, trial %i" %(subject.id,trial_number))
+            print("Subject %i, trial %i" %(subject.id, trial.id))
             print("eyetracker")
             print(subject.eyetracker)
             #if len(line) >= 5 and 'response' in line[3] and 'screen' in line[4]:
             start_trial_time = trial.getStartTrial().getTime()
 
             if trial.saccades == []:
-                logTrace ("Subject %i has no saccades at trial %i !" %(subject.id,trial_number), Precision.DETAIL)
+                logTrace ("Subject %i has no saccades at trial %i !" %(subject.id, trial.id), Precision.DETAIL)
                 first_saccade = None
             else:
                 first_saccade = trial.saccades[0].getStartTimeFromStartTrial()
@@ -311,7 +310,7 @@ class Exp(Experiment):
             # Writing data in result csv file
             s = [str(subject.id) + "-E", # Subject name
                 subject.group,
-                trial_number,
+                trial.id,
                 trial.features['session'],
                 trial.features['training'],
                 trial.features['global_task'],

@@ -85,11 +85,10 @@ class Exp(Experiment):
         pass
 
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
-        trial_number = trial.getTrialId()
         targetname = trial.getStimulus()
 
         if trial.saccades == []:
-            logTrace ('Subject %i has no saccades at trial %i !' %(subject.id,trial_number), Precision.DETAIL)
+            logTrace ('Subject %i has no saccades at trial %i !' %(subject.id, trial.id), Precision.DETAIL)
         else:
             if trial.features['target_side'] == 'Gauche':
                 correct_position = 'Right'
@@ -194,7 +193,7 @@ class Exp(Experiment):
             # Writing data in result csv file
             s = [str(subject.id) + '-E', # Subject name
                 subject.group,
-                trial_number,
+                trial.id,
                 trial.features['training'],
                 trial.eye,
                 emotion,

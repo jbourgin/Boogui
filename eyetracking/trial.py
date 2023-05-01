@@ -31,6 +31,8 @@ class Trial:
         # Dominant eye.
         # Either "Left" or "Right"
         self.eye = None
+        # Trial number
+        self.id = None
 
         # Is the trial discarded
         self.discarded = False
@@ -101,6 +103,7 @@ class Trial:
             if entry != None:
                 if isinstance(entry, StartTrial):
                     started = True
+                    self.id = entry.trial_number
                 if started:
                     entry.check()
                     self.entries.append(entry)
@@ -178,13 +181,8 @@ class Trial:
 
         return None
 
-    # Returns the trial id
-    # The trial is assumed to be valid (see checkValid()).
-    def getTrialId(self) -> int:
-        return self.getStartTrial().trial_number
-
     def discard(self, b) -> None:
-        print('Discarding trial %i' % self.getTrialId())
+        print('Discarding trial %i' % self.id)
         self.discarded = b
 
     def getStartTrial(self) -> Entry:

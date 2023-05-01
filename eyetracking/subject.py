@@ -39,6 +39,6 @@ class Subject:
 
     def getTrial(self, trial_number : int):
         for trial in self.trials:
-            if trial.getTrialId() == trial_number:
+            if trial.id == trial_number:
                 return trial
         return None

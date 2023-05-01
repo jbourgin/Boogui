@@ -191,10 +191,9 @@ class Exp(Experiment):
 
     def processTrial(self, subject: Subject, trial, filename = None):
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
-        trial_number = trial.getTrialId()
 
         if trial.saccades == []:
-            logTrace ("Subject %i has no saccades at trial %i !" %(subject.id,trial_number), Precision.DETAIL)
+            logTrace ("Subject %i has no saccades at trial %i !" %(subject.id,trial.id), Precision.DETAIL)
 
         if trial.features['num_of_dis'] == 1:
             frame_list = subject.eyetracker.frame_list_1
@@ -226,9 +225,9 @@ class Exp(Experiment):
 
         #We determine in which block occurred each trial
         block = None
-        if int(trial_number) < 60 and target_cat != "VISAGE":
+        if trial.id < 60 and target_cat != "VISAGE":
             block = 1
-        elif int(trial_number) >= 60:
+        elif trial.id >= 60:
             block = 2
 
         #We determine congruency between target side and frame break side.
@@ -302,7 +301,7 @@ class Exp(Experiment):
             subject_name = str(subject.id) + "-S"
         s = [subject_name, # Subject name
             subject.group,
-            trial_number,
+            trial.id,
             block,
             trial.eye,
             target_cat,

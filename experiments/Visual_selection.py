@@ -123,7 +123,6 @@ class Exp(Experiment):
     def processTrial(self, subject: Subject, trial, filename = None):
 
         logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
-        trial_number = trial.getTrialId()
         start_trial_time = trial.getStartTrial().getTime()
 
         if trial.isTraining():
@@ -148,7 +147,7 @@ class Exp(Experiment):
             region_not_to_look = emo_position
 
         if trial.saccades == []:
-            logTrace ("Subject %i has no saccades at trial %i !" %(subject.id,trial_number), Precision.DETAIL)
+            logTrace ("Subject %i has no saccades at trial %i !" %(subject.id,trial.id), Precision.DETAIL)
             first_saccade = None
             first_saccade_pos = None
         else:
@@ -307,7 +306,7 @@ class Exp(Experiment):
         # Writing data in result csv file
         s = [str(subject.id) + "-E", # Subject name
             subject.group,
-            trial_number,
+            trial.id,
             trial.isTraining(),
             trial.eye,
             trial.features['emotion'],
