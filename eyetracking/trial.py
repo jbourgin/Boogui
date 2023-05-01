@@ -1,9 +1,9 @@
-from eyetracking.eyetracker import *
 from eyetracking.interest_region import *
 from eyetracking.utils import *
 from eyetracking.scanpath import plotSegment
 from typing import TypeVar, List
 from math import sqrt, pow
+from eyetracking.entry import *
 
 class TrialException(Exception):
     def __init__(self, message):
@@ -15,26 +15,19 @@ class TrialException(Exception):
 Line = List[str]
 
 class Trial:
-    def __init__(self, eyetracker):
-        # Eyetracker
-        self.eyetracker = eyetracker
-        # List of entries
+    def __init__(self, experiment: "Experiment"):
         self.entries = []
         # Dictionary of trial features
         self.features = None
-        # List of saccades
         self.saccades = []
-        # List of fixations
         self.fixations = []
-        # List of blinks
         self.blinks = []
         # Dominant eye.
         # Either "Left" or "Right"
         self.eye = None
         # Trial number
         self.id = None
-
-        # Is the trial discarded
+        self.experiment = experiment
         self.discarded = False
 
         self.is_training = False
@@ -53,9 +46,9 @@ class Trial:
             logTrace ('Setting trial features', Precision.NORMAL)
             self.setFeatures()
             logTrace ('Setting eye', Precision.NORMAL)
-            self.eye = self.eyetracker.getEye(lines)
+            self.eye = self.experiment.getEye(lines)
             logTrace ('Setting if trial is training', Precision.NORMAL)
-            self.is_training = self.eyetracker.isTraining(self)
+            self.is_training = self.experiment.isTraining(self)
         return rest_lines
 
     def isEmpty(self) -> bool:
@@ -99,7 +92,7 @@ class Trial:
         i_line = -1
         for line in lines:
             i_line += 1
-            entry = self.eyetracker.parseEntry(line)
+            entry = self.experiment.parseEntry(line)
             if entry != None:
                 if isinstance(entry, StartTrial):
                     started = True
@@ -110,7 +103,7 @@ class Trial:
                     #We are looking for entries with the same time as the stop trial entry
                     if isinstance(entry, StopTrial):
                         for line in lines[i_line + 1:]:
-                            entry2 = self.eyetracker.parseEntry(line)
+                            entry2 = self.experiment.parseEntry(line)
                             if entry2 != None and entry2.getTime() == entry.getTime():
                                 self.entries.insert(len(self.entries)-1, entry2)
                                 if begin_saccade is not None and isinstance(entry2, EndSaccade):

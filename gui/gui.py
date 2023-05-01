@@ -5,8 +5,9 @@ from PyQt5.QtGui import *
 from PyQt5.QtMultimedia import*
 from PyQt5.QtCore import *
 
-from eyetracking.smi import *
 from eyetracking.subject import Subject
+from eyetracking.utils import *
+from eyetracking.entry import *
 from gui.utils import *
 from gui.subject import *
 from gui.progress_widget import ProgressWidget

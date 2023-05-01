@@ -2,9 +2,7 @@ from eyetracking.trial import *
 from eyetracking.utils import *
 
 class Subject:
-
-    def __init__(self, eyetracker: Eyetracker, n_trials: int, lines, id : int, group : str, progress = None):
-        self.eyetracker = eyetracker
+    def __init__(self, experiment, n_trials: int, lines, id : int, group : str, progress = None):
         # list of training trials
         self.training_trials = []
         # list of trials
@@ -20,7 +18,7 @@ class Subject:
 
         logTrace ('Parsing trials entries', Precision.TITLE)
         while lines != []:
-            trial = Trial(eyetracker)
+            trial = Trial(experiment)
             lines = trial.setEntries(lines)
             try:
                 logTrace ('Checking trial validity', Precision.NORMAL)
