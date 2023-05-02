@@ -1,6 +1,4 @@
 import re #To format data lists
-from eyetracking.eyelink import *
-from eyetracking.smi import *
 from eyetracking.experiment import *
 from eyetracking.interest_region import *
 from eyetracking.scanpath import *
@@ -11,15 +9,17 @@ import sys
 import random
 import numpy as np
 
-class Make_Eyelink(Eyelink):
+class Exp(Experiment):
+
     def __init__(self):
-        super().__init__()
+        super().__init__({'target_hp', 'target_vp', 'num_of_dis', 'cor_resp', 'response', 'target_side'})
+        self.n_trials = 120
+
         # Center of the screen.
         self.screen_center = (512,384)
-        self.eyetracker_name = "Eyelink"
         # Minimal distance at which we consider the subject is looking at the
         # fixation cross at the trial beginning
-        self.valid_distance_center = 125 #3 degres of visual angle 95
+        self.valid_distance_center = 95 #3 degres of visual angle 95
 
         # Initializing regions of interest
         self.half_width = 153
@@ -50,6 +50,10 @@ class Make_Eyelink(Eyelink):
         # Patients with inhibition difficulties
         self.list_patients_cong = [13,14]
 
+    ###############################################
+    ############## Overriden methods ##############
+    ###############################################
+
     # Returns a dictionary of experiment variables
     def parseVariables(self, line: List[str]):
         if len(line) > 24 and line[8] == "tgt_hor":
@@ -76,131 +80,28 @@ class Make_Eyelink(Eyelink):
                 pass
         return None
 
-    def fits(self, input_file : str) -> bool:
-        with open(input_file, "r") as file:
-            lines = file.readlines()
-            for n, line in enumerate(lines):
-                if n >= 100: return False
-                if 'EYELINK' in line: return True
-            return False
-
-
     def isResponse(self, line: Line) -> bool :
         return len(line) >= 6 and 'repondu' in line[5]
 
     def isTraining(self, trial) -> bool:
         return 'face' in trial.getStimulus()
 
-class Make_Smi(Smi):
-    # Currently, Smi data are not run in Boogui. If they were, we would need to remove first fixation (on center) of each trial from fixation list.
-    def __init__(self):
-        super().__init__()
-        # Center of the screen.
-        self.screen_center = (683,384)
-        self.eyetracker_name = "SMI"
-        # Minimal distance at which we consider the subject is looking at the
-        # fixation cross at the trial beginning
-        self.valid_distance_center = 130 #3 degres of visual angle 95 (+ marge)
-
-        # Initializing regions of interest
-        self.half_width = 163
-        self.half_height = 115
-
-        # frames
-        self.frame_list_1 = InterestRegionList([
-            RectangleRegion((312, 384), self.half_width, self.half_height),
-            RectangleRegion((1054, 384), self.half_width, self.half_height)
-        ])
-
-        self.frame_list_3 = InterestRegionList([
-            RectangleRegion((421, 646), self.half_width, self.half_height),
-            RectangleRegion((945, 646), self.half_width, self.half_height),
-            RectangleRegion((945, 122), self.half_width, self.half_height),
-            RectangleRegion((421, 122), self.half_width, self.half_height)
-        ])
-
-        self.frame_list_5 = InterestRegionList([
-            RectangleRegion((312, 384), self.half_width, self.half_height),
-            RectangleRegion((1054, 384), self.half_width, self.half_height),
-            RectangleRegion((421, 646), self.half_width, self.half_height),
-            RectangleRegion((945, 646), self.half_width, self.half_height),
-            RectangleRegion((945, 122), self.half_width, self.half_height),
-            RectangleRegion((421, 122), self.half_width, self.half_height)
-        ])
-
-        # Patients with inhibition difficulties
-        self.list_patients_cong = [45, 50, 51, 53]
-
-    # Returns a dictionary of experiment variables
-    def parseVariables(self, line: List[str]):
-        if len(line) > 6 and line[5] == "features:":
-            try:
-                target_hp = int(line[9]) + self.screen_center[0]
-                target_vp = int(line[11]) + self.screen_center[1]
-                num_of_dis = int(line[7])
-                cor_resp = line[13]
-                response = line[15]
-                if target_hp < self.screen_center[0]:
-                    target_side = "L"
-                else:
-                    target_side = "R"
-                return {
-                    'target_hp' : target_hp,
-                    'target_vp' : target_vp,
-                    'num_of_dis' : num_of_dis,
-                    'cor_resp' : cor_resp,
-                    'response' : response,
-                    'target_side' : target_side
-                }
-            except:
-                pass
-        return None
-
-    def fits(self, input_file : str) -> bool:
-        with open(input_file, "r") as file:
-            lines = file.readlines()
-            for n, line in enumerate(lines):
-                if n >= 100: return False
-                if 'IDF Converter' in line: return True
-            return False
-
-    def isResponse(self, line: Line) -> bool :
-        return len(line) >= 8 and 'sujet' in line[6]
-
-    def isTraining(self, trial) -> bool:
-        return 'face' in trial.getStimulus()
-
-class Exp(Experiment):
-
-    def __init__(self):
-        super().__init__()
-        self.n_trials = 120
-        self.expected_features = {'target_hp', 'target_vp', 'num_of_dis', 'cor_resp', 'response', 'target_side'}
-
-    def createEyetracker(self, input_file: str) -> Eyetracker:
-        eyelink = Make_Eyelink()
-        if eyelink.fits(input_file):
-            logTrace ('Selecting Eyelink', Precision.NORMAL)
-            return eyelink
-        smi = Make_Smi()
-        if smi.fits(input_file):
-            logTrace ('Selecting SMI', Precision.NORMAL)
-            return smi
-        logTrace ('No suitable eyetracker found for input file %s' % input_file, Precision.ERROR)
-        raise ExperimentException('No suitable eyetracker found for input file %s' % input_file)
+    ######################################################
+    ############## End of Overriden methods ##############
+    ######################################################
 
     def processTrial(self, subject: Subject, trial, filename = None):
-        logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
+        logTrace ('Processing trial n°%i' % trial.id, Precision.DETAIL)
 
         if trial.saccades == []:
             logTrace ("Subject %i has no saccades at trial %i !" %(subject.id,trial.id), Precision.DETAIL)
 
         if trial.features['num_of_dis'] == 1:
-            frame_list = subject.eyetracker.frame_list_1
+            frame_list = self.frame_list_1
         elif trial.features['num_of_dis'] == 3:
-            frame_list = subject.eyetracker.frame_list_3
+            frame_list = self.frame_list_3
         elif trial.features['num_of_dis'] == 5:
-            frame_list = subject.eyetracker.frame_list_5
+            frame_list = self.frame_list_5
 
         start_trial_time = trial.getStartTrial().getTime()
 
@@ -232,8 +133,8 @@ class Exp(Experiment):
 
         #We determine congruency between target side and frame break side.
         congruency = None
-        if ((trial.features['target_hp'] < subject.eyetracker.screen_center[0] and trial.features['cor_resp'] == '1')
-        or (trial.features['target_hp'] > subject.eyetracker.screen_center[0] and trial.features['cor_resp'] == '2')):
+        if ((trial.features['target_hp'] < self.screen_center[0] and trial.features['cor_resp'] == '1')
+        or (trial.features['target_hp'] > self.screen_center[0] and trial.features['cor_resp'] == '2')):
             congruency = "YES"
         else:
             congruency = "NO"
@@ -273,7 +174,7 @@ class Exp(Experiment):
                 blink_category = "late"
 
         # Error :
-        if not trial.isStartValid(subject.eyetracker.screen_center, subject.eyetracker.valid_distance_center)[0]:
+        if not trial.isStartValid(self.screen_center, self.valid_distance_center)[0]:
             error = "Not valid start"
         elif first_good_fixation is None:
             error = "No fixation on target"
@@ -284,7 +185,7 @@ class Exp(Experiment):
         elif capture_delay_first < 100:
             error = "Anticipation saccade"
         elif (subject.group == 'MA'
-            and subject in subject.eyetracker.list_patients_cong
+            and subject in self.list_patients_cong
             and congruency == "NO"
             and trial.features['cor_resp'] != trial.features['response']):
             error = 'CONG'
@@ -295,10 +196,7 @@ class Exp(Experiment):
                 error = '0'
 
         # Writing data in result csv file
-        if subject.eyetracker.eyetracker_name == "Eyelink":
-            subject_name = str(subject.id) + "-E"
-        elif subject.eyetracker.eyetracker_name == "SMI":
-            subject_name = str(subject.id) + "-S"
+        subject_name = str(subject.id) + "-E"
         s = [subject_name, # Subject name
             subject.group,
             trial.id,
@@ -546,8 +444,8 @@ class Exp(Experiment):
 
         frame_color = (0,0,0)
         target_color = (1,0,0)
-        x_axis = subject.eyetracker.screen_center[0] * 2
-        y_axis = subject.eyetracker.screen_center[1] * 2
+        x_axis = self.screen_center[0] * 2
+        y_axis = self.screen_center[1] * 2
         plt.axis([0, x_axis, 0, y_axis])
         plt.gca().invert_yaxis()
         plt.axis('off')
@@ -569,11 +467,11 @@ class Exp(Experiment):
 
         # Plotting frames
         if trial.features['num_of_dis'] == 1:
-            frame_list = subject.eyetracker.frame_list_1.getRegions()
+            frame_list = self.frame_list_1.getRegions()
         elif trial.features['num_of_dis'] == 3:
-            frame_list = subject.eyetracker.frame_list_3.getRegions()
+            frame_list = self.frame_list_3.getRegions()
         elif trial.features['num_of_dis'] == 5:
-            frame_list = subject.eyetracker.frame_list_5.getRegions()
+            frame_list = self.frame_list_5.getRegions()
 
         for frame in frame_list:
             if frame.isTarget((trial.features['target_hp'], trial.features['target_vp'])):
@@ -601,9 +499,9 @@ class Exp(Experiment):
         # Plotting gaze positions
         trial.plot(frequency)
         if trial.isTraining():
-            image_name = 'subject_%i_training_%i.png' % (subject.id, trial.getTrialId())
+            image_name = 'subject_%i_training_%i.png' % (subject.id, trial.id)
         else:
-            image_name = 'subject_%i_trial_%i.png' % (subject.id, trial.getTrialId())
+            image_name = 'subject_%i_trial_%i.png' % (subject.id, trial.id)
         saveImage(getTmpFolder(), image_name)
         return image_name
 
@@ -639,14 +537,14 @@ class Exp(Experiment):
         image_list = []
         # Plotting frames
         if trial.features['num_of_dis'] == 1:
-            frame_list = subject.eyetracker.frame_list_1.getRegions()
+            frame_list = self.frame_list_1.getRegions()
         elif trial.features['num_of_dis'] == 3:
-            frame_list = subject.eyetracker.frame_list_3.getRegions()
+            frame_list = self.frame_list_3.getRegions()
         elif trial.features['num_of_dis'] == 5:
-            frame_list = subject.eyetracker.frame_list_5.getRegions()
+            frame_list = self.frame_list_5.getRegions()
 
-        axis_x = subject.eyetracker.screen_center[0]*2
-        axis_y = subject.eyetracker.screen_center[1]*2
+        axis_x = self.screen_center[0]*2
+        axis_y = self.screen_center[1]*2
 
         logTrace ('Creating video frames', Precision.NORMAL)
 
@@ -700,9 +598,9 @@ class Exp(Experiment):
             saveImage(getTmpFolder(), image_name)
             image_list.append(joinPaths(getTmpFolder(), image_name))
         if trial.isTraining():
-            vid_name = 'subject_%i_training_%s.avi' % (subject.id, trial.getTrialId())
+            vid_name = 'subject_%i_training_%s.avi' % (subject.id, trial.id)
         else:
-            vid_name = 'subject_%i_trial_%s.avi' % (subject.id, trial.getTrialId())
+            vid_name = 'subject_%i_trial_%s.avi' % (subject.id, trial.id)
 
         progress.setText(0, 'Loading frames')
         makeVideo(image_list, vid_name, fps=100/frequency)
@@ -719,7 +617,7 @@ class Exp(Experiment):
     default_category = 'Not defined'
     #default_category = 'SAS'
 
-    def parseSubject(self, input_file : str, eyetracker: Eyetracker, progress = None) -> Subject:
+    def parseSubject(self, input_file : str, progress = None) -> Subject:
 
         with open(input_file) as f:
             first_line = f.readline()
@@ -734,11 +632,7 @@ class Exp(Experiment):
             Exp.default_subject_id += 1
 
         result_file = "results.txt"
-        is_processed = eyetracker.preprocess(input_file, result_file, progress)
-        if is_processed:
-            datafile = open(joinPaths(getTmpFolder(), result_file), "r")
-        else:
-            datafile = open(input_file, "r")
+        datafile = open(input_file, "r")
 
         #File conversion in list.
         data = datafile.read()
@@ -748,4 +642,4 @@ class Exp(Experiment):
         data = [re.split("[\t ]+",line) for line in data]
 
         (n_subject, subject_cat) = subject_data
-        return Subject(eyetracker, self.n_trials, data, n_subject, subject_cat, progress)
+        return Subject(self, self.n_trials, data, n_subject, subject_cat, progress)
