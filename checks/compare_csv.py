@@ -13,7 +13,7 @@ with open(files[0], 'r') as t1, open(files[1], 'r') as t2:
 for count, line in enumerate(fileone):
     if line != filetwo[count]:
         print("Difference at line {0}".format(count))
-        print(filename)
+        print(files[0])
         print(line)
-        print(filename2)
+        print(files[1])
         print(filetwo[count])
