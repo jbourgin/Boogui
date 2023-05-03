@@ -1,5 +1,5 @@
 run:
-	pypsy test.py
+	python3 test.py
 
 gui:
-	pypsy test_gui.py
+	python3 test_gui.py

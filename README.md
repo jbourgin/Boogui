@@ -28,7 +28,7 @@ Any further experiment may be implemented upon request.
 
 1. __[Python 3.6](https://www.python.org/downloads/)__
 
-    This program requires Python 3.6. It was tested on version 3.6.8.
+    This program requires Python 3. It was tested on version 3.11.3.
 
 2. __[PIP](https://pypi.org/project/pip/)__
 
@@ -55,15 +55,15 @@ make.bat
 ```
 or
 ```
-python test_gui.py
+python3 test_gui.py
 ```
 
 
 ### On Debian
 
-1. __[Python 3.6](https://www.python.org/downloads/)__
+1. __[Python 3](https://www.python.org/downloads/)__
 
-    This program requires Python 3.6. It was tested on versions 3.6.5 and 3.6.7.
+    This program requires Python 3. It was tested on version 3.11.3.
 
 2. __[PIP](https://pypi.org/project/pip/)__
 
@@ -88,7 +88,7 @@ sudo apt install libqt5multimedia5-plugins
 
 sudo rm /usr/local/lib/python3.6/dist-packages/PyQt5/Qt/plugins/mediaservice/libgstmediaplayer.so
 
-sudo ln -s /usr/lib/x86_64-linux-gnu/qt5/plugins/mediaservice/libgstmediaplayer.so /usr/local/lib/python3.6/dist-packages/PyQt5/Qt/plugins/mediaservice/libgstmediaplayer.so
+sudo ln -s /usr/lib/x86_64-linux-gnu/qt5/plugins/mediaservice/libgstmediaplayer.so /usr/local/lib/python3.11/dist-packages/PyQt5/Qt/plugins/mediaservice/libgstmediaplayer.so
 ```
 
 # Usage
@@ -100,5 +100,5 @@ make gui
 ```
 or
 ```
-python test_gui.py
+python3 test_gui.py
 ```

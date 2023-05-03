@@ -1,1 +1,1 @@
-pypsy test_gui.py
+python3 test_gui.py
