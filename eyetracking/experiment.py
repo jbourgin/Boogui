@@ -213,9 +213,8 @@ class Experiment (ABC):
         """
         pass
 
-    @abstractmethod
     def processTrial(self, subject : "Subject", trial : Trial) -> None:
-        pass
+        logTrace ('Processing trial n°%i' % trial.id, Precision.DETAIL)
 
     # Creates an image scanpath for one trial.
     @abstractmethod

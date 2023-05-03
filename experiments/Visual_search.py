@@ -91,8 +91,7 @@ class Exp(Experiment):
     ######################################################
 
     def processTrial(self, subject: Subject, trial, filename = None):
-        logTrace ('Processing trial n°%i' % trial.id, Precision.DETAIL)
-
+        super().__init__(self, subject, trial)
         if trial.saccades == []:
             logTrace ("Subject %i has no saccades at trial %i !" %(subject.id,trial.id), Precision.DETAIL)
 

@@ -91,7 +91,7 @@ class Exp(Experiment):
         return None
 
     def processTrial(self, subject: Subject, trial, filename = None):
-        logTrace ('Processing trial n°%i' % trial.id, Precision.DETAIL)
+        super().__init__(self, subject, trial)
         if trial.discarded:
             s = [str(subject.id) + "-E", # Subject name
                 subject.group,

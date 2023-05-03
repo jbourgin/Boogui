@@ -75,9 +75,7 @@ class Exp(Experiment):
     ######################################################
 
     def processTrial(self, subject: Subject, trial, filename = None):
-        pass
-
-        logTrace ('Processing trial n°%i' % trial.id, Precision.DETAIL)
+        super().__init__(self, subject, trial)
         targetname = trial.getStimulus()
 
         if trial.saccades == []:

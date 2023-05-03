@@ -99,8 +99,7 @@ class Exp(Experiment):
     # This is why we do calculation like :
     # total_target_fixation_time = sum(x.duration() for x in region_fixations if ((x.on_target and first_image_to_look == "EMO") or (not x.on_target and first_image_to_look == "NEU") ))
     def processTrial(self, subject: Subject, trial, filename = None):
-
-        logTrace ('Processing trial n°%i' % trial.id, Precision.DETAIL)
+        super().__init__(self, subject, trial)
         start_trial_time = trial.getStartTrial().getTime()
 
         if trial.isTraining():
