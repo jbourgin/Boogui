@@ -1,10 +1,21 @@
 import attr
+import pandas as pd
 from abc import ABC, abstractmethod
 from typing import List, Dict, Union, Set
 
 from eyetracking.utils import *
 from eyetracking.subject import *
 from eyetracking.entry import *
+
+class Col():
+
+    # Columns constants
+    SUBJID = "Subject"
+    GROUP = "Group"
+    TRIALID = "TrialID"
+    TRAINING = "Training"
+    EYE = "Eye"
+    BLINK = "First blink type"
 
 class ExperimentException(Exception):
     def __init__(self, message):
@@ -14,8 +25,10 @@ class ExperimentException(Exception):
 
 class Experiment (ABC):
 
-    def __init__(self, expected_features: Set[str]):
+    def __init__(self, expected_features: Set[str], exp_name):
         self.expected_features = expected_features
+        self.dataframe = None
+        self.exp_name = os.path.basename(os.path.splitext(exp_name)[0])
 
     def processSubject(self, input_file: str, progress_bar = None) -> "Subject":
         subject = self.parseSubject(input_file, progress_bar)
@@ -216,6 +229,14 @@ class Experiment (ABC):
     def processTrial(self, subject : "Subject", trial : Trial) -> None:
         logTrace ('Processing trial n°%i' % trial.id, Precision.DETAIL)
 
+        self.trial_dict = {
+            Col.SUBJID: "%i-E"%subject.id,
+            Col.GROUP: subject.group,
+            Col.TRIALID: trial.id,
+            Col.TRAINING: trial.features['training'],
+            Col.EYE: trial.eye,
+        }
+
     # Creates an image scanpath for one trial.
     @abstractmethod
     def scanpath(self, subject : "Subject", trial : Trial, frequency : int) -> str:
@@ -228,8 +249,4 @@ class Experiment (ABC):
     # TODO: no need for abstract: factorize?
     @abstractmethod
     def parseSubject(self, input_file : str, progress_bar) -> "Subject":
-        pass
-
-    @abstractmethod
-    def makeResultFile() -> None:
         pass

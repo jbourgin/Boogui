@@ -3,12 +3,27 @@ from eyetracking.experiment import *
 from eyetracking.interest_region import *
 from eyetracking.scanpath import *
 import matplotlib.pyplot as plt
+import pandas as pd
 from PyQt5.QtWidgets import QApplication
+
+class PSCol(Col):
+
+    # Specific columns
+    EMOTION = "Emotion"
+    TARGET = "Target Name"
+    SIDE = "Target Side"
+    COR_POS = "Correct position"
+    ERR = "Errors"
+    FIRST_RT = "First saccade RT"
+    FIRST_POS_START = "First saccade start gaze position"
+    FIRST_POS_END = "First saccade ending gaze position"
+    FIRST_DUR = "First saccade duration"
+    THRESH = "Threshold excess"
 
 class Exp(Experiment):
 
     def __init__(self):
-        super().__init__({'training', 'target_side'})
+        super().__init__({'training', 'target_side'}, __file__)
         self.n_trials = 96
         self.screen_center = (512,384)
         # Minimal distance at which we consider the subject is looking at the
@@ -72,8 +87,8 @@ class Exp(Experiment):
     ############## End of Overriden methods ##############
     ######################################################
 
-    def processTrial(self, subject: Subject, trial, filename = None):
-        super().__init__(self, subject, trial)
+    def processTrial(self, subject: Subject, trial):
+        super().processTrial(subject, trial)
         targetname = trial.getStimulus()
 
         if trial.saccades == []:
@@ -143,30 +158,26 @@ class Exp(Experiment):
                 error = None
 
             # Writing data in result csv file
-            s = [str(subject.id) + '-E', # Subject name
-                subject.group,
-                trial.id,
-                trial.features['training'],
-                trial.eye,
-                emotion,
-                targetname,
-                trial.features['target_side'],
-                correct_position,
-                error,
-                trial.saccades[0].getStartTime() - start_trial_time,
-                trial.saccades[0].getFirstGazePosition(),
-                trial.saccades[0].getLastGazePosition(),
-                trial.saccades[0].getEndTime() - trial.saccades[0].getStartTime(),
-                blink_category,
-                threshold_excess]
+            new_dict = {
+                PSCol.EMOTION: emotion,
+                PSCol.TARGET: targetname,
+                PSCol.SIDE: trial.features['target_side'],
+                PSCol.COR_POS: correct_position,
+                PSCol.ERR: error,
+                PSCol.FIRST_RT: trial.saccades[0].getStartTime() - start_trial_time,
+                PSCol.FIRST_POS_START: trial.saccades[0].getFirstGazePosition(),
+                PSCol.FIRST_POS_END: trial.saccades[0].getLastGazePosition(),
+                PSCol.FIRST_DUR: trial.saccades[0].getEndTime() - trial.saccades[0].getStartTime(),
+                PSCol.BLINK: blink_category,
+                PSCol.THRESH: threshold_excess
+            }
+            self.trial_dict.update(new_dict)
 
-            if filename is None:
-                f = open(getResultsFile(), 'a')
+            df = pd.DataFrame([self.trial_dict])
+            if self.dataframe is None:
+                self.dataframe = df
             else:
-                f = open(filename, 'a')
-            f.write(';'.join([str(x) for x in s]))
-            f.write('\n')
-        f.close()
+                self.dataframe = pd.concat([self.dataframe, df])
 
     def postProcess(self, filename: str):
         def initialize_variables(line):
@@ -291,39 +302,6 @@ class Exp(Experiment):
                 s = ";".join([str(e) for e in new_line]) + "\n"
                 data_modified.write(s)
         data_modified.close()
-
-    @staticmethod
-    def getDefaultResultsFile():
-        return joinPaths(getResultsFolder(), 'antisaccade.csv')
-
-    @staticmethod
-    def makeResultFile() -> None:
-        createResultsFolder()
-        Visual_selection.makeResultFile(getDefaultResultsFile)
-
-    @staticmethod
-    def makeResultFile(filename: str) -> None:
-        f = open(filename, 'w')
-        f.write(';'.join([
-            'Subject',
-            'Group',
-            'TrialID',
-            'Training',
-            'Eye',
-            'Emotion',
-            'Target Name',
-            'TargetSide',
-            'Correct position',
-            'Errors',
-            'First saccade RT',
-            'First saccade start gaze position',
-            'First saccade ending gaze position',
-            'First saccade duration',
-            'First blink type',
-            'Threshold excess'
-        ]))
-        f.write('\n')
-        f.close()
 
     # Creates an image scanpath for one trial.
     def scanpath(self, subject: Subject, trial, frequency : int):

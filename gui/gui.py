@@ -357,8 +357,7 @@ class Main(QMainWindow):
         """
         createResultsFolder()
         filedialog = QFileDialog()
-        filedialog.setDirectory(getResultsFolder())
-        filename,_ = filedialog.getSaveFileName(self, 'Save File')
+        filename,_ = filedialog.getSaveFileName(self, 'Save File', os.path.join(getResultsFolder(), self.subject_datas[0].experiment.exp_name), "CSV Files (*.csv)")
         # Creation of results file
         if len(filename) > 0:
             try:
@@ -367,15 +366,16 @@ class Main(QMainWindow):
                 progress.setText(0, 'Exporting Subjects')
                 progress.setMaximum(0, len(self.subject_datas))
 
-                self.getExperiment().makeResultFile(filename)
+                createResultsFolder()
                 for subjectData in self.subject_datas:
                     progress.increment(0)
                     progress.setText(1, 'Exporting Trials')
                     progress.setMaximum(1, len(subjectData.subject.trials))
                     for trial in subjectData.subject.trials:
                         progress.increment(1)
-                        subjectData.experiment.processTrial(subjectData.subject, trial, filename = filename)
-                self.getExperiment().postProcess(filename)
+                        subjectData.experiment.processTrial(subjectData.subject, trial)
+                    subjectData.experiment.dataframe.to_csv(filename, index = False, compression = None, sep=";")
+                # self.getExperiment().postProcess(filename)
 
             except Exception as e:
                 raise Exception('Error while exporting to file %s: \n%s' % (filename, traceback.format_exc()))
