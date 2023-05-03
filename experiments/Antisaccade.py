@@ -1,6 +1,4 @@
 import re #To format data lists
-from eyetracking.eyelink import *
-from eyetracking.smi import *
 from eyetracking.experiment import *
 from eyetracking.interest_region import *
 from eyetracking.scanpath import *
@@ -8,10 +6,12 @@ import matplotlib.pyplot as plt
 from math import sqrt
 from PyQt5.QtWidgets import QApplication
 
-class Make_Eyelink(Eyelink):
+class Exp(Experiment):
+
     def __init__(self):
-        super().__init__()
-        # Center of the screen.
+        super().__init__({'training', 'target_side'})
+        self.n_trials = 96
+
         self.screen_center = (512,384)
         # Minimal distance at which we consider the subject is looking at the
         # fixation cross at the trial beginning
@@ -24,6 +24,10 @@ class Make_Eyelink(Eyelink):
         # frames
         self.right = RectangleRegion((self.screen_center[0]*1.5, self.screen_center[1]), self.half_width, self.half_height)
         self.left = RectangleRegion((self.screen_center[0]/2, self.screen_center[1]), self.half_width, self.half_height)
+
+    ###############################################
+    ############## Overriden methods ##############
+    ###############################################
 
     # Returns a dictionary of experiment variables
     def parseVariables(self, line: List[str]):
@@ -40,16 +44,6 @@ class Make_Eyelink(Eyelink):
                 pass
         return None
 
-    # returns always true since we only expect one eyelink
-    def fits(self, input_file: str) -> bool:
-        return True
-
-    def isResponse(self, line: Line) -> bool :
-        return len(line) >= 5 and 'END' in line[2] and 'TRANSITION' in line[3] and 'TIMEOUT' in line[4]
-
-    def isTraining(self, trial) -> bool:
-        return 'App' in trial.features['training']
-
     def parseStartTrial(self, line: List[str]) -> Union[Entry, None]:
         if len(line) >= 4 and line[2] == 'BEGIN' and line[3] == 'TRANSITION' and line[4] == 'time_transition':
             try:
@@ -61,6 +55,12 @@ class Make_Eyelink(Eyelink):
                 pass
         return None
 
+    def isTraining(self, trial) -> bool:
+        return 'App' in trial.features['training']
+
+    def isResponse(self, line: Line) -> bool :
+        return len(line) >= 5 and 'END' in line[2] and 'TRANSITION' in line[3] and 'TIMEOUT' in line[4]
+
     def parseStopTrial(self, line: List[str]) -> Union[Entry, None]:
         if len(line) >= 4 and line[2] == 'END' and line[3] == 'SEQUENCE':
             try:
@@ -70,21 +70,14 @@ class Make_Eyelink(Eyelink):
                 pass
         return None
 
-class Exp(Experiment):
-
-    def __init__(self):
-        super().__init__()
-        self.n_trials = 96
-        self.expected_features = {'training', 'target_side'}
-
-    def createEyetracker(self, input_file: str) -> Eyetracker:
-        logTrace ('Selecting Eyelink', Precision.NORMAL)
-        return Make_Eyelink()
+    ######################################################
+    ############## End of Overriden methods ##############
+    ######################################################
 
     def processTrial(self, subject: Subject, trial, filename = None):
         pass
 
-        logTrace ('Processing trial n°%i' % trial.getTrialId(), Precision.DETAIL)
+        logTrace ('Processing trial n°%i' % trial.id, Precision.DETAIL)
         targetname = trial.getStimulus()
 
         if trial.saccades == []:
@@ -92,10 +85,10 @@ class Exp(Experiment):
         else:
             if trial.features['target_side'] == 'Gauche':
                 correct_position = 'Right'
-                target_position = subject.eyetracker.left
+                target_position = self.left
             elif trial.features['target_side'] == 'Droite':
                 correct_position = 'Left'
-                target_position = subject.eyetracker.right
+                target_position = self.right
 
             start_trial_time = trial.getStartTrial().getTime()
 
@@ -121,8 +114,8 @@ class Exp(Experiment):
                 SRT2_real = trial.saccades[1].getStartTime() - trial.saccades[0].getEndTime()
                 SRT2_duration = trial.saccades[1].getEndTime() - trial.saccades[1].getStartTime()
             if ((trial.saccades[0].getStartTime() - start_trial_time) < 80 and
-                distance(trial.saccades[0].getFirstGazePosition(), trial.saccades[0].getLastGazePosition()) < subject.eyetracker.valid_distance_center and
-                distance(trial.saccades[0].getLastGazePosition(), subject.eyetracker.screen_center) < subject.eyetracker.valid_distance_center and
+                distance(trial.saccades[0].getFirstGazePosition(), trial.saccades[0].getLastGazePosition()) < self.valid_distance_center and
+                distance(trial.saccades[0].getLastGazePosition(), self.screen_center) < self.valid_distance_center and
                 len(trial.saccades) > 1):
                 SRT_to_consider = 'Second saccade'
                 SRT_real = SRT2_real
@@ -153,7 +146,7 @@ class Exp(Experiment):
                     blink_category = 'late'
 
             # Error :
-            if not trial.isStartValid(subject.eyetracker.screen_center, subject.eyetracker.valid_distance_center)[0]:
+            if not trial.isStartValid(self.screen_center, self.valid_distance_center)[0]:
                 error = "No valid start"
             elif blink_category == 'early capture':
                 error = "Early blink"
@@ -164,14 +157,14 @@ class Exp(Experiment):
             elif sac_amplitude < 20:
                 error = "Micro saccade"
             elif ((correct_position == 'Right'
-                  and horizontal_gaze_position_end < subject.eyetracker.screen_center[0])
+                  and horizontal_gaze_position_end < self.screen_center[0])
                   or (correct_position == 'Left'
-                      and horizontal_gaze_position_end > subject.eyetracker.screen_center[0])):
+                      and horizontal_gaze_position_end > self.screen_center[0])):
                 error = '1'
             elif ((correct_position == 'Right'
-                  and horizontal_gaze_position_end > subject.eyetracker.screen_center[0])
+                  and horizontal_gaze_position_end > self.screen_center[0])
                   or (correct_position == 'Left'
-                      and horizontal_gaze_position_end < subject.eyetracker.screen_center[0])):
+                      and horizontal_gaze_position_end < self.screen_center[0])):
                 error = '0'
             else:
                 error = None
@@ -182,9 +175,9 @@ class Exp(Experiment):
                 for saccade in trial.saccades:
                     if saccade.getStartTime() >= SRT_threshold and correction == 'NO':
                         if ((correct_position == 'Right'
-                            and saccade.getLastGazePosition()[0] > subject.eyetracker.screen_center[0])
+                            and saccade.getLastGazePosition()[0] > self.screen_center[0])
                             or (correct_position == 'Left'
-                                and saccade.getLastGazePosition()[0] < subject.eyetracker.screen_center[0])):
+                                and saccade.getLastGazePosition()[0] < self.screen_center[0])):
                             if saccade.getEndTime() - saccade.getStartTime() <= 130:
                                 correction = 'YES'
                             else:
@@ -406,21 +399,21 @@ class Exp(Experiment):
         else:
             frame_color = (0,0,0)
 
-        x_axis = subject.eyetracker.screen_center[0] * 2
-        y_axis = subject.eyetracker.screen_center[1] * 2
+        x_axis = self.screen_center[0] * 2
+        y_axis = self.screen_center[1] * 2
         plt.axis([0, x_axis, 0, y_axis])
         plt.gca().invert_yaxis()
         plt.axis('off')
 
         # Plotting frames
         if trial.features['target_side'] == 'Gauche':
-            plotRegion(subject.eyetracker.left, frame_color)
+            plotRegion(self.left, frame_color)
         elif trial.features['target_side'] == 'Droite':
-            plotRegion(subject.eyetracker.right, frame_color)
+            plotRegion(self.right, frame_color)
 
         # Plotting gaze positions
         trial.plot(frequency)
-        image_name = 'subject_%i_trial_%i.png' % (subject.id, trial.getTrialId())
+        image_name = 'subject_%i_trial_%i.png' % (subject.id, trial.id)
         saveImage(getTmpFolder(), image_name)
         return image_name
 
@@ -445,8 +438,8 @@ class Exp(Experiment):
 
         image_list = []
 
-        axis_x = subject.eyetracker.screen_center[0]*2
-        axis_y = subject.eyetracker.screen_center[1]*2
+        axis_x = self.screen_center[0]*2
+        axis_y = self.screen_center[1]*2
 
         logTrace ('Creating video frames', Precision.NORMAL)
 
@@ -467,14 +460,14 @@ class Exp(Experiment):
             point_color = (1, point_color[1] - 1.0/nb_points , 0)
 
             if trial.features['target_side'] == 'Gauche':
-                plotRegion(subject.eyetracker.left, frame_color)
+                plotRegion(self.left, frame_color)
             elif trial.features['target_side'] == 'Droite':
-                plotRegion(subject.eyetracker.right, frame_color)
+                plotRegion(self.right, frame_color)
 
             image_name = '%i.png' % elem
             saveImage(getTmpFolder(), image_name)
             image_list.append(joinPaths(getTmpFolder(), image_name))
-        vid_name = 'subject_%i_trial_%s.avi' % (subject.id, trial.getTrialId())
+        vid_name = 'subject_%i_trial_%s.avi' % (subject.id, trial.id)
         progress.setText(0, 'Loading frames')
         makeVideo(image_list, vid_name, fps=100/frequency)
         return vid_name
@@ -486,7 +479,7 @@ class Exp(Experiment):
         except:
             return None
 
-    def parseSubject(self, input_file : str, eyetracker : Eyetracker, progress = None) -> Subject:
+    def parseSubject(self, input_file : str, progress = None) -> Subject:
 
         with open(input_file) as f:
             first_line = f.readline()
@@ -500,11 +493,7 @@ class Exp(Experiment):
 
         else:
             result_file = 'results.txt'
-            is_processed = eyetracker.preprocess(input_file, result_file, progress)
-            if is_processed:
-                datafile = open(joinPaths(getTmpFolder(), result_file), 'r')
-            else:
-                datafile = open(input_file, 'r')
+            datafile = open(input_file, 'r')
 
             #File conversion in list.
             data = datafile.read()
@@ -514,4 +503,4 @@ class Exp(Experiment):
             data = [re.split('[\t ]+',line) for line in data]
 
             (n_subject, subject_cat) = subject_data
-            return Subject(eyetracker, self.n_trials, data, n_subject, subject_cat, progress)
+            return Subject(self, self.n_trials, data, n_subject, subject_cat, progress)
