@@ -24,9 +24,6 @@ class Experiment (ABC):
         else:
             raise ExperimentException('File %s does not fit the experiment' % input_file)
 
-    def recalibrate(self, subject : "Subject") -> None:
-        pass
-
     # Returns true if this subject made this experiment
     def isSubjectValid(self, subject : "Subject") -> bool:
         if len(subject.trials) == 0:

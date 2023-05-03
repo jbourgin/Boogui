@@ -242,15 +242,6 @@ class Main(QMainWindow):
             EntryList.ENTRYLISTEXCEPTION_WARNING = not EntryList.ENTRYLISTEXCEPTION_WARNING
         setWarning.triggered.connect(f)
 
-        # Recalibrate menu
-        recalibrate = QAction('&Recalibrate all subjects', self)
-        def f_recalibrate():
-            for subjectData in self.subject_datas:
-                g = self.recalibrate(subjectData)
-                g()
-        recalibrate.triggered.connect(f_recalibrate)
-        self.config_menu.addAction(recalibrate)
-
     # Called when the application stops
     # Clears the temporary folder
     def closeEvent(self, close_event):
@@ -349,9 +340,6 @@ class Main(QMainWindow):
                     button.setContextMenuPolicy(Qt.ActionsContextMenu)
                     # create context menu
                     #popMenu = QtWidgets.QMenu(self)
-                    a = QAction('Recalibrate', self)
-                    a.triggered.connect(self.recalibrate(subject))
-                    button.addAction(a)
                     button.setCheckable(True)
                     self.subjecttrialScrollLayout.addWidget(button)
                     button.clicked.connect(self.make_choose_subject(n_subject))
@@ -362,18 +350,6 @@ class Main(QMainWindow):
 
             #closing message box
             progress.close()
-
-    def recalibrate(self, subject: Subject) -> None:
-        def f():
-            progress = ProgressWidget(self, 1)
-            progress.setText(0, 'Recalibration')
-            progress.setMaximum(0, 4)
-            subject.experiment.recalibrate(subject.subject,
-                (progress, 0)
-            )
-            subject.clearScanpaths()
-            progress.close()
-        return f
 
     def exportSubjects(self):
         """
