@@ -24,6 +24,7 @@ class Main(QMainWindow):
 
     # folder where the "open" file dialog starts
     dataDirectory = 'data'
+    rawDataDirectory = 'raw_data'
 
     def __init__(self):
         super().__init__()
@@ -178,6 +179,11 @@ class Main(QMainWindow):
         exitAct.triggered.connect(self.close)
 
         # Browse menu item
+        convertAct = QAction("&Convert .EDF files", self)
+        convertAct.setStatusTip('Convert .EDF files')
+        convertAct.triggered.connect(self.convert_edf)
+
+        # Browse menu item
         browseAct = QAction("&Open File", self)
         browseAct.setShortcut('Ctrl+O')
         browseAct.setStatusTip('Open file')
@@ -200,6 +206,7 @@ class Main(QMainWindow):
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(exitAct)
         fileMenu.addAction(browseAct)
+        fileMenu.addAction(convertAct)
         fileMenu.addAction(self.exportAct)
         fileMenu.addAction(self.clear)
 
@@ -307,11 +314,34 @@ class Main(QMainWindow):
     ###########################
     ###### I/O functions ######
     ###########################
+    def convert_edf(self):
+
+        filedialog = QFileDialog()
+        filedialog.setDirectory(self.rawDataDirectory)
+        filenames,_ = filedialog.getOpenFileNames(self, 'Select one or more files to convert', self.rawDataDirectory, "EDF files (*.edf)")
+        if len(filenames) > 0:
+            progress = ProgressWidget(self, 1)
+            progress.setText(0, 'Converting Files')
+            progress.setMaximum(0, len(filenames))
+            for filename in filenames:
+                logTrace ('Converting subject file %s' % filename, Precision.INPUT)
+
+                os.system("edf2asc.exe %s"%filename)
+                asc_filename = os.path.splitext(filename)[0]+".asc"
+                new_asc_filename = os.path.join(self.dataDirectory, os.path.basename(asc_filename))
+                try:
+                    os.rename(asc_filename, new_asc_filename)
+                except FileExistsError:
+                    os.remove(new_asc_filename)
+                    os.rename(asc_filename, new_asc_filename)
+                progress.increment(0)
+            #closing message box
+            progress.close()
+
     def file_open(self):
 
         filedialog = QFileDialog()
-        filedialog.setDirectory(self.dataDirectory)
-        filenames,_ = filedialog.getOpenFileNames(self, 'Open File')
+        filenames,_ = filedialog.getOpenFileNames(self, 'Select one or more files to open', self.dataDirectory, "Text files (*.txt *.asc)")
         if len(filenames) > 0:
             # Storing new default data folder
             self.dataDirectory = '/'.join(filenames[0].split('/')[0:-1])
