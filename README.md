@@ -28,21 +28,34 @@ Any further experiment may be implemented upon request.
 
 1. __[Python 3.6](https://www.python.org/downloads/)__
 
-    This program requires Python 3.6. It was tested on versions 3.6.5 and 3.6.7.
+    This program requires Python 3.6. It was tested on version 3.6.8.
 
 2. __[PIP](https://pypi.org/project/pip/)__
 
+    Further dependencies will be handled by the requirements file, which requires the PIP package manager of Python.
     If pip is not installed, download [get-pip.py](https://bootstrap.pypa.io/get-pip.py) and run:
 
 ```
 python get-pip.py
 ```
 
-3. __[PIPENV](https://docs.python-guide.org/dev/virtualenvs/)__
+3. __Dependencies__
 
-    Dependencies are handled by Pipenv. To install Pipenv:
+    Dependencies are written in requirements.txt file. To install:
 ```
-pip install pipenv
+pip install -r requirements.txt
+```
+
+# Usage
+
+To launch the gui, type
+
+```
+make.bat
+```
+or
+```
+python test_gui.py
 ```
 
 
@@ -54,17 +67,17 @@ pip install pipenv
 
 2. __[PIP](https://pypi.org/project/pip/)__
 
-    Further dependencies will be handled by the Pipenv, which requires the PIP package manager of Python.
+    Further dependencies will be handled by the requirements file, which requires the PIP package manager of Python.
     To install pip:
 ```
 apt install pip
 ```
 
-3. __[PIPENV](https://docs.python-guide.org/dev/virtualenvs/)__
+3. __Dependencies__
 
-    Dependencies are handled by Pipenv. To install Pipenv:
+    Dependencies are written in requirements.txt file. To install:
 ```
-pip install pipenv
+pip install -r requirements.txt
 ```
 
 4. __MISC__
@@ -78,21 +91,14 @@ sudo rm /usr/local/lib/python3.6/dist-packages/PyQt5/Qt/plugins/mediaservice/lib
 sudo ln -s /usr/lib/x86_64-linux-gnu/qt5/plugins/mediaservice/libgstmediaplayer.so /usr/local/lib/python3.6/dist-packages/PyQt5/Qt/plugins/mediaservice/libgstmediaplayer.so
 ```
 
-## Installation
-
-Once the requirements are installed, the python environment is built by
-```
-pipenv install
-```
-
 # Usage
 
 To launch the gui, type
 
 ```
-make run
+make gui
 ```
 or
 ```
-pipenv run python test_gui.py
+python test_gui.py
 ```

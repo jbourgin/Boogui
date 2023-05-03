@@ -1,7 +1,7 @@
-attr
-sumtypes
-matplotlib
-opencv-contrib-python
-pyqt5
-scipy
-io
+attr==0.3.2
+sumtypes==0.1a6
+matplotlib==3.3.4
+opencv-contrib-python==4.6.0.66
+pyqt5==5.15.6
+scipy==1.5.4
+pandas==1.1.5
