@@ -215,15 +215,17 @@ class Main(QMainWindow):
         ag.setExclusive(True)
         self.experiment_menu = menubar.addMenu('&Experiment')
 
-        for exp_name in self.experiments:
+        for count_exp, exp_name in enumerate(self.experiments):
             setExp = QAction('&' + exp_name, self, checkable = True)
             setExp.triggered.connect(self.setExperiment(exp_name))
             a = ag.addAction(setExp)
             self.experiment_menu.addAction(a)
 
-        #Default experiment: the last one
-        setExp.setChecked(True)
-        self.setExperiment(exp_name)()
+            #Default experiment: the first one
+            if count_exp == 0:
+                setExp.setChecked(True)
+                self.setExperiment(exp_name)()
+
 
         # Config menu
         self.config_menu = menubar.addMenu('&Config')
@@ -271,6 +273,7 @@ class Main(QMainWindow):
         sound.play()
         reply = messagebox.exec_()
         if reply == QMessageBox.Yes:
+            self.experiment.dataframe = None
             self.subject_datas = []
             self.subject_buttons = QButtonGroup()
             self.subject_buttons.setExclusive(True)
