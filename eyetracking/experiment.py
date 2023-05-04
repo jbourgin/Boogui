@@ -13,7 +13,6 @@ class Col():
     SUBJID = "Subject"
     GROUP = "Group"
     TRIALID = "TrialID"
-    TRAINING = "Training"
     EYE = "Eye"
     BLINK = "First blink type"
 
@@ -45,11 +44,13 @@ class Experiment (ABC):
         if self.expected_features == set():
             logTrace('Experiment has no expected features', Precision.ERROR)
             return False
-        features = subject.trials[0].features.keys()
-        if self.expected_features != features:
-            logTrace('Expected features %s, got %s for trial 0' % (self.expected_features, features), Precision.ERROR)
-            return False
-        return True
+        for trial in subject.trials:
+            features = trial.features.keys()
+            if self.expected_features == features:
+                return True
+        # If no trial has expected features
+        logTrace('Expected features %s, got %s for trial 0' % (self.expected_features, features), Precision.ERROR)
+        return False
 
     @staticmethod
     def getEye(lines: List[List[str]]) -> str:
@@ -233,7 +234,6 @@ class Experiment (ABC):
             Col.SUBJID: "%i-E"%subject.id,
             Col.GROUP: subject.group,
             Col.TRIALID: trial.id,
-            Col.TRAINING: trial.features['training'],
             Col.EYE: trial.eye,
         }
 
