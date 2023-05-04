@@ -1,0 +1,271 @@
+import re #To format data lists
+from eyetracking.experiment import *
+from eyetracking.interest_region import *
+from eyetracking.scanpath import *
+import matplotlib.pyplot as plt
+import pandas as pd
+from PyQt5.QtWidgets import QApplication
+from enum import Enum
+
+class EDCol(Col):
+
+    # Specific columns
+    TRAINING = "Training"
+    TRIALTYPE = "Type essai"
+    STIMTYPE = "Type stimulus"
+    EMOTION = "Emotion"
+    STIMEMO = "Stimulus emo"
+    STIMNEU = "Stimulus neu"
+    FRAME = "Forme"
+    ERR = "Error" # if subject gave wrong manual answer
+    FIRSTFIX = "First fixation"
+    FAILED = "Failed eyetracking" # if recalibration took place during trial (should be discarded)
+    RT = "Response time"
+    TARGET_POS = "Target position"
+
+class StimType(Enum):
+    SCENE = "Scene"
+    FACE = "Face"
+
+class TrialType(Enum):
+    CONTROL = "Control"
+    ENGAGEMENT = "Engagement"
+    DISENGAGEMENT = "Disengagement"
+
+class Exp(Experiment):
+
+    def __init__(self):
+        super().__init__({'start_wait_sac', 'frame', 'pos_frame', 'correct', 'trialType', 'failed_trial', 'stim_emo', 'stim_neu', 'emotion', 'response_time'}, __file__)
+        self.n_trials = 48
+
+        #Center of the screen
+        self.screen_center = (960, 540)
+
+        self.valid_distance_center = 95
+
+        self.half_height = {}
+        self.half_width = {}
+        self.half_height[StimType.FACE] = 180
+        self.half_width[StimType.FACE] = 140
+        self.half_height[StimType.SCENE] = 150
+        self.half_width[StimType.SCENE] = 200
+
+        self.frame_list = {}
+        for stimType in StimType:
+            self.frame_list[stimType] = {}
+            self.frame_list[stimType]["-440"] = RectangleRegion((self.screen_center[0]-440, self.screen_center[1]), self.half_width[stimType], self.half_height[stimType])
+            self.frame_list[stimType]["440"]= RectangleRegion((self.screen_center[0]+440, self.screen_center[1]), self.half_width[stimType], self.half_height[stimType])
+
+    ###############################################
+    ############## Overriden methods ##############
+    ###############################################
+
+    # Returns a dictionary of experiment variables
+    def parseVariables(self, line: List[str]):
+        if len(line) >= 4 and line[2] == "start_wait_sac":
+            return {
+                "start_wait_sac": line[1]
+            }
+        elif any(f in line for f in self.expected_features):
+            parseDict = {}
+            for f in self.expected_features:
+                if f in line:
+                    parseDict[f] = line[line.index(f)+1]
+            return parseDict
+        return None
+
+    def isResponse(self, line: Line) -> bool :
+        return len(line) > 4 and 'cor_response' in line[4]
+
+    def isTraining(self, trial) -> bool:
+        return any(s in trial.features["stim_emo"] for s in ["training", "Training"])
+
+    ######################################################
+    ############## End of Overriden methods ##############
+    ######################################################
+
+    def processTrial(self, subject: Subject, trial):
+        super().processTrial(subject, trial)
+
+        if trial.saccades == []:
+            logTrace ('Subject %i has no saccades at trial %i !' %(subject.id, trial.id), Precision.DETAIL)
+            return
+        elif trial.features["trialType"] == TrialType.CONTROL.value:
+            logTrace ('Skip Control trial %i for subject %i' %(trial.id, subject.id), Precision.DETAIL)
+            return
+        elif trial.features["failed_trial"] == "1":
+            logTrace ('Had to recalibrate during trial %i for subject %i' %(trial.id, subject.id), Precision.DETAIL)
+            return
+        else:
+            if any(f in trial.features["stim_emo"] for f in ["Homme", "Femme"]):
+                trial.features["stimType"] = StimType.FACE
+            else:
+                trial.features["stimType"] = StimType.SCENE
+        target = self.frame_list[trial.features["stimType"]][trial.features["pos_frame"]]
+
+        # Get all fixations that occurred on target only after wait for saccade toward frame begins
+        region_fixations = [x for x in trial.getFixationTime(InterestRegionList([target]), target) if x.getStartTime() > int(trial.features["start_wait_sac"])]
+
+        # Get all saccades tat occurred after wait for saccade toward frame begins
+        saccades = [x for x in trial.saccades if x.getStartTime() > int(trial.features["start_wait_sac"])]
+
+        # Get first fixation on target after wait for sac starts
+        first_fixation = None
+        if len(region_fixations) != 0:
+            first_fixation = next(iter(region_fixations))
+
+
+        # Determining blink category
+        if trial.blinks == []:
+            blink_category = "No blink"
+        else:
+            blink_category = "late"
+            if first_fixation is not None:
+                for blink in trial.blinks:
+                    if int(trial.features["start_wait_sac"]) < blink.getStartTime() < first_fixation.getStartTime():
+                        blink_category = "early capture"
+                        break
+            else:
+                blink_category = None
+
+        # Error :
+        if not trial.isStartValid(self.screen_center, self.valid_distance_center)[0]:
+            error = "Not valid start"
+        elif blink_category == 'early capture':
+            error = "Early blink"
+        elif first_fixation is None:
+            error = "No fixation"
+        elif len(saccades) > 0 and saccades[0].getStartTime() - int(trial.features["start_wait_sac"]) < 60:
+            error = "Anticipation saccade"
+        else:
+            error = 0 if trial.features["correct"] == "1" else 1
+
+        # Compiling data in trial_dict
+        new_dict = {
+            EDCol.TRAINING: trial.isTraining(),
+            EDCol.TRIALTYPE: trial.features["trialType"],
+            EDCol.STIMTYPE: trial.features["stimType"].value,
+            EDCol.EMOTION: trial.features["emotion"],
+            EDCol.STIMEMO: trial.features["stim_emo"],
+            EDCol.STIMNEU: trial.features["stim_neu"],
+            EDCol.FRAME: trial.features["frame"],
+            EDCol.TARGET_POS: "Right" if trial.features["pos_frame"] == "440" else "Left",
+            EDCol.FIRSTFIX: None if first_fixation is None else first_fixation.getStartTime() - int(trial.features["start_wait_sac"]),
+            EDCol.ERR: error,
+            EDCol.RT: trial.features["response_time"],
+            EDCol.FAILED: trial.features["failed_trial"],
+            EDCol.BLINK: blink_category
+        }
+        self.trial_dict.update(new_dict)
+
+        df = pd.DataFrame([self.trial_dict])
+        if self.dataframe is None:
+            self.dataframe = df
+        else:
+            self.dataframe = pd.concat([self.dataframe, df])
+
+    # Creates an image scanpath for one trial.
+    def scanpath(self, subject: Subject, trial, frequency : int):
+        plt.clf()
+
+        frame_emo = (1,0,0)
+        frame_target = (0,1,0)
+        frame_default = (0,0,0)
+
+        if trial.features["trialType"] == TrialType.DISENGAGEMENT.value:
+            frame_color = frame_target
+        else:
+            frame_color = frame_emo
+
+        x_axis = self.screen_center[0] * 2
+        y_axis = self.screen_center[1] * 2
+        plt.axis([0, x_axis, 0, y_axis])
+        plt.gca().invert_yaxis()
+        plt.axis('off')
+
+        if trial.features["trialType"] != TrialType.CONTROL.value:
+            # Plotting frames
+            plotRegion(self.frame_list[StimType.SCENE][trial.features["pos_frame"]], frame_color)
+
+            other_frame = "440" if trial.features["pos_frame"] == "-440" else "-440"
+            plotRegion(self.frame_list[StimType.SCENE][other_frame], frame_default)
+
+        # Plotting gaze positions
+        trial.plot(frequency)
+        image_name = 'subject_%i_trial_%i.png' % (subject.id, trial.id)
+        saveImage(getTmpFolder(), image_name)
+        return image_name
+
+    # Creates a video scanpath for one trial.
+    def scanpathVideo(self, subject: Subject, trial, frequency : int, progress = None):
+        n_elem_drawn = 20
+        point_list = trial.getGazePoints()
+        nb_points = len(point_list)
+
+        point_color = (1,1,0)
+        frame_emo = (1,0,0)
+        frame_target = (0,1,0)
+        frame_default = (0,0,0)
+
+        if trial.features["trialType"] == TrialType.DISENGAGEMENT.value:
+            frame_color = frame_target
+        else:
+            frame_color = frame_emo
+
+        # Taking frequency into account
+        point_list_f = []
+        for i in range(0,len(point_list)-frequency,frequency):
+            point_list_f.append(point_list[i])
+
+        image_list = []
+
+        axis_x = self.screen_center[0]*2
+        axis_y = self.screen_center[1]*2
+
+        logTrace ('Creating video frames', Precision.NORMAL)
+
+        if progress != None:
+            progress.setText(0, 'Loading frames')
+            progress.setMaximum(0, len(point_list_f) - 1)
+
+        for elem in range(0,len(point_list_f)-1):
+            if progress != None:
+                progress.increment(0)
+            plt.clf()
+            ax = plt.axis([0,axis_x,0,axis_y])
+            plt.gca().invert_yaxis()
+            plt.axis('off')
+
+            for j in range(max(0,elem-n_elem_drawn),elem+1):
+                plotSegment(point_list_f[j], point_list_f[j+1], c = point_color)
+            point_color = (1, point_color[1] - 1.0/nb_points , 0)
+
+            # Plotting frames
+            plotRegion(self.frame_list[StimType.SCENE][trial.features["pos_frame"]], frame_color)
+
+            other_frame = "440" if trial.features["pos_frame"] == "-440" else "-440"
+            plotRegion(self.frame_list[StimType.SCENE][other_frame], frame_default)
+
+            image_name = '%i.png' % elem
+            saveImage(getTmpFolder(), image_name)
+            image_list.append(joinPaths(getTmpFolder(), image_name))
+
+        vid_name = 'subject_%i_trial_%s.avi' % (subject.id, trial.id)
+
+        progress.setText(0, 'Loading frames')
+        makeVideo(image_list, vid_name, fps=100/frequency)
+        return vid_name
+
+    def parseSubject(self, input_file : str, progress = None) -> Subject:
+        datafile = open(input_file, 'r')
+
+        #File conversion in list.
+        data = datafile.read()
+        data = list(data.splitlines())
+
+        #We add a tabulation and space separator.
+        data = [re.split('[\t ]+',line) for line in data]
+
+        n_subject = int(os.path.basename(os.path.splitext(input_file)[0]).split("_")[1])
+
+        return Subject(self, self.n_trials, data, n_subject, None, progress)
