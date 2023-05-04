@@ -19,6 +19,7 @@ class PSCol(Col):
     FIRST_POS_END = "First saccade ending gaze position"
     FIRST_DUR = "First saccade duration"
     THRESH = "Threshold excess"
+    TRAINING = "Training"
 
 class Exp(Experiment):
 
@@ -159,6 +160,7 @@ class Exp(Experiment):
 
             # Writing data in result csv file
             new_dict = {
+                PSCol.TRAINING: trial.features['training'],
                 PSCol.EMOTION: emotion,
                 PSCol.TARGET: targetname,
                 PSCol.SIDE: trial.features['target_side'],
