@@ -1,4 +1,5 @@
 import attr
+import re #To format data lists
 import pandas as pd
 from abc import ABC, abstractmethod
 from typing import List, Dict, Union, Set
@@ -209,6 +210,40 @@ class Experiment (ABC):
 
         return None
 
+    # TODO: no need for abstract: factorize?
+    def getSubjectData(self, line: str) -> Union[Tuple[int,str]]:
+        try:
+            l = re.split('[\t ]+', line)
+            return (int(l[1]), l[2])
+        except:
+            return None
+
+    def parseSubject(self, input_file : str, progress = None) -> Subject:
+
+        with open(input_file) as f:
+            first_line = f.readline()
+            if first_line[-1] == '\n':
+                first_line = first_line[:-1]
+
+        subject_data = self.getSubjectData(first_line)
+
+        if subject_data is None:
+            raise ExperimentException('Subject number and category could not be found')
+
+        else:
+            result_file = 'results.txt'
+            datafile = open(input_file, 'r')
+
+            #File conversion in list.
+            data = datafile.read()
+            data = list(data.splitlines())
+
+            #We add a tabulation and space separator.
+            data = [re.split('[\t ]+',line) for line in data]
+
+            (n_subject, subject_cat) = subject_data
+            return Subject(self, self.n_trials, data, n_subject, subject_cat, progress)
+
     ##########################################
     ############ Abstract methods ############
     ##########################################
@@ -244,9 +279,4 @@ class Experiment (ABC):
 
     @abstractmethod
     def scanpathVideo(self, subject : "Subject", trial : Trial, frequency : int, progress = None) -> str:
-        pass
-
-    # TODO: no need for abstract: factorize?
-    @abstractmethod
-    def parseSubject(self, input_file : str, progress_bar) -> "Subject":
         pass
