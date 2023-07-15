@@ -2,11 +2,13 @@ import attr
 import re #To format data lists
 import pandas as pd
 from abc import ABC, abstractmethod
+import matplotlib.pyplot as plt
 from typing import List, Dict, Union, Set
 
 from eyetracking.utils import *
 from eyetracking.subject import *
 from eyetracking.entry import *
+from eyetracking.scanpath import *
 
 class Col():
 
@@ -29,6 +31,7 @@ class Experiment (ABC):
         self.expected_features = expected_features
         self.dataframe = None
         self.exp_name = os.path.basename(os.path.splitext(exp_name)[0])
+        self.path_images = None
 
     def processSubject(self, input_file: str, progress_bar = None) -> "Subject":
         subject = self.parseSubject(input_file, progress_bar)
@@ -244,6 +247,42 @@ class Experiment (ABC):
             (n_subject, subject_cat) = subject_data
             return Subject(self, self.n_trials, data, n_subject, subject_cat, progress)
 
+    def get_frame_color(self, trial):
+        return (0,0,0)
+
+    # Creates an image scanpath for one trial.
+    def scanpath(self, subject: Subject, trial, frequency : int):
+        plt.clf()
+
+        x_axis = self.screen_center[0] * 2
+        y_axis = self.screen_center[1] * 2
+        plt.axis([0, x_axis, 0, y_axis])
+        plt.gca().invert_yaxis()
+        plt.axis('off')
+
+        # Plotting image
+        # Valid if only one image to show
+        if self.path_images is not None:
+            image_name = os.path.join(
+                self.path_images,
+                trial.getStimulus().split('.')[0] + '.png'
+            )
+            image = None
+            if os.path.isfile(image_name):
+                image = plt.imread(image_name, format = 'png')
+
+        # depends on experiment
+        self.plotRegions(trial)
+
+        # For GazeContingent only
+        try: end_line = self.returnStopImageEntry(trial)
+        except AttributeError: end_line = None
+        # Plotting gaze positions
+        trial.plot(frequency, end_line)
+        image_name = 'exp_%s_subject_%i_%s_%i.png' % (self.exp_name, subject.id, "training" if trial.isTraining() else "trial", trial.id)
+        saveImage(getTmpFolder(), image_name)
+        return image_name
+
     ##########################################
     ############ Abstract methods ############
     ##########################################
@@ -272,11 +311,10 @@ class Experiment (ABC):
             Col.EYE: trial.eye,
         }
 
-    # Creates an image scanpath for one trial.
     @abstractmethod
-    def scanpath(self, subject : "Subject", trial : Trial, frequency : int) -> str:
+    def scanpathVideo(self, subject : "Subject", trial : Trial, frequency : int, progress = None) -> str:
         pass
 
     @abstractmethod
-    def scanpathVideo(self, subject : "Subject", trial : Trial, frequency : int, progress = None) -> str:
+    def plotRegions(self, trial):
         pass

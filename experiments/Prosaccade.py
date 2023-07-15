@@ -1,4 +1,3 @@
-import re #To format data lists
 from eyetracking.experiment import *
 from eyetracking.interest_region import *
 from eyetracking.scanpath import *
@@ -305,34 +304,20 @@ class Exp(Experiment):
                 data_modified.write(s)
         data_modified.close()
 
-    # Creates an image scanpath for one trial.
-    def scanpath(self, subject: Subject, trial, frequency : int):
-        plt.clf()
-
+    def get_frame_color(self, trial):
         if 'P' in trial.getStimulus()[0]:
-            frame_color = (0,1,0)
+            return (0,1,0)
         elif 'Neg' in trial.getStimulus()[:3]:
-            frame_color = (1,0,0)
-        else:
-            frame_color = (0,0,0)
+            return (1,0,0)
+        return (0,0,0)
 
-        x_axis = self.screen_center[0] * 2
-        y_axis = self.screen_center[1] * 2
-        plt.axis([0, x_axis, 0, y_axis])
-        plt.gca().invert_yaxis()
-        plt.axis('off')
-
-        # Plotting frames
+    # Creates an image scanpath for one trial.
+    def plotRegions(self, trial):
+        frame_color = self.get_frame_color(trial)
         if trial.features['target_side'] == 'Gauche':
             plotRegion(self.left, frame_color)
         elif trial.features['target_side'] == 'Droite':
             plotRegion(self.right, frame_color)
-
-        # Plotting gaze positions
-        trial.plot(frequency)
-        image_name = 'subject_%i_trial_%i.png' % (subject.id, trial.id)
-        saveImage(getTmpFolder(), image_name)
-        return image_name
 
     # Creates a video scanpath for one trial.
     def scanpathVideo(self, subject: Subject, trial, frequency : int, progress = None):

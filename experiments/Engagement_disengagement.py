@@ -164,37 +164,21 @@ class Exp(Experiment):
         else:
             self.dataframe = pd.concat([self.dataframe, df])
 
-    # Creates an image scanpath for one trial.
-    def scanpath(self, subject: Subject, trial, frequency : int):
-        plt.clf()
-
-        frame_emo = (1,0,0)
-        frame_target = (0,1,0)
-        frame_default = (0,0,0)
-
+    def get_frame_color(self, trial):
         if trial.features["trialType"] == TrialType.DISENGAGEMENT.value:
-            frame_color = frame_target
+            return (0,1,0)
         else:
-            frame_color = frame_emo
+            return (1,0,0)
 
-        x_axis = self.screen_center[0] * 2
-        y_axis = self.screen_center[1] * 2
-        plt.axis([0, x_axis, 0, y_axis])
-        plt.gca().invert_yaxis()
-        plt.axis('off')
-
+    # Creates an image scanpath for one trial.
+    def plotRegions(self, trial):
+        frame_color = self.get_frame_color(trial)
         if trial.features["trialType"] != TrialType.CONTROL.value:
             # Plotting frames
             plotRegion(self.frame_list[StimType.SCENE][trial.features["pos_frame"]], frame_color)
 
             other_frame = "440" if trial.features["pos_frame"] == "-440" else "-440"
-            plotRegion(self.frame_list[StimType.SCENE][other_frame], frame_default)
-
-        # Plotting gaze positions
-        trial.plot(frequency)
-        image_name = 'subject_%i_trial_%i.png' % (subject.id, trial.id)
-        saveImage(getTmpFolder(), image_name)
-        return image_name
+            plotRegion(self.frame_list[StimType.SCENE][other_frame], (0,0,0))
 
     # Creates a video scanpath for one trial.
     def scanpathVideo(self, subject: Subject, trial, frequency : int, progress = None):
