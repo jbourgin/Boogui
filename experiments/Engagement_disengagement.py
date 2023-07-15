@@ -78,6 +78,20 @@ class Exp(Experiment):
     def isTraining(self, trial) -> bool:
         return any(s in trial.features["stim_emo"] for s in ["training", "Training"])
 
+    def parseSubject(self, input_file : str, progress = None) -> Subject:
+        datafile = open(input_file, 'r')
+
+        #File conversion in list.
+        data = datafile.read()
+        data = list(data.splitlines())
+
+        #We add a tabulation and space separator.
+        data = [re.split('[\t ]+',line) for line in data]
+
+        n_subject = int(os.path.basename(os.path.splitext(input_file)[0]).split("_")[1])
+
+        return Subject(self, self.n_trials, data, n_subject, None, progress)
+
     ######################################################
     ############## End of Overriden methods ##############
     ######################################################
@@ -128,13 +142,13 @@ class Exp(Experiment):
 
         # Error :
         if not trial.isStartValid(self.screen_center, self.valid_distance_center)[0]:
-            error = "Not valid start"
+            error = ERROR.START_INVALID
         elif blink_category == 'early capture':
-            error = "Early blink"
+            error = ERROR.EARLY_BLINK
         elif first_fixation is None:
-            error = "No fixation"
+            error = ERROR.NO_FIXATION
         elif len(saccades) > 0 and saccades[0].getStartTime() - int(trial.features["start_wait_sac"]) < 60:
-            error = "Anticipation saccade"
+            error = ERROR.EARLY_SACCADE
         else:
             error = 0 if trial.features["correct"] == "1" else 1
 
@@ -162,6 +176,10 @@ class Exp(Experiment):
         else:
             self.dataframe = pd.concat([self.dataframe, df])
 
+    ######################################################
+    ###################### Plot data #####################
+    ######################################################
+
     # Get frame color (stim delimitation during scanpath plot)
     def getFrameColor(self, trial):
         if trial.features["trialType"] == TrialType.DISENGAGEMENT.value:
@@ -178,18 +196,3 @@ class Exp(Experiment):
 
             other_frame = "440" if trial.features["pos_frame"] == "-440" else "-440"
             plotRegion(self.frame_list[StimType.SCENE][other_frame], (0,0,0))
-
-
-    def parseSubject(self, input_file : str, progress = None) -> Subject:
-        datafile = open(input_file, 'r')
-
-        #File conversion in list.
-        data = datafile.read()
-        data = list(data.splitlines())
-
-        #We add a tabulation and space separator.
-        data = [re.split('[\t ]+',line) for line in data]
-
-        n_subject = int(os.path.basename(os.path.splitext(input_file)[0]).split("_")[1])
-
-        return Subject(self, self.n_trials, data, n_subject, None, progress)

@@ -19,6 +19,16 @@ class Col():
     EYE = "Eye"
     BLINK = "First blink type"
 
+class ERROR():
+
+    # Error type constants
+    START_INVALID = "No valid start"
+    EARLY_BLINK = "Early blink"
+    SHORT_SACCADE = "Short saccade"
+    EARLY_SACCADE = "Anticipation saccade"
+    MICRO_SACCADE = "Micro saccade"
+    NO_FIXATION = "No fixation"
+
 class ExperimentException(Exception):
     def __init__(self, message):
 
@@ -213,7 +223,6 @@ class Experiment (ABC):
 
         return None
 
-    # TODO: no need for abstract: factorize?
     def getSubjectData(self, line: str) -> Union[Tuple[int,str]]:
         try:
             l = re.split('[\t ]+', line)
@@ -246,6 +255,24 @@ class Experiment (ABC):
 
             (n_subject, subject_cat) = subject_data
             return Subject(self, self.n_trials, data, n_subject, subject_cat, progress)
+
+    #######################################
+    ############ Trial process ############
+    #######################################
+    def processTrial(self, subject : "Subject", trial : Trial) -> None:
+        logTrace ('Processing trial n°%i' % trial.id, Precision.DETAIL)
+
+        self.trial_dict = {
+            Col.SUBJID: "%i-E"%subject.id,
+            Col.GROUP: subject.group,
+            Col.TRIALID: trial.id,
+            Col.EYE: trial.eye,
+        }
+
+
+    #######################################
+    ############# Data plot ###############
+    #######################################
 
     # Draw base plot : create image with correct dimensions and plot images and regions (shared by video and image scanpath)
     def drawBasePlot(self, trial):
@@ -343,16 +370,6 @@ class Experiment (ABC):
         Returns a dictionary of experiment variables
         """
         pass
-
-    def processTrial(self, subject : "Subject", trial : Trial) -> None:
-        logTrace ('Processing trial n°%i' % trial.id, Precision.DETAIL)
-
-        self.trial_dict = {
-            Col.SUBJID: "%i-E"%subject.id,
-            Col.GROUP: subject.group,
-            Col.TRIALID: trial.id,
-            Col.EYE: trial.eye,
-        }
 
     @abstractmethod
     def plotRegions(self, trial):

@@ -133,15 +133,15 @@ class Exp(Experiment):
 
             # Error :
             if not trial.isStartValid(self.screen_center, self.valid_distance_center)[0]:
-                error = "No valid start"
+                error = ERROR.START_INVALID
             elif blink_category == 'early capture':
-                error = "Early blink"
+                error = ERROR.EARLY_BLINK
             elif SRT_real <= 80:
-                error = "Anticipation saccade"
+                error = ERROR.EARLY_SACCADE
             elif sac_duration < 22:
-                error = "Short saccade"
+                error = ERROR.SHORT_SACCADE
             elif sac_amplitude < self.valid_distance_center:
-                error = "Micro saccade"
+                error = ERROR.MICRO_SACCADE
             elif ((correct_position == 'Right'
                   and horizontal_gaze_position_end < self.screen_center[0])
                   or (correct_position == 'Left'
@@ -301,6 +301,10 @@ class Exp(Experiment):
                 s = ";".join([str(e) for e in new_line]) + "\n"
                 data_modified.write(s)
         data_modified.close()
+
+    ######################################################
+    ###################### Plot data #####################
+    ######################################################
 
     # Get frame color (stim delimitation during scanpath plot)
     def getFrameColor(self, trial):
