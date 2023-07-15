@@ -247,11 +247,8 @@ class Experiment (ABC):
             (n_subject, subject_cat) = subject_data
             return Subject(self, self.n_trials, data, n_subject, subject_cat, progress)
 
-    def get_frame_color(self, trial):
-        return (0,0,0)
-
-    # Creates an image scanpath for one trial.
-    def scanpath(self, subject: Subject, trial, frequency : int):
+    # Draw base plot : create image with correct dimensions and plot images and regions (shared by video and image scanpath)
+    def drawBasePlot(self, trial):
         plt.clf()
 
         x_axis = self.screen_center[0] * 2
@@ -274,14 +271,60 @@ class Experiment (ABC):
         # depends on experiment
         self.plotRegions(trial)
 
+    def getPlotName(self, trial, subject, extension):
+        return 'exp_%s_subject_%i_%s_%i.%s' % (self.exp_name, subject.id, "training" if trial.isTraining() else "trial", trial.id, extension)
+
+    # Creates an image scanpath for one trial.
+    def scanpath(self, subject: Subject, trial, frequency : int):
+        self.drawBasePlot(trial)
+
         # For GazeContingent only
         try: end_line = self.returnStopImageEntry(trial)
         except AttributeError: end_line = None
         # Plotting gaze positions
         trial.plot(frequency, end_line)
-        image_name = 'exp_%s_subject_%i_%s_%i.png' % (self.exp_name, subject.id, "training" if trial.isTraining() else "trial", trial.id)
+        image_name = self.getPlotName(trial, subject, "png")
         saveImage(getTmpFolder(), image_name)
         return image_name
+
+    # Creates a video scanpath for one trial.
+    def scanpathVideo(self, subject : "Subject", trial : Trial, frequency : int, progress = None) -> str:
+        n_elem_drawn = 20
+        point_list = trial.getGazePoints()
+        nb_points = len(point_list)
+        point_color = (1,1,0)
+
+        # Taking frequency into account
+        point_list_f = []
+        for i in range(0,len(point_list)-frequency,frequency):
+            point_list_f.append(point_list[i])
+
+        image_list = []
+
+        logTrace ('Creating video frames', Precision.NORMAL)
+
+        if progress != None:
+            progress.setText(0, 'Loading frames')
+            progress.setMaximum(0, len(point_list_f) - 1)
+
+        for elem in range(0,len(point_list_f)-1):
+            if progress != None:
+                progress.increment(0)
+            self.drawBasePlot(trial)
+
+            for j in range(max(0,elem-n_elem_drawn),elem+1):
+                plotSegment(point_list_f[j], point_list_f[j+1], c = point_color)
+            point_color = (1, point_color[1] - 1.0/nb_points , 0)
+
+            image_name = '%i.png' % elem
+            saveImage(getTmpFolder(), image_name)
+            image_list.append(joinPaths(getTmpFolder(), image_name))
+
+        vid_name = self.getPlotName(trial, subject, "avi")
+
+        progress.setText(0, 'Loading frames')
+        makeVideo(image_list, vid_name, fps=100/frequency)
+        return vid_name
 
     ##########################################
     ############ Abstract methods ############
@@ -310,10 +353,6 @@ class Experiment (ABC):
             Col.TRIALID: trial.id,
             Col.EYE: trial.eye,
         }
-
-    @abstractmethod
-    def scanpathVideo(self, subject : "Subject", trial : Trial, frequency : int, progress = None) -> str:
-        pass
 
     @abstractmethod
     def plotRegions(self, trial):

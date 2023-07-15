@@ -1,8 +1,6 @@
 import re #To format data lists
 from eyetracking.experiment import *
 from eyetracking.interest_region import *
-from eyetracking.scanpath import *
-import matplotlib.pyplot as plt
 import pandas as pd
 from PyQt5.QtWidgets import QApplication
 from enum import Enum
@@ -164,15 +162,16 @@ class Exp(Experiment):
         else:
             self.dataframe = pd.concat([self.dataframe, df])
 
-    def get_frame_color(self, trial):
+    # Get frame color (stim delimitation during scanpath plot)
+    def getFrameColor(self, trial):
         if trial.features["trialType"] == TrialType.DISENGAGEMENT.value:
             return (0,1,0)
         else:
             return (1,0,0)
 
-    # Creates an image scanpath for one trial.
+    # plot regions for image scanpath
     def plotRegions(self, trial):
-        frame_color = self.get_frame_color(trial)
+        frame_color = self.getFrameColor(trial)
         if trial.features["trialType"] != TrialType.CONTROL.value:
             # Plotting frames
             plotRegion(self.frame_list[StimType.SCENE][trial.features["pos_frame"]], frame_color)
@@ -180,65 +179,6 @@ class Exp(Experiment):
             other_frame = "440" if trial.features["pos_frame"] == "-440" else "-440"
             plotRegion(self.frame_list[StimType.SCENE][other_frame], (0,0,0))
 
-    # Creates a video scanpath for one trial.
-    def scanpathVideo(self, subject: Subject, trial, frequency : int, progress = None):
-        n_elem_drawn = 20
-        point_list = trial.getGazePoints()
-        nb_points = len(point_list)
-
-        point_color = (1,1,0)
-        frame_emo = (1,0,0)
-        frame_target = (0,1,0)
-        frame_default = (0,0,0)
-
-        if trial.features["trialType"] == TrialType.DISENGAGEMENT.value:
-            frame_color = frame_target
-        else:
-            frame_color = frame_emo
-
-        # Taking frequency into account
-        point_list_f = []
-        for i in range(0,len(point_list)-frequency,frequency):
-            point_list_f.append(point_list[i])
-
-        image_list = []
-
-        axis_x = self.screen_center[0]*2
-        axis_y = self.screen_center[1]*2
-
-        logTrace ('Creating video frames', Precision.NORMAL)
-
-        if progress != None:
-            progress.setText(0, 'Loading frames')
-            progress.setMaximum(0, len(point_list_f) - 1)
-
-        for elem in range(0,len(point_list_f)-1):
-            if progress != None:
-                progress.increment(0)
-            plt.clf()
-            ax = plt.axis([0,axis_x,0,axis_y])
-            plt.gca().invert_yaxis()
-            plt.axis('off')
-
-            for j in range(max(0,elem-n_elem_drawn),elem+1):
-                plotSegment(point_list_f[j], point_list_f[j+1], c = point_color)
-            point_color = (1, point_color[1] - 1.0/nb_points , 0)
-
-            # Plotting frames
-            plotRegion(self.frame_list[StimType.SCENE][trial.features["pos_frame"]], frame_color)
-
-            other_frame = "440" if trial.features["pos_frame"] == "-440" else "-440"
-            plotRegion(self.frame_list[StimType.SCENE][other_frame], frame_default)
-
-            image_name = '%i.png' % elem
-            saveImage(getTmpFolder(), image_name)
-            image_list.append(joinPaths(getTmpFolder(), image_name))
-
-        vid_name = 'subject_%i_trial_%s.avi' % (subject.id, trial.id)
-
-        progress.setText(0, 'Loading frames')
-        makeVideo(image_list, vid_name, fps=100/frequency)
-        return vid_name
 
     def parseSubject(self, input_file : str, progress = None) -> Subject:
         datafile = open(input_file, 'r')
