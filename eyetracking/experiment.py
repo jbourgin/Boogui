@@ -1,5 +1,7 @@
 import attr
 import re #To format data lists
+import pandas as pd
+import numpy as np
 from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt
 from typing import List, Dict, Union, Set
@@ -8,6 +10,7 @@ from eyetracking.utils import *
 from eyetracking.subject import *
 from eyetracking.entry import *
 from eyetracking.scanpath import *
+import itertools
 
 class Col():
 
@@ -28,6 +31,11 @@ class ERROR():
     MICRO_SACCADE = "Micro saccade"
     NO_FIXATION = "No fixation"
 
+class PROCESS():
+    MEAN = "Mean"
+    SD = "SD"
+    SORTING = "sorting"
+
 class ExperimentException(Exception):
     def __init__(self, message):
 
@@ -42,6 +50,8 @@ class Experiment (ABC):
         self.trial_dict = dict()
         self.exp_name = os.path.basename(os.path.splitext(exp_name)[0])
         self.path_images = None
+        self.IVs = []
+        self.DVs = []
 
     def processSubject(self, input_file: str, progress_bar = None) -> "Subject":
         subject = self.parseSubject(input_file, progress_bar)
@@ -271,11 +281,63 @@ class Experiment (ABC):
 
         self.updateDict(new_dict)
 
-    def updateDict(self, new_dict):
+    def updateDict(self, new_dict) -> None:
         updateListDict(self.trial_dict, new_dict)
 
-    def postProcess(self):
-        pass
+    # isEligibleTrial for filtering outliers
+    def isEligibleTrial(self, trial, DV) -> bool:
+        # Check that DV value is number
+        return isinstance(trial[DV], int) or isinstance(trial[DV], float) or (isinstance(trial[DV], str) and trial[DV].isnumeric())
+
+    def postProcess(self) -> None:
+        # No post process if no DV provided
+        if len(self.DVs) == 0:
+            logTrace('No DV provided for experiment %s : post process halted'%self.exp_name, Precision.NORMAL)
+            return
+
+        # Create all IV combinations (e.g., (Pos, 3), (Pos, 5), (Neg, 3), (Neg, 5))
+        IV_list = [[IVVal for IVVal in self.dataframe[IVCol].unique()] for IVCol in self.IVs]
+        IV_combinations = [p for p in itertools.product(*IV_list)]
+
+        # Init sorting columns
+        for DV in self.DVs:
+            self.dataframe['{0}_{1}'.format(DV, PROCESS.SORTING)] = ""
+
+        # For each subject
+        for subjID in self.dataframe[Col.SUBJID].unique():
+            subj_df = self.dataframe.loc[self.dataframe[Col.SUBJID] == subjID]
+
+            for IV_combination in IV_combinations:
+                # Successively filter for each IVVal (e.g., only negative trials, then only trials with 5 distractors, etc.)
+                combination_df = subj_df
+                for count, IVVal in enumerate(IV_combination):
+                    combination_df = combination_df.loc[combination_df[self.IVs[count]] == IVVal]
+                # For each dependent variable
+                for DV in self.DVs:
+                    # Dict to hold mean and SD for current DV
+                    IV_df = nested_dict()
+                    # Keep only eligible trials
+                    DV_df = [float(x[DV]) for x in combination_df.to_dict(orient='records') if self.isEligibleTrial(x, DV)]
+                    # Compute mean and standard deviation (nan versions ignore NaN)
+                    IV_df[IV_combination][PROCESS.MEAN] = np.nanmean(DV_df)
+                    IV_df[IV_combination][PROCESS.SD] = np.nanstd(DV_df)
+                    for row_num, row in combination_df.iterrows():
+                        # Default : normal
+                        row_status = "Normal {0} value".format(DV)
+                        if self.isEligibleTrial(row.to_dict(), DV):
+                            # Reverse order : 2 then 3. We need to do this in this order, since a value deviant by 3SDs will also be deviant by 2 (we would have no 3SDs deviant if we did it in decremental order)
+                            for nbSD in [2,3]:
+                                # Outlier
+                                if isOutlier(row[DV], IV_df[IV_combination][PROCESS.MEAN], IV_df[IV_combination][PROCESS.SD], nbSD):
+                                    row_status = "Deviant {0} {1} SD".format(DV, nbSD)
+                                    logTrace("{0} in a {1} trial exceeds {2} SD for subject {3} : {4}, mean: {5}, SD: {6}".format(DV, "-".join(IV_combination), nbSD, subjID, row[DV], IV_df[IV_combination][PROCESS.MEAN], IV_df[IV_combination][PROCESS.SD]), Precision.NORMAL)
+                        # Not eligible
+                        else:
+                            row_status = "{0} not relevant".format(DV)
+                        combination_df.at[row_num, '{0}_{1}'.format(DV, PROCESS.SORTING)] = row_status
+                # Put updated filtered df back to main self.dataframe
+                self.dataframe.loc[combination_df.index] = combination_df
+
 
     #######################################
     ############# Data plot ###############

@@ -2,6 +2,7 @@ from typing import Tuple
 from math import pow, sqrt
 import os, shutil
 from enum import Enum
+import collections
 
 #############################
 ############ Log ############
@@ -77,8 +78,14 @@ def loadExperiments():
 ######## Postprocess ########
 #############################
 
+# No longer used, replaced with numpy.nanstd
 def squareSum(score: float, global_mean: float):
     return (float(score) - global_mean)*(float(score) - global_mean)
+
+# Return true if val is outlier (far from mean by nbSD standard deviations, 3 by default)
+# val may be float or string convertible to float
+def isOutlier(val, mean, sd, nbSD=3) -> bool:
+    return float(val) < (mean-(nbSD*sd)) or float(val) > (mean+(nbSD*sd))
 
 #############################
 ############ IO #############
@@ -108,3 +115,6 @@ def createResultsFolder() -> None:
 
 def skip():
     1
+
+def nested_dict():
+    return collections.defaultdict(nested_dict)

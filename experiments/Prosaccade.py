@@ -35,6 +35,15 @@ class Exp(Experiment):
         self.right = RectangleRegion((self.screen_center[0]*1.5, self.screen_center[1]), self.half_width, self.half_height)
         self.left = RectangleRegion((self.screen_center[0]/2, self.screen_center[1]), self.half_width, self.half_height)
 
+        # For postProcess
+        self.IVs = [
+            PSCol.EMOTION
+        ]
+
+        self.DVs = [
+            PSCol.FIRST_RT
+        ]
+
     ###############################################
     ############## Overriden methods ##############
     ###############################################
@@ -172,129 +181,11 @@ class Exp(Experiment):
 
             self.updateDict(new_dict)
 
-    def postProcess(self, filename: str):
-        def initialize_variables(line):
-            d = dict()
-            d['subject_num'] = line[0]
-            d['emotion'] = line[5]
-            d['error'] = line[9]
-            d['blink'] = line[14]
-            try:
-                d['saccade'] = float(line[10])
-            except:
-                d['saccade'] = line[10]
-            try:
-                d['duration'] = float(line[13])
-            except:
-                d['duration'] = line[13]
-            return d
-
-        # In the first version, only saccade durations with a duration higher than 100 ms could be considered as deviant.
-        with open(filename) as datafile:
-            data = datafile.read()
-        data_modified = open(filename, 'w')
-        data = data.split('\n')
-        data = [x.split(';') for x in data]
-        subject = "Subject"
-        sequence = []
-        data_seq = []
-        list_scores = ['saccade', 'duration']
-
-        for line in data:
-            if line[0] == "Subject":
-                new_line = line
-                new_line.append('Saccade sorting')
-                new_line.append('Duration sorting')
-                s = ";".join([str(e) for e in new_line]) + "\n"
-                data_modified.write(s)
-            if line[0] != subject:
-                data_seq.append(sequence)
-                sequence = [line]
-                subject = line[0]
-            else:
-                sequence.append(line)
-        data = data_seq[1:]
-
-
-        for subject in data:
-            elements_list = {}
-            mean_dic = {}
-            square_dic = {}
-            SD_dic = {}
-            group = subject[0][1]
-            if group == "SJS":
-                pass
-            elif group == "SAS" or group == "MA":
-                pass
-            else:
-                raise ExperimentException('No appropriate group for subject %s' % subject[0][0])
-
-            for line in subject:
-                dic_variables = initialize_variables(line)
-                code = dic_variables['emotion']
-                if code not in elements_list:
-                    elements_list[code] = {}
-                    mean_dic[code] = {}
-                    for element in list_scores:
-                        elements_list[code][element] = []
-                        mean_dic[code][element] = None
-                if dic_variables['error'] == '0' and dic_variables['saccade'] != 'None' and "early" not in dic_variables['blink']:
-                    elements_list[code]['saccade'].append(dic_variables['saccade'])
-                    elements_list[code]['duration'].append(dic_variables['duration'])
-
-            for code in mean_dic:
-                for key in mean_dic[code]:
-                    if len(elements_list[code][key]) != 0:
-                        mean_dic[code][key] = sum(elements_list[code][key])/len(elements_list[code][key])
-
-            for line in subject:
-                dic_variables = initialize_variables(line)
-                code = dic_variables['emotion']
-                if code not in square_dic:
-                    square_dic[code] = {}
-                    SD_dic[code] = {}
-                    for element in list_scores:
-                        square_dic[code][element] = []
-                        SD_dic[code][element] = None
-                if dic_variables['error'] == "0" and dic_variables['saccade'] != "None" and "early" not in dic_variables['blink']:
-                    square_dic[code]['saccade'].append(squareSum(dic_variables['saccade'], mean_dic[code]['saccade']))
-                    square_dic[code]['duration'].append(squareSum(dic_variables['duration'], mean_dic[code]['duration']))
-
-                for code in SD_dic:
-                    for key in SD_dic[code]:
-                        if len(square_dic[code][key]) != 0:
-                            if len(square_dic[code][key]) > 1:
-                                SD_dic[code][key] = sqrt(sum(square_dic[code][key])/(len(square_dic[code][key])-1))
-                            else:
-                                SD_dic[code][key] = sqrt(sum(square_dic[code][key])/len(square_dic[code][key]))
-
-            for line in subject:
-                dic_variables = initialize_variables(line)
-                code = dic_variables['emotion']
-                new_line = line
-                for key in mean_dic[code]:
-                    if key == 'saccade':
-                        score = dic_variables['saccade']
-                    elif key == 'duration':
-                        score = dic_variables['duration']
-                    if SD_dic[code][key] != None and dic_variables['error'] == "0" and dic_variables['saccade'] != "None" and "early" not in dic_variables['blink']:
-                        current_mean = mean_dic[code][key]
-                        current_SD = SD_dic[code][key]
-                        if (float(score) > (float(current_mean) + 3*float(current_SD)) or float(score) < (float(current_mean) - 3*float(current_SD))):
-                                print(key, " in a ", code, " trial exceeds 3 SD for subject ", dic_variables['subject_num'], " : ",
-                                      str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
-                                new_line.append("Deviant %s 3 SD" %key)
-                        elif (float(score) > (float(current_mean) + 2*float(current_SD)) or float(score) < (float(current_mean) - 2*float(current_SD))):
-                                print(key, " in a ", code, " trial exceeds 2 SD for subject ", dic_variables['subject_num'], " : ",
-                                      str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
-                                new_line.append("Deviant %s 2 SD" %key)
-                        else:
-                            new_line.append("Normal %s value" %key)
-                    else:
-                        new_line.append("%s not relevant" %key)
-                s = ";".join([str(e) for e in new_line]) + "\n"
-                data_modified.write(s)
-        data_modified.close()
+    def isEligibleTrial(self, trial, DV):
+        if DV == PSCol.FIRST_RT:
+            # Exclude trials with no saccade and trials with error or non desired events (blink, anticipation, etc.)
+            return super().isEligibleTrial(trial, DV) and trial[PSCol.FIRST_RT] != None and trial[PSCol.ERR] == "0"
+        return True
 
     ######################################################
     ###################### Plot data #####################

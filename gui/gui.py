@@ -411,8 +411,8 @@ class Main(QMainWindow):
                         progress.increment(1)
                         subjectData.experiment.processTrial(subjectData.subject, trial)
                     subjectData.experiment.dataframe = pd.DataFrame.from_dict(subjectData.experiment.trial_dict)
+                    subjectData.experiment.postProcess()
                     subjectData.experiment.dataframe.to_csv(filename, index = False, compression = None, sep=";")
-                # self.getExperiment().postProcess(filename)
 
             except Exception as e:
                 raise Exception('Error while exporting to file %s: \n%s' % (filename, traceback.format_exc()))

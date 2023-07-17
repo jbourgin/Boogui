@@ -53,6 +53,17 @@ class Exp(Experiment):
             self.frame_list[stimType]["-440"] = RectangleRegion((self.screen_center[0]-440, self.screen_center[1]), self.half_width[stimType], self.half_height[stimType])
             self.frame_list[stimType]["440"]= RectangleRegion((self.screen_center[0]+440, self.screen_center[1]), self.half_width[stimType], self.half_height[stimType])
 
+        # For postProcess
+        self.IVs = [
+            EDCol.EMOTION,
+            EDCol.TRIALTYPE
+        ]
+
+        self.DVs = [
+            EDCol.FIRSTFIX,
+            EDCol.RT
+        ]
+
     ###############################################
     ############## Overriden methods ##############
     ###############################################
@@ -96,7 +107,6 @@ class Exp(Experiment):
     ######################################################
 
     def processTrial(self, subject: Subject, trial):
-        super().processTrial(subject, trial)
 
         if trial.saccades == []:
             logTrace ('Subject %i has no saccades at trial %i !' %(subject.id, trial.id), Precision.DETAIL)
@@ -112,6 +122,8 @@ class Exp(Experiment):
                 trial.features["stimType"] = StimType.FACE
             else:
                 trial.features["stimType"] = StimType.SCENE
+        # Do processTrial of parent after making sure that the trial will be considered
+        super().processTrial(subject, trial)
         target = self.frame_list[trial.features["stimType"]][trial.features["pos_frame"]]
 
         # Get all fixations that occurred on target only after wait for saccade toward frame begins
@@ -169,6 +181,12 @@ class Exp(Experiment):
         }
 
         self.updateDict(new_dict)
+
+    def isEligibleTrial(self, trial, DV):
+        if DV in [EDCol.FIRSTFIX, EDCol.RT]:
+            # Exclude trials with no saccade and trials with error or non desired events (blink, anticipation, etc.)
+            return super().isEligibleTrial(trial, DV) and trial[EDCol.FIRSTFIX] != None and (trial[EDCol.ERR] == "0" or trial[EDCol.ERR] == 0)
+        return True
 
     ######################################################
     ###################### Plot data #####################
