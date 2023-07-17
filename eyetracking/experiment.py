@@ -1,6 +1,5 @@
 import attr
 import re #To format data lists
-import pandas as pd
 from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt
 from typing import List, Dict, Union, Set
@@ -40,6 +39,7 @@ class Experiment (ABC):
     def __init__(self, expected_features: Set[str], exp_name):
         self.expected_features = expected_features
         self.dataframe = None
+        self.trial_dict = dict()
         self.exp_name = os.path.basename(os.path.splitext(exp_name)[0])
         self.path_images = None
 
@@ -262,13 +262,20 @@ class Experiment (ABC):
     def processTrial(self, subject : "Subject", trial : Trial) -> None:
         logTrace ('Processing trial n°%i' % trial.id, Precision.DETAIL)
 
-        self.trial_dict = {
+        new_dict = {
             Col.SUBJID: "%i-E"%subject.id,
             Col.GROUP: subject.group,
             Col.TRIALID: trial.id,
             Col.EYE: trial.eye,
         }
 
+        self.updateDict(new_dict)
+
+    def updateDict(self, new_dict):
+        updateListDict(self.trial_dict, new_dict)
+
+    def postProcess(self):
+        pass
 
     #######################################
     ############# Data plot ###############

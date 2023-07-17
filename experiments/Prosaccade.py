@@ -1,6 +1,5 @@
 from eyetracking.experiment import *
 from eyetracking.interest_region import *
-import pandas as pd
 from PyQt5.QtWidgets import QApplication
 
 class PSCol(Col):
@@ -170,13 +169,8 @@ class Exp(Experiment):
                 PSCol.BLINK: blink_category,
                 PSCol.THRESH: threshold_excess
             }
-            self.trial_dict.update(new_dict)
 
-            df = pd.DataFrame([self.trial_dict])
-            if self.dataframe is None:
-                self.dataframe = df
-            else:
-                self.dataframe = pd.concat([self.dataframe, df])
+            self.updateDict(new_dict)
 
     def postProcess(self, filename: str):
         def initialize_variables(line):

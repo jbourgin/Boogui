@@ -1,38 +1,12 @@
 from typing import Tuple
 from math import pow, sqrt
 import os, shutil
-
-# Type for points describing gaze positions on the screen.
-Point = Tuple[int,int]
-
-def distance(point1 : Point, point2 : Point) -> float:
-    return sqrt(pow(point2[0]-point1[0],2) + pow(point2[1] - point1[1],2))
-
-def joinPaths(path1: str, path2: str) -> str:
-    return os.path.join(path1, path2)
-
-def squareSum(score: float, global_mean: float):
-    return (float(score) - global_mean)*(float(score) - global_mean)
-
-def getTmpFolder() -> str:
-    return '_tmp'
-
-def clearTmpFolder() -> None:
-    folder = getTmpFolder()
-    shutil.rmtree('%s' % (getTmpFolder()), ignore_errors=True)
-
-def createTmpFolder() -> None:
-    if not os.path.exists(getTmpFolder()):
-        os.makedirs(getTmpFolder())
-
-def getResultsFolder() -> str:
-    return '_results'
-
-def createResultsFolder() -> None:
-    if not os.path.exists(getResultsFolder()):
-        os.makedirs(getResultsFolder())
-
 from enum import Enum
+
+#############################
+############ Log ############
+#############################
+
 class Precision(Enum):
     TITLE = 0
     INPUT = 1
@@ -51,8 +25,31 @@ def logTrace(message, precision):
     if precision.value <= precision_level:
         print_trace(message, precision)
 
-def skip():
-    1
+
+#############################
+# Interest regions and plot #
+#############################
+
+# Type for points describing gaze positions on the screen.
+Point = Tuple[int,int]
+
+def distance(point1 : Point, point2 : Point) -> float:
+    return sqrt(pow(point2[0]-point1[0],2) + pow(point2[1] - point1[1],2))
+
+def joinPaths(path1: str, path2: str) -> str:
+    return os.path.join(path1, path2)
+
+#############################
+###### Data management ######
+#############################
+
+# ref_dict is a dict which every key refers to a list. If key of new_dict already exists in ref_dict, we update the already existing list. Else we create a new list with first element being value from new_dict.
+def updateListDict(ref_dict, new_dict):
+    for key, value in new_dict.items():
+        if key in ref_dict:
+            ref_dict[key].append(value)
+        else:
+            ref_dict[key] = [value]
 
 def loadExperiments():
     """
@@ -75,3 +72,39 @@ def loadExperiments():
         klass = getattr(mod, 'Exp')
         experiments[filename] = klass()
     return experiments
+
+#############################
+######## Postprocess ########
+#############################
+
+def squareSum(score: float, global_mean: float):
+    return (float(score) - global_mean)*(float(score) - global_mean)
+
+#############################
+############ IO #############
+#############################
+
+def getTmpFolder() -> str:
+    return '_tmp'
+
+def clearTmpFolder() -> None:
+    folder = getTmpFolder()
+    shutil.rmtree('%s' % (getTmpFolder()), ignore_errors=True)
+
+def createTmpFolder() -> None:
+    if not os.path.exists(getTmpFolder()):
+        os.makedirs(getTmpFolder())
+
+def getResultsFolder() -> str:
+    return '_results'
+
+def createResultsFolder() -> None:
+    if not os.path.exists(getResultsFolder()):
+        os.makedirs(getResultsFolder())
+
+#############################
+####### Miscellaneous #######
+#############################
+
+def skip():
+    1

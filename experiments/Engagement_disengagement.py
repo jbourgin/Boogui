@@ -1,7 +1,6 @@
 import re #To format data lists
 from eyetracking.experiment import *
 from eyetracking.interest_region import *
-import pandas as pd
 from PyQt5.QtWidgets import QApplication
 from enum import Enum
 
@@ -168,13 +167,8 @@ class Exp(Experiment):
             EDCol.FAILED: trial.features["failed_trial"],
             EDCol.BLINK: blink_category
         }
-        self.trial_dict.update(new_dict)
 
-        df = pd.DataFrame([self.trial_dict])
-        if self.dataframe is None:
-            self.dataframe = df
-        else:
-            self.dataframe = pd.concat([self.dataframe, df])
+        self.updateDict(new_dict)
 
     ######################################################
     ###################### Plot data #####################

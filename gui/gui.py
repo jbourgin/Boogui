@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtMultimedia import*
 from PyQt5.QtCore import *
+import pandas as pd
 
 from eyetracking.subject import Subject
 from eyetracking.utils import *
@@ -273,7 +274,9 @@ class Main(QMainWindow):
         sound.play()
         reply = messagebox.exec_()
         if reply == QMessageBox.Yes:
+            # Reset
             self.experiment.dataframe = None
+            self.experiment.trial_dict = dict()
             self.subject_datas = []
             self.subject_buttons = QButtonGroup()
             self.subject_buttons.setExclusive(True)
@@ -407,6 +410,7 @@ class Main(QMainWindow):
                     for trial in subjectData.subject.trials:
                         progress.increment(1)
                         subjectData.experiment.processTrial(subjectData.subject, trial)
+                    subjectData.experiment.dataframe = pd.DataFrame.from_dict(subjectData.experiment.trial_dict)
                     subjectData.experiment.dataframe.to_csv(filename, index = False, compression = None, sep=";")
                 # self.getExperiment().postProcess(filename)
 
