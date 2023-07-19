@@ -1,4 +1,3 @@
-import re #To format data lists
 from eyetracking.experiment import *
 from eyetracking.interest_region import *
 from eyetracking.scanpath import *
@@ -6,29 +5,52 @@ import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import QApplication
 from matplotlib.offsetbox import OffsetImage
 
+class GCCol(Col):
+    # Specific columns
+    FIRSTFIX = "First time on eyes"
+    TOTAL_EYE = "Total fixation time on eyes"
+    TOTAL_FACE = "Total fixation time on face (other than eyes)"
+    TOTAL_FIX = "Total fixation time on image (used for percentage computation)"
+    PERCENT_EYE = "Percent time on eyes"
+    PERCENT_FACE = "Percent time on face"
+    FIRST_AREA = "First area looked (1 for eyes)"
+
 class Exp(Experiment):
 
     def __init__(self):
-        super().__init__({'training', 'session', 'global_task', 'emotion', 'gender', 'target_side', 'response', 'cor_resp', 'response_time'})
+        super().__init__({'training', 'session', 'global_task', 'emotion', 'gender', 'target_side', 'response', 'cor_resp', 'response_time'}, __file__)
         self.n_trials = 96
         # Center of the screen.
         self.screen_center = (683,384)
         # Minimal distance at which we consider the subject is looking at the
         # fixation cross at the trial beginning
-        self.valid_distance_center = 220 #3 degres of visual angle 95 (+ marge)
+        self.valid_distance_center = 150 #3 degres of visual angle 95 (+ marge)
 
         # Initializing regions of interest
         self.half_width = 210 #200
         self.half_height_face = 278 #268
-        self.half_height_eye = 52 #45
+        self.half_height_eye = 60 #45 # Increase a little for imprecision
+
+        self.path_images = "D:/Utilisateurs/bourginj/Ingé/ATEMMA/230704 Manip IRMf/images/All"
 
         # frames
-        self.right_gaze = RectangleRegion((self.screen_center[0]*(1+1/3), self.screen_center[1]-10), self.half_width, self.half_height_eye)
-        self.left_gaze = RectangleRegion((self.screen_center[0]-(self.screen_center[0]/3), self.screen_center[1]-10), self.half_width, self.half_height_eye)
+        self.right_gaze = RectangleRegion((self.screen_center[0]*(1+1/3), self.screen_center[1]), self.half_width, self.half_height_eye)
+        self.left_gaze = RectangleRegion((self.screen_center[0]-(self.screen_center[0]/3), self.screen_center[1]), self.half_width, self.half_height_eye)
         self.right_ellipse = EllipseRegion((self.screen_center[0]*(1+1/3), self.screen_center[1]), self.half_width, self.half_height_face)
         self.left_ellipse = EllipseRegion((self.screen_center[0]-(self.screen_center[0]/3), self.screen_center[1]), self.half_width, self.half_height_face)
         self.right_face = DifferenceRegion(self.right_ellipse, self.right_gaze)
         self.left_face = DifferenceRegion(self.left_ellipse, self.left_gaze)
+
+        # For postProcess
+        self.IVs = [
+            Col.EMOTION,
+            Col.TASK
+        ]
+
+        self.DVs = [
+            Col.RT,
+            GCCol.TOTAL_FIX
+        ]
 
     ###############################################
     ############## Overriden methods ##############
@@ -64,6 +86,12 @@ class Exp(Experiment):
                 pass
         return None
 
+    def isResponse(self, line: Line) -> bool :
+        return len(line) >= 5 and 'responded' in line[4]
+
+    def isTraining(self, trial) -> bool:
+        return 'Training' in trial.features['training']
+
     def parseMessage(self, line: List[str]):
         if len(line) > 6 and line[4] == "showing":
             try:
@@ -73,12 +101,6 @@ class Exp(Experiment):
             except:
                 pass
         return None
-
-    def isResponse(self, line: Line) -> bool :
-        return len(line) >= 5 and 'responded' in line[4]
-
-    def isTraining(self, trial) -> bool:
-        return 'Training' in trial.features['training']
 
     ######################################################
     ############## End of Overriden methods ##############
@@ -91,370 +113,130 @@ class Exp(Experiment):
         return None
 
     def processTrial(self, subject: Subject, trial, filename = None):
-        super().__init__(self, subject, trial)
-        if trial.discarded:
-            s = [str(subject.id) + "-E", # Subject name
-                subject.group,
-                trial.id,
-                trial.features['session'],
-                trial.features['training'],
-                trial.features['global_task'],
-                trial.eye,
-                trial.features['emotion'],
-                trial.features['gender'],
-                trial.getStimulus().split('.')[0],
-                trial.features['target_side'],
-                trial.features['cor_resp'],
-                trial.features['response'],
-                '1' if trial.features['cor_resp'] != trial.features['response'] else '0',
-                trial.features['response_time'],
-                'DISCARDED'
-            ]
-        else:
-            print("Subject %i, trial %i" %(subject.id, trial.id))
-            #if len(line) >= 5 and 'response' in line[3] and 'screen' in line[4]:
-            start_trial_time = trial.getStartTrial().getTime()
+        super().processTrial(subject, trial)
+        start_trial_time = trial.getStartTrial().getTime()
 
-            if trial.saccades == []:
-                logTrace ("Subject %i has no saccades at trial %i !" %(subject.id, trial.id), Precision.DETAIL)
-                first_saccade = None
-            else:
-                first_saccade = trial.saccades[0].getStartTimeFromStartTrial()
+        if trial.saccades == []:
+            logTrace ("Subject %i has no saccades at trial %i !" %(subject.id, trial.id), Precision.DETAIL)
+            return
+        first_saccade = trial.saccades[0].getStartTimeFromStartTrial()
 
-            if trial.features['target_side'] == 'Left':
-                eye_position = self.left_gaze
-                face_position = self.left_face
-                start_point = (self.screen_center[0]*(1+1/3), self.screen_center[1]+150)
-            elif trial.features['target_side'] == 'Right':
-                eye_position = self.right_gaze
-                face_position = self.right_face
-                start_point = (self.screen_center[0]-(self.screen_center[0]/3), self.screen_center[1]+150)
-            regions = InterestRegionList([eye_position, face_position])
-
-            targetname = trial.getStimulus()
-            targetname = targetname.split('.')[0]
-
-            end_line = self.returnStopImageEntry(trial)
-
-            response_entry = trial.getResponse()
-
-            region_fixations = trial.getFixationTime(regions, eye_position, end_line)
-
-            # First and last good fixations
-            try:
-                print(region_fixations)
-                for fixation in region_fixations:
-                    print(fixation.on_target)
-                    print(fixation.region)
-                first_fixation = next(fixation for fixation in region_fixations)
-                if first_fixation.on_target:
-                    first_area = 1
-                else:
-                    first_area = 0
-            except:
-                first_fixation = None
-                first_area = None
-            try:
-                first_good_fixation = next(fixation for fixation in region_fixations if fixation.on_target)
-                capture_delay_first = first_good_fixation.getStartTimeFromStartTrial()
-            except:
-                first_good_fixation = None
-                capture_delay_first = None
-
-            # Time on target and distractors
-            total_eye_fixation_time = sum(x.duration() for x in region_fixations if x.on_target)
-            # if total_eye_fixation_time == 0:
-            #     total_eye_fixation_time = None
-            total_faceNotEye_fixation_time = sum(x.duration() for x in region_fixations if not x.on_target)
-            total_fixation_time = total_eye_fixation_time + total_faceNotEye_fixation_time
-            if total_fixation_time != 0:
-                percent_eye = total_eye_fixation_time/total_fixation_time*100
-                percent_face = total_faceNotEye_fixation_time/total_fixation_time*100
-            else:
-                percent_eye = None
-                percent_face = None
-            # if total_faceNotEye_fixation_time == 0:
-            #     total_faceNotEye_fixation_time = None
-
-            # Determining blink category
-            if trial.blinks == []:
-                blink_category = "No blink"
-            else:
-                if region_fixations != []:
-                    if trial.blinks[0].getStartTime() < region_fixations[0].getStartTime():
-                        blink_category = "early capture"
-                    else:
-                        blink_category = "late"
-                else:
-                    blink_category = None
-
-            # Error :
-
-            if not trial.isStartValid(start_point, self.valid_distance_center)[0]:
-                 error = "Not valid start"
-            elif trial.features['response'] == 'None':
-                error = "No subject response"
-            elif total_fixation_time < 2000:
-                error = "Low fixation time"
-            elif blink_category == 'early capture':
-                error = "Early blink"
-            elif first_fixation is None:
-                error = "No fixation"
-            elif first_saccade < 50:
-                error = "Anticipation saccade"
-            # elif first_saccade > 700:
-            #     error = "Saccade too long"
-            else:
-                if trial.features['cor_resp'] != trial.features['response']:
-                    error = '1'
-                else:
-                    error = '0'
-
-            # Writing data in result csv file
-            s = [str(subject.id) + "-E", # Subject name
-                subject.group,
-                trial.id,
-                trial.features['session'],
-                trial.features['training'],
-                trial.features['global_task'],
-                trial.eye,
-                trial.features['emotion'],
-                trial.features['gender'],
-                targetname,
-                trial.features['target_side'],
-                trial.features['cor_resp'],
-                trial.features['response'],
-                error,
-                trial.features['response_time'],
-                trial.isStartValid(start_point, self.valid_distance_center)[1],
-                capture_delay_first,
-                total_eye_fixation_time,
-                total_faceNotEye_fixation_time,
-                str(percent_eye).replace('.',','),
-                str(percent_face).replace('.',','),
-                blink_category,
-                total_fixation_time,
-                first_saccade,
-                first_area]
-
-        if filename is None:
-            f = open(getResultsFile(), 'a')
-        else:
-            f = open(filename, 'a')
-        f.write(';'.join([str(x) for x in s]))
-        f.write('\n')
-        f.close()
-
-    def postProcess(self, filename: str):
-        def initialize_variables(line):
-            d = dict()
-            d['subject_num'] = line[0]
-            d['emotion'] = line[7]
-            d['task'] = line[5]
-            d['blink'] = line[21]
-            d['error'] = line[13]
-            try:
-                d['response_time'] = float(line[14])
-            except:
-                d['response_time'] = line[14]
-            try:
-                d['first_saccade'] = float(line[23])
-            except:
-                d['first_saccade'] = line[23]
-            try:
-                d['total_fixation_time'] = float(line[22])
-            except:
-                d['total_fixation_time'] = line[22]
-            return d
-
-        with open(filename) as datafile:
-            data = datafile.read()
-        data_modified = open(filename, 'w')
-        data = data.split('\n')
-        data = [x.split(';') for x in data]
-        subject = "Subject"
-        sequence = []
-        data_seq = []
-        list_scores = ['first_saccade', 'response_time', 'total_fixation_time']
-
-        lines_error = []
-        for line in data:
-            if len(line) >= 16 and line[15] == 'DISCARDED':
-                lines_error.append(line)
-                continue
-            if line[0] == "Subject":
-                new_line = line
-                new_line.append('First saccade sorting')
-                new_line.append('Response time sorting')
-                new_line.append('Total image sorting')
-                s = ";".join([str(e) for e in new_line]) + "\n"
-                data_modified.write(s)
-            if line[0] != subject:
-                data_seq.append(sequence)
-                sequence = [line]
-                subject = line[0]
-            else:
-                sequence.append(line)
-        data = data_seq[1:]
-
-        for subject in data:
-            elements_list = {}
-            mean_dic = {}
-            square_dic = {}
-            SD_dic = {}
-            group = subject[0][1]
-            if group == "YA":
-                pass
-            elif group == "SAS" or group == "MA":
-                pass
-            else:
-                raise ExperimentException('No appropriate group for subject %s' % subject[0][0])
-
-            for line in subject:
-                dic_variables = initialize_variables(line)
-                code = dic_variables['task'] + dic_variables['emotion']
-                if code not in elements_list:
-                    elements_list[code] = {}
-                    mean_dic[code] = {}
-                    for element in list_scores:
-                        elements_list[code][element] = []
-                        mean_dic[code][element] = None
-                if dic_variables['first_saccade'] != 'None' and "early" not in dic_variables['blink'] and dic_variables["error"] == "0":
-                    elements_list[code]['first_saccade'].append(dic_variables['first_saccade'])
-                if dic_variables['response_time'] != 'None' and "early" not in dic_variables['blink'] and dic_variables["error"] == "0":
-                    elements_list[code]['response_time'].append(dic_variables['response_time'])
-                if dic_variables['total_fixation_time'] != 'None' and "early" not in dic_variables['blink'] and dic_variables["error"] == "0":
-                    elements_list[code]['total_fixation_time'].append(dic_variables['total_fixation_time'])
-
-            for code in mean_dic:
-                for key in mean_dic[code]:
-                    if len(elements_list[code][key]) != 0:
-                        mean_dic[code][key] = sum(elements_list[code][key])/len(elements_list[code][key])
-
-            for line in subject:
-                dic_variables = initialize_variables(line)
-                code = dic_variables['task'] + dic_variables['emotion']
-                if code not in square_dic:
-                    square_dic[code] = {}
-                    SD_dic[code] = {}
-                    for element in list_scores:
-                        square_dic[code][element] = []
-                        SD_dic[code][element] = None
-                if dic_variables['first_saccade'] != 'None' and "early" not in dic_variables['blink'] and dic_variables["error"] == "0":
-                    square_dic[code]['first_saccade'].append(squareSum(dic_variables['first_saccade'], mean_dic[code]['first_saccade']))
-                if dic_variables['response_time'] != 'None' and "early" not in dic_variables['blink'] and dic_variables["error"] == "0":
-                    square_dic[code]['response_time'].append(squareSum(dic_variables['response_time'], mean_dic[code]['response_time']))
-                if dic_variables['total_fixation_time'] != 'None' and "early" not in dic_variables['blink'] and dic_variables["error"] == "0":
-                    square_dic[code]['total_fixation_time'].append(squareSum(dic_variables['total_fixation_time'], mean_dic[code]['total_fixation_time']))
-
-                for code in SD_dic:
-                    for key in SD_dic[code]:
-                        if len(square_dic[code][key]) != 0:
-                            if len(square_dic[code][key]) > 1:
-                                SD_dic[code][key] = sqrt(sum(square_dic[code][key])/(len(square_dic[code][key])-1))
-                            else:
-                                SD_dic[code][key] = sqrt(sum(square_dic[code][key])/len(square_dic[code][key]))
-
-            for line in subject:
-                dic_variables = initialize_variables(line)
-                code = dic_variables['task'] + dic_variables['emotion']
-                new_line = line
-                for key in mean_dic[code]:
-                    if key == 'first_saccade':
-                        score = dic_variables['first_saccade']
-                    elif key == 'response_time':
-                        score = dic_variables['response_time']
-                    elif key == 'total_fixation_time':
-                        score = dic_variables['total_fixation_time']
-                    # print(key)
-                    # print(score)
-                    if SD_dic[code][key] != None and dic_variables['error'] == "0" and score != "None" and score != "" and "early" not in dic_variables['blink'] and dic_variables["error"] == "0":
-                        current_mean = mean_dic[code][key]
-                        current_SD = SD_dic[code][key]
-                        if (float(score) > (float(current_mean) + 3*float(current_SD)) or float(score) < (float(current_mean) - 3*float(current_SD))):
-                                print(key, " in a ", dic_variables['emotion'], " trial exceeds 3 SD for subject ", dic_variables['subject_num'], " : ",
-                                      str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
-                                new_line.append("Deviant %s 3 SD" %key)
-                        elif (float(score) > (float(current_mean) + 2*float(current_SD)) or float(score) < (float(current_mean) - 2*float(current_SD))):
-                                print(key, " in a ", dic_variables['emotion'], " trial exceeds 2 SD for subject ", dic_variables['subject_num'], " : ",
-                                      str(score), ", mean: ", str(current_mean), ", SD: ", str(current_SD))
-                                new_line.append("Deviant %s 2 SD" %key)
-                        else:
-                            new_line.append("Normal %s value" %key)
-                    else:
-                        new_line.append("%s not relevant" %key)
-                s = ";".join([str(e) for e in new_line]) + "\n"
-                data_modified.write(s)
-        for line in lines_error:
-            data_modified.write(';'.join(line) + '\n')
-        data_modified.close()
-
-    @staticmethod
-    def getDefaultResultsFile():
-        return joinPaths(getResultsFolder(), 'gaze_contingent.csv')
-
-    @staticmethod
-    def makeResultFile() -> None:
-        createResultsFolder()
-        Gaze_contingent.makeResultFile(getDefaultResultsFile)
-
-    @staticmethod
-    def makeResultFile(filename: str) -> None:
-        f = open(filename, 'w')
-        f.write(';'.join([
-            'Subject',
-            'Group',
-            'TrialID',
-            'Session',
-            'Training',
-            'Task',
-            'Eye',
-            'Emotion',
-            'Gender',
-            'TargetName',
-            'TargetSide',
-            'Correct response',
-            'Response',
-            'Errors',
-            'Response time',
-            'First gaze position',
-            'First time on eyes',
-            'Total fixation time on eyes',
-            'Total fixation time on face (other than eyes)',
-            'Percent time on eyes',
-            'Percent time on face',
-            'First blink type',
-            'Total fixation time on image',
-            'First saccade',
-            'First area looked (1 for eyes)'
-        ]))
-        f.write('\n')
-        f.close()
-
-
-    # Creates an image scanpath for one trial.
-    def scanpath(self, subject: Subject, trial, frequency : int):
-        plt.clf()
+        if trial.features['target_side'] == 'Left':
+            eye_position = self.left_gaze
+            face_position = self.left_face
+            start_point = (self.screen_center[0]*(1+1/3), self.screen_center[1]+150)
+        elif trial.features['target_side'] == 'Right':
+            eye_position = self.right_gaze
+            face_position = self.right_face
+            start_point = (self.screen_center[0]-(self.screen_center[0]/3), self.screen_center[1]+150)
+        regions = InterestRegionList([eye_position, face_position])
 
         end_line = self.returnStopImageEntry(trial)
 
-        frame_color = (0,0,0)
-        x_axis = self.screen_center[0] * 2
-        y_axis = self.screen_center[1] * 2
-        plt.axis([0, x_axis, 0, y_axis])
-        plt.gca().invert_yaxis()
-        plt.axis('off')
+        response_entry = trial.getResponse()
 
-        # Plotting image
-        image_name = os.path.join(
-            'D:\\ATEMMA\\Task\\',
-            trial.getStimulus().split('.')[0] + '.png'
-        )
-        image = None
-        if os.path.isfile(image_name):
-            image = plt.imread(image_name, format = 'png')
+        region_fixations = trial.getFixationTime(regions, eye_position, end_line)
+
+        # First and last good fixations
+        try:
+            # Fixations on eye region
+            first_fixation = next(fixation for fixation in region_fixations)
+            if first_fixation.on_target:
+                first_area = 1
+            else:
+                first_area = 0
+        except:
+            first_fixation = None
+            first_area = None
+        try:
+            first_good_fixation = next(fixation for fixation in region_fixations if fixation.on_target)
+            capture_delay_first = first_good_fixation.getStartTimeFromStartTrial()
+        except:
+            first_good_fixation = None
+            capture_delay_first = None
+
+        # Time on target and distractors
+        total_eye_fixation_time = sum(x.duration() for x in region_fixations if x.on_target)
+        total_faceNotEye_fixation_time = sum(x.duration() for x in region_fixations if not x.on_target)
+        total_fixation_time = total_eye_fixation_time + total_faceNotEye_fixation_time
+        if total_fixation_time != 0:
+            percent_eye = total_eye_fixation_time/total_fixation_time*100
+            percent_face = total_faceNotEye_fixation_time/total_fixation_time*100
+        else:
+            percent_eye = None
+            percent_face = None
+
+        # Determining blink category
+        if trial.blinks == []:
+            blink_category = BLINK.NO
+        else:
+            if region_fixations != []:
+                if trial.blinks[0].getStartTime() < region_fixations[0].getStartTime():
+                    blink_category = BLINK.EARLY
+                else:
+                    blink_category = BLINK.LATE
+            else:
+                blink_category = None
+
+        # Error :
+
+        if not trial.isStartValid(start_point, self.valid_distance_center)[0]:
+             error = ERROR.START_INVALID
+        elif trial.features['response'] == 'None':
+            error = ERROR.NO_RESPONSE
+        elif total_fixation_time < 2000:
+            error = ERROR.SHORT_FIXATION
+        elif blink_category == BLINK.EARLY:
+            error = ERROR.EARLY_BLINK
+        elif first_fixation is None:
+            error = ERROR.NO_FIXATION
+        elif first_saccade < 50:
+            error = ERROR.EARLY_SACCADE
+        else:
+            if trial.features['cor_resp'] != trial.features['response']:
+                error = 1
+            else:
+                error = 0
+
+        # Compiling data in trial_dict
+        new_dict = {
+            Col.TRAINING: trial.isTraining(),
+            Col.SESSION: trial.features['session'],
+            Col.TASK: trial.features['global_task'],
+            Col.EMOTION: trial.features['emotion'],
+            Col.GENDER: trial.features['gender'],
+            Col.TARGET: trial.getStimulus().split('.')[0],
+            Col.TARGET_POS: trial.features['target_side'],
+            Col.COR_RESP: trial.features['cor_resp'],
+            Col.RESP: trial.features['response'],
+            Col.ERR: error,
+            Col.RT: trial.features['response_time'],
+            GCCol.FIRSTFIX: capture_delay_first,
+            GCCol.TOTAL_EYE: total_eye_fixation_time,
+            GCCol.TOTAL_FACE: total_faceNotEye_fixation_time,
+            GCCol.TOTAL_FIX: total_fixation_time,
+            GCCol.PERCENT_EYE: percent_eye,
+            GCCol.PERCENT_FACE: percent_face,
+            Col.BLINK: blink_category,
+            GCCol.FIRST_AREA: first_area
+        }
+
+        self.updateDict(new_dict)
+
+    def isEligibleTrial(self, trial, DV):
+        return super().isEligibleTrial(trial, DV) and trial[DV] != "None" and (trial[Col.ERR] == "0" or trial[Col.ERR] == 0)
+
+
+    ######################################################
+    ###################### Plot data #####################
+    ######################################################
+
+    # plot regions for image scanpath
+    def plotRegions(self, trial, image):
+        frame_color = self.getFrameColor(trial)
         img_width = self.half_width
         img_height = self.half_height_face
+
         # Plotting frames
         if trial.features['target_side'] == 'Left':
             if image is not None:
@@ -476,125 +258,3 @@ class Exp(Experiment):
                 ])
             plotRegion(self.right_ellipse, frame_color)
             plotRegion(self.right_gaze, frame_color)
-
-        # Plotting gaze positions
-        trial.plot(frequency, end_line)
-        if trial.isTraining():
-            image_name = 'subject_%i_training_%i.png' % (subject.id, trial.id)
-        else:
-            image_name = 'subject_%i_trial_%i.png' % (subject.id, trial.id)
-        saveImage(getTmpFolder(), image_name)
-        return image_name
-
-    # Creates a video scanpath for one trial.
-    def scanpathVideo(self, subject: Subject, trial, frequency : int, progress = None):
-        n_elem_drawn = 20
-        end_line = self.returnStopImageEntry(trial)
-        point_list = trial.getGazePoints(end_line)
-        nb_points = len(point_list)
-        frame_color = (0,0,0)
-        point_color = (1,1,0)
-
-        # Plotting image
-        image_name = os.path.join(
-            'D:\\ATEMMA\\Task\\',
-            trial.getStimulus().split('.')[0] + '.png'
-        )
-        image = None
-        if os.path.isfile(image_name):
-            image = plt.imread(image_name, format = 'png')
-        img_width = self.half_width
-        img_height = self.half_height_face
-
-        # Taking frequency into account
-        point_list_f = []
-        for i in range(0,len(point_list)-frequency,frequency):
-            point_list_f.append(point_list[i])
-
-        image_list = []
-
-        axis_x = self.screen_center[0]*2
-        axis_y = self.screen_center[1]*2
-
-        logTrace ('Creating video frames', Precision.NORMAL)
-
-        if progress != None:
-            progress.setText(0, 'Loading frames')
-            progress.setMaximum(0, len(point_list_f) - 1)
-
-        for elem in range(0,len(point_list_f)-1):
-            if progress != None:
-                progress.increment(0)
-            plt.clf()
-            plt.axis([0,axis_x,0,axis_y])
-            plt.gca().invert_yaxis()
-            plt.axis('off')
-
-            for j in range(max(0,elem-n_elem_drawn),elem+1):
-                plotSegment(point_list_f[j], point_list_f[j+1], c = point_color)
-            point_color = (1, point_color[1] - 1.0/nb_points , 0)
-
-            if trial.features['target_side'] == 'Left':
-                if image is not None:
-                    plt.imshow(image, extent=[
-                        self.left_ellipse.center[0] - img_width,
-                        self.left_ellipse.center[0] + img_width,
-                        self.left_ellipse.center[1] + img_height,
-                        self.left_ellipse.center[1] - img_height
-                    ])
-                # plotRegion(self.left_ellipse, frame_color)
-                # plotRegion(self.left_gaze, frame_color)
-            elif trial.features['target_side'] == 'Right':
-                if image is not None:
-                    plt.imshow(image, extent=[
-                        self.left_ellipse.center[0] - img_width,
-                        self.left_ellipse.center[0] + img_width,
-                        self.left_ellipse.center[1] + img_height,
-                        self.left_ellipse.center[1] - img_height
-                    ])
-                # plotRegion(self.right_ellipse, frame_color)
-                # plotRegion(self.right_gaze, frame_color)
-
-            image_name = '%i.png' % elem
-            saveImage(getTmpFolder(), image_name)
-            image_list.append(joinPaths(getTmpFolder(), image_name))
-        if trial.isTraining():
-            vid_name = 'subject_%i_training_%s.avi' % (subject.id, trial.id)
-        else:
-            vid_name = 'subject_%i_trial_%s.avi' % (subject.id, trial.id)
-        progress.setText(0, 'Loading frames')
-        makeVideo(image_list, vid_name, fps=100/frequency)
-        return vid_name
-
-    def getSubjectData(self, line: str) -> Union[Tuple[int,str]]:
-        try:
-            l = re.split("[\t ]+", line)
-            return (int(l[1]), l[2])
-        except:
-            return None
-
-    def parseSubject(self, input_file : str, progress = None) -> Subject:
-
-        with open(input_file) as f:
-            first_line = f.readline()
-            if first_line[-1] == '\n':
-                first_line = first_line[:-1]
-
-        subject_data = self.getSubjectData(first_line)
-
-        if subject_data is None:
-            raise ExperimentException('Subject number and category could not be found')
-
-        else:
-            result_file = "results.txt"
-            datafile = open(input_file, "r")
-
-            #File conversion in list.
-            data = datafile.read()
-            data = list(data.splitlines())
-
-            #We add a tabulation and space separator.
-            data = [re.split("[\t ]+",line) for line in data]
-
-            (n_subject, subject_cat) = subject_data
-            return Subject(self, self.n_trials, data, n_subject, subject_cat, progress)
