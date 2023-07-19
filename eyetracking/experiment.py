@@ -20,6 +20,17 @@ class Col():
     TRIALID = "TrialID"
     EYE = "Eye"
     BLINK = "First blink type"
+    TRAINING = "Training"
+    TASK = "Task"
+    SESSION = "Session"
+    EMOTION = "Emotion"
+    GENDER = "Gender"
+    TARGET = "Target Name"
+    TARGET_POS = "Target Position"
+    RESP = "Subject response"
+    COR_RESP = "Correct response"
+    ERR = "Errors"
+    RT = "Response time"
 
 class ERROR():
 
@@ -30,11 +41,18 @@ class ERROR():
     EARLY_SACCADE = "Anticipation saccade"
     MICRO_SACCADE = "Micro saccade"
     NO_FIXATION = "No fixation"
+    SHORT_FIXATION = "Low fixation time"
+    NO_RESPONSE = "No response"
 
 class PROCESS():
     MEAN = "Mean"
     SD = "SD"
     SORTING = "sorting"
+
+class BLINK():
+    NO = "No blink"
+    EARLY = "Early capture"
+    LATE = "Late"
 
 class ExperimentException(Exception):
     def __init__(self, message):
@@ -287,7 +305,7 @@ class Experiment (ABC):
     # isEligibleTrial for filtering outliers
     def isEligibleTrial(self, trial, DV) -> bool:
         # Check that DV value is number
-        return isinstance(trial[DV], int) or isinstance(trial[DV], float) or (isinstance(trial[DV], str) and trial[DV].isnumeric())
+        return isinstance(trial[DV], int) or isinstance(trial[DV], float) or (isinstance(trial[DV], str) and isFloat(trial[DV]))
 
     def postProcess(self) -> None:
         # No post process if no DV provided
@@ -355,20 +373,24 @@ class Experiment (ABC):
 
         # Plotting image
         # Valid if only one image to show
+        image = None
         if self.path_images is not None:
             image_name = os.path.join(
                 self.path_images,
                 trial.getStimulus().split('.')[0] + '.png'
             )
-            image = None
             if os.path.isfile(image_name):
                 image = plt.imread(image_name, format = 'png')
 
         # depends on experiment
-        self.plotRegions(trial)
+        self.plotRegions(trial, image)
 
     def getPlotName(self, trial, subject, extension):
         return 'exp_%s_subject_%i_%s_%i.%s' % (self.exp_name, subject.id, "training" if trial.isTraining() else "trial", trial.id, extension)
+
+    # Get frame color (stim delimitation during scanpath plot)
+    def getFrameColor(self, trial):
+        return (0,0,0)
 
     # Creates an image scanpath for one trial.
     def scanpath(self, subject: Subject, trial, frequency : int):

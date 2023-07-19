@@ -113,6 +113,14 @@ def createResultsFolder() -> None:
 ####### Miscellaneous #######
 #############################
 
+def isFloat(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        logTrace("Can't make float of {0}".format(s), Precision.OUTPUT)
+        return False
+
 def skip():
     1
 

@@ -5,17 +5,12 @@ from PyQt5.QtWidgets import QApplication
 class PSCol(Col):
 
     # Specific columns
-    EMOTION = "Emotion"
-    TARGET = "Target Name"
-    SIDE = "Target Side"
     COR_POS = "Correct position"
-    ERR = "Errors"
     FIRST_RT = "First saccade RT"
     FIRST_POS_START = "First saccade start gaze position"
     FIRST_POS_END = "First saccade ending gaze position"
     FIRST_DUR = "First saccade duration"
     THRESH = "Threshold excess"
-    TRAINING = "Training"
 
 class Exp(Experiment):
 
@@ -37,7 +32,7 @@ class Exp(Experiment):
 
         # For postProcess
         self.IVs = [
-            PSCol.EMOTION
+            Col.EMOTION
         ]
 
         self.DVs = [
@@ -132,17 +127,17 @@ class Exp(Experiment):
 
             # Determining blink category
             if trial.blinks == []:
-                blink_category = 'No blink'
+                blink_category = BLINK.NO
             else:
                 if trial.blinks[0].getStartTime() < SRT_threshold:
-                    blink_category = 'early capture'
+                    blink_category = BLINK.EARLY
                 else:
-                    blink_category = 'late'
+                    blink_category = BLINK.LATE
 
             # Error :
             if not trial.isStartValid(self.screen_center, self.valid_distance_center)[0]:
                 error = ERROR.START_INVALID
-            elif blink_category == 'early capture':
+            elif blink_category == BLINK.EARLY:
                 error = ERROR.EARLY_BLINK
             elif SRT_real <= 80:
                 error = ERROR.EARLY_SACCADE
@@ -165,17 +160,17 @@ class Exp(Experiment):
 
             # Writing data in result csv file
             new_dict = {
-                PSCol.TRAINING: trial.features['training'],
-                PSCol.EMOTION: emotion,
+                Col.TRAINING: trial.features['training'],
+                Col.EMOTION: emotion,
                 PSCol.TARGET: targetname,
-                PSCol.SIDE: trial.features['target_side'],
+                Col.TARGET_POS: trial.features['target_side'],
                 PSCol.COR_POS: correct_position,
-                PSCol.ERR: error,
+                Col.ERR: error,
                 PSCol.FIRST_RT: trial.saccades[0].getStartTime() - start_trial_time,
                 PSCol.FIRST_POS_START: trial.saccades[0].getFirstGazePosition(),
                 PSCol.FIRST_POS_END: trial.saccades[0].getLastGazePosition(),
                 PSCol.FIRST_DUR: trial.saccades[0].getEndTime() - trial.saccades[0].getStartTime(),
-                PSCol.BLINK: blink_category,
+                Col.BLINK: blink_category,
                 PSCol.THRESH: threshold_excess
             }
 

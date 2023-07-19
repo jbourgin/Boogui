@@ -7,18 +7,13 @@ from enum import Enum
 class EDCol(Col):
 
     # Specific columns
-    TRAINING = "Training"
     TRIALTYPE = "Type essai"
     STIMTYPE = "Type stimulus"
-    EMOTION = "Emotion"
     STIMEMO = "Stimulus emo"
     STIMNEU = "Stimulus neu"
     FRAME = "Forme"
-    ERR = "Error" # if subject gave wrong manual answer
     FIRSTFIX = "First fixation"
     FAILED = "Failed eyetracking" # if recalibration took place during trial (should be discarded)
-    RT = "Response time"
-    TARGET_POS = "Target position"
 
 class StimType(Enum):
     SCENE = "Scene"
@@ -55,13 +50,13 @@ class Exp(Experiment):
 
         # For postProcess
         self.IVs = [
-            EDCol.EMOTION,
+            Col.EMOTION,
             EDCol.TRIALTYPE
         ]
 
         self.DVs = [
             EDCol.FIRSTFIX,
-            EDCol.RT
+            Col.RT
         ]
 
     ###############################################
@@ -140,13 +135,13 @@ class Exp(Experiment):
 
         # Determining blink category
         if trial.blinks == []:
-            blink_category = "No blink"
+            blink_category = BLINK.NO
         else:
-            blink_category = "late"
+            blink_category = BLINK.LATE
             if first_fixation is not None:
                 for blink in trial.blinks:
                     if int(trial.features["start_wait_sac"]) < blink.getStartTime() < first_fixation.getStartTime():
-                        blink_category = "early capture"
+                        blink_category = BLINK.EARLY
                         break
             else:
                 blink_category = None
@@ -154,30 +149,30 @@ class Exp(Experiment):
         # Error :
         if not trial.isStartValid(self.screen_center, self.valid_distance_center)[0]:
             error = ERROR.START_INVALID
-        elif blink_category == 'early capture':
+        elif blink_category == BLINK.EARLY:
             error = ERROR.EARLY_BLINK
         elif first_fixation is None:
             error = ERROR.NO_FIXATION
         elif len(saccades) > 0 and saccades[0].getStartTime() - int(trial.features["start_wait_sac"]) < 60:
             error = ERROR.EARLY_SACCADE
-        else:
+        else: # 1 if subject gave wrong manual answer
             error = 0 if trial.features["correct"] == "1" else 1
 
         # Compiling data in trial_dict
         new_dict = {
-            EDCol.TRAINING: trial.isTraining(),
+            Col.TRAINING: trial.isTraining(),
             EDCol.TRIALTYPE: trial.features["trialType"],
             EDCol.STIMTYPE: trial.features["stimType"].value,
-            EDCol.EMOTION: trial.features["emotion"],
+            Col.EMOTION: trial.features["emotion"],
             EDCol.STIMEMO: trial.features["stim_emo"],
             EDCol.STIMNEU: trial.features["stim_neu"],
             EDCol.FRAME: trial.features["frame"],
-            EDCol.TARGET_POS: "Right" if trial.features["pos_frame"] == "440" else "Left",
+            Col.TARGET_POS: "Right" if trial.features["pos_frame"] == "440" else "Left",
             EDCol.FIRSTFIX: None if first_fixation is None else first_fixation.getStartTime() - int(trial.features["start_wait_sac"]),
-            EDCol.ERR: error,
-            EDCol.RT: trial.features["response_time"],
+            Col.ERR: error,
+            Col.RT: trial.features["response_time"],
             EDCol.FAILED: trial.features["failed_trial"],
-            EDCol.BLINK: blink_category
+            Col.BLINK: blink_category
         }
 
         self.updateDict(new_dict)
