@@ -291,7 +291,7 @@ class Experiment (ABC):
         logTrace ('Processing trial n°%i' % trial.id, Precision.DETAIL)
 
         new_dict = {
-            Col.SUBJID: "%i-E"%subject.id,
+            Col.SUBJID: "%i"%subject.id,
             Col.GROUP: subject.group,
             Col.TRIALID: trial.id,
             Col.EYE: trial.eye,

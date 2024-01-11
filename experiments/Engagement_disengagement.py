@@ -195,7 +195,7 @@ class Exp(Experiment):
             return (1,0,0)
 
     # plot regions for image scanpath
-    def plotRegions(self, trial):
+    def plotRegions(self, trial, image):
         frame_color = self.getFrameColor(trial)
         if trial.features["trialType"] != TrialType.CONTROL.value:
             # Plotting frames

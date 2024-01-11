@@ -1,5 +1,6 @@
 */__pycache__/*
 _tmp/*
 _results/*
+raw_data/*
 
 Pipfile.lock
