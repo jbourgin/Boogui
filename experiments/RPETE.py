@@ -110,6 +110,12 @@ class Exp(Experiment):
                 pass
         return None
 
+    def isResponse(self, line):
+        pass
+
+    def isTraining(self, trial):
+        return False
+
     ######################################################
     ############## End of Overriden methods ##############
     ######################################################

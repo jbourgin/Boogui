@@ -109,6 +109,13 @@ def createResultsFolder() -> None:
     if not os.path.exists(getResultsFolder()):
         os.makedirs(getResultsFolder())
 
+def getScanpathsFolder() -> str:
+    return '_scanpaths'
+
+def createScanpathsFolder() -> None:
+    if not os.path.exists(getScanpathsFolder()):
+        os.makedirs(getScanpathsFolder())
+
 #############################
 ####### Miscellaneous #######
 #############################

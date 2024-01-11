@@ -401,9 +401,11 @@ class Experiment (ABC):
         except AttributeError: end_line = None
         # Plotting gaze positions
         trial.plot(frequency, end_line)
-        image_name = self.getPlotName(trial, subject, "png")
-        saveImage(getTmpFolder(), image_name)
-        return image_name
+        self.saveScanpath(trial, subject)
+
+    def saveScanpath(self, trial, subject) -> None:
+    	image_name = self.getPlotName(trial, subject, "png")
+    	saveImage(getScanpathsFolder(), image_name)
 
     # Creates a video scanpath for one trial.
     def scanpathVideo(self, subject : "Subject", trial : Trial, frequency : int, progress = None) -> str:

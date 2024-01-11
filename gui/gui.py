@@ -197,6 +197,12 @@ class Main(QMainWindow):
         self.exportAct.setEnabled(False)
         self.exportAct.triggered.connect(self.exportSubjects)
 
+        # Export scanpaths
+        self.exportScanAct = QAction("&Export scanpaths", self)
+        self.exportScanAct.setStatusTip('Export scanpaths')
+        self.exportScanAct.setEnabled(False)
+        self.exportScanAct.triggered.connect(self.exportScanpaths)
+
         # Export menu item
         self.clear = QAction("&Clear subjects", self)
         self.clear.setEnabled(False)
@@ -209,6 +215,7 @@ class Main(QMainWindow):
         fileMenu.addAction(browseAct)
         fileMenu.addAction(convertAct)
         fileMenu.addAction(self.exportAct)
+        fileMenu.addAction(self.exportScanAct)
         fileMenu.addAction(self.clear)
 
         # Experiment menu
@@ -223,7 +230,7 @@ class Main(QMainWindow):
             self.experiment_menu.addAction(a)
 
             #Default experiment: the first one
-            if count_exp == 0:
+            if exp_name == "RPETE":
                 setExp.setChecked(True)
                 self.setExperiment(exp_name)()
 
@@ -282,6 +289,7 @@ class Main(QMainWindow):
             self.subject_buttons.setExclusive(True)
             # Disabling Save menu action
             self.exportAct.setEnabled(False)
+            self.exportScanAct.setEnabled(False)
             # Enabling change of experiment
             self.experiment_menu.setEnabled(True)
             # Disbaling clear menu action
@@ -353,6 +361,7 @@ class Main(QMainWindow):
             self.dataDirectory = '/'.join(filenames[0].split('/')[0:-1])
             # Enabling Save menu action
             self.exportAct.setEnabled(True)
+            self.exportScanAct.setEnabled(True)
             # Disabling change of experiment
             self.experiment_menu.setEnabled(False)
             # Enabling clear menu action
@@ -391,7 +400,6 @@ class Main(QMainWindow):
         """
         hyp: len(subject_datas) > 0
         """
-        createResultsFolder()
         filedialog = QFileDialog()
         filename,_ = filedialog.getSaveFileName(self, 'Save File', os.path.join(getResultsFolder(), self.subject_datas[0].experiment.exp_name), "CSV Files (*.csv)")
         # Creation of results file
@@ -419,6 +427,28 @@ class Main(QMainWindow):
 
             # Closing progress bar
             progress.close()
+
+    def exportScanpaths(self):
+        try:
+            progress = ProgressWidget(self, 2)
+            progress.setText(0, 'Exporting Subjects')
+            progress.setMaximum(0, len(self.subject_datas))
+            for subjectData in self.subject_datas:
+                progress.increment(0)
+                progress.setText(1, 'Exporting Scanpaths')
+                progress.setMaximum(1, len(subjectData.subject.trials))
+                for trial in subjectData.subject.trials:
+                    progress.increment(1)
+                    subjectData.experiment.scanpath(subjectData.subject, trial, 10)
+
+
+        except Exception as e:
+            raise Exception('Error while exporting scanpaths: \n%s' % (traceback.format_exc()))
+
+        # Closing progress bar
+        progress.close()
+
+
 
     ###########################
     ######## CALLBACKS ########
