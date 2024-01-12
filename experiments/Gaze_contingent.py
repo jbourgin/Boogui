@@ -1,6 +1,6 @@
 from eyetracking.experiment import *
 from eyetracking.interest_region import *
-from eyetracking.scanpath import *
+from eyetracking.plot import *
 import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import QApplication
 from matplotlib.offsetbox import OffsetImage
@@ -102,6 +102,12 @@ class Exp(Experiment):
                 pass
         return None
 
+    def getTrialRegions(self, trial):
+        if trial.features['target_side'] == 'Left':
+            return [self.left_gaze, self.left_face]
+        elif trial.features['target_side'] == 'Right':
+            return [self.right_gaze, self.right_face]
+
     ######################################################
     ############## End of Overriden methods ##############
     ######################################################
@@ -122,20 +128,18 @@ class Exp(Experiment):
         first_saccade = trial.saccades[0].getStartTimeFromStartTrial()
 
         if trial.features['target_side'] == 'Left':
-            eye_position = self.left_gaze
-            face_position = self.left_face
             start_point = (self.screen_center[0]*(1+1/3), self.screen_center[1]+150)
         elif trial.features['target_side'] == 'Right':
-            eye_position = self.right_gaze
-            face_position = self.right_face
             start_point = (self.screen_center[0]-(self.screen_center[0]/3), self.screen_center[1]+150)
-        regions = InterestRegionList([eye_position, face_position])
+        regions = self.getTrialRegions(trial)
+        eye_position = regions[0]
+        face_position = regions[1]
 
         end_line = self.returnStopImageEntry(trial)
 
         response_entry = trial.getResponse()
 
-        region_fixations = trial.getFixationTime(regions, eye_position, end_line)
+        region_fixations = trial.getFixationTime(InterestRegionList(regions), eye_position, end_line)
 
         # First and last good fixations
         try:
@@ -231,7 +235,7 @@ class Exp(Experiment):
     ###################### Plot data #####################
     ######################################################
 
-    # plot regions for image scanpath
+    # plot regions for image plot
     def plotRegions(self, trial, image):
         frame_color = self.getFrameColor(trial)
         img_width = self.half_width

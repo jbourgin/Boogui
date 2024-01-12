@@ -1,8 +1,28 @@
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import os
+import pandas as pd
+import seaborn as sns
 from eyetracking.utils import *
 from eyetracking.interest_region import *
 from math import pi, cos, sin
+
+class Plot():
+	color_palette = "Spectral_r"
+
+def setColorBar(nb_points, label=""):
+	cmap = Plot.color_palette
+	norm = mpl.colors.Normalize(vmin=0, vmax=nb_points)
+
+	plt.colorbar(mpl.cm.ScalarMappable(norm = norm, cmap=cmap), label=label)
+
+def getColorSequence(nb_points):
+	return sns.color_palette(palette=Plot.color_palette, n_colors=nb_points)
+
+# coords is a list of Point
+def plotHeatmap(coords):
+	df = pd.DataFrame(coords, columns=['x', 'y'])
+	ax = sns.kdeplot(data=df, x="x", y="y", fill=True, cmap=Plot.color_palette, cbar=True, shade=True, alpha=0.5)
 
 def plotSegment(point1 : Point, point2 : Point, c = 'black', alpha = 1.0) -> None:
 	if point1[0] == point2[0] and point1[1] == point2[1]:
@@ -11,7 +31,10 @@ def plotSegment(point1 : Point, point2 : Point, c = 'black', alpha = 1.0) -> Non
 		plt.plot([point1[0],point2[0]],[point1[1],point2[1]],c=c, alpha = alpha)
 
 def plotPoint(point : Point, color) -> None:
-		plotSegment(point, point, c = color)
+	plotSegment(point, point, c = color)
+
+def plotCircle(center : Point, size, color) -> None:
+	plt.scatter(center[0], center[1], s = size, color=color, alpha=0.8)
 
 def plotRectangle(center : Point, color, half_width, half_height) -> None:
 	lu_corner = [center[0]-half_width,center[1]+half_height]

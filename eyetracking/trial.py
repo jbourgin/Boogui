@@ -1,6 +1,6 @@
 from eyetracking.interest_region import *
 from eyetracking.utils import *
-from eyetracking.scanpath import plotSegment
+from eyetracking.plot import plotSegment, plotCircle, plotHeatmap, getColorSequence, setColorBar
 from typing import TypeVar, List
 from math import sqrt, pow
 from eyetracking.entry import *
@@ -208,7 +208,7 @@ class Trial:
 
         return (True, first_pos.getGazePosition())
 
-    def getFixationTime(self, regions : InterestRegionList, target_region : InterestRegion, end_line = None):
+    def getFixationTime(self, regions : InterestRegionList, target_region = None, end_line = None):
         """
         Returns the list of fixations that happen on the given regions.
         """
@@ -263,7 +263,7 @@ class Trial:
                 # If we change of frame or encounter a blink, we end the previous fixation and add it to our list.
                 if current_region_fixation.begin != None and (watched_region != current_region_fixation.region or blink_encountered):
                     set_type_fixation(current_region_fixation)
-                    current_region_fixation.on_target = (target_region == current_region_fixation.region)
+                    current_region_fixation.on_target = (target_region != None and target_region == current_region_fixation.region)
 
                     if current_region_fixation.type == "NORMAL":
                         region_fixations.append(current_region_fixation)
@@ -284,7 +284,7 @@ class Trial:
             if end_line is not None:
                 current_region_fixation.end = end_line
             set_type_fixation(current_region_fixation)
-            current_region_fixation.on_target = (target_region == current_region_fixation.region)
+            current_region_fixation.on_target = (target_region != None and target_region == current_region_fixation.region)
 
             if current_region_fixation.type == "NORMAL":
                 region_fixations.append(current_region_fixation)
@@ -317,13 +317,31 @@ class Trial:
 
     # Plot the trial on the current image
     def plot(self, plotStep: int, end_line = None):
+        if self.experiment.plotMethod.value == PlotMethod.SCANPATH.value:
+            point_list = self.getGazePoints(end_line)
+            colors = getColorSequence(len(point_list))
 
-        nb_points = 0
-        color = (1,1,0)
+            for i in range(0,len(point_list)-plotStep,plotStep):
+                plotSegment(point_list[i],point_list[i+plotStep],c=colors[i])
+            setColorBar(len(point_list), label="Time in ms")
+        elif self.experiment.plotMethod.value == PlotMethod.FIX.value:
+            region_fixations = self.getFixationTime(InterestRegionList(self.experiment.getTrialRegions(self)))
+            regions = {}
+            max_duration = 0
+            for fix in region_fixations:
+                if fix.region in regions.keys():
+                    regions[fix.region] += (fix.end - fix.begin)
+                else:
+                    regions[fix.region] = fix.end - fix.begin
+                if regions[fix.region] > max_duration:
+                    max_duration = regions[fix.region]
+            nb_colors = max_duration+1
+            colors = getColorSequence(nb_colors)
 
-        point_list = self.getGazePoints(end_line)
-        nb_points = float(len(point_list))
-
-        for i in range(0,len(point_list)-plotStep,plotStep):
-            plotSegment(point_list[i],point_list[i+plotStep],c=color)
-            color = (1, color[1] - float(plotStep)/nb_points , 0)
+            for region in regions.keys():
+                duration = regions[region]
+                plotCircle(region.center, duration, colors[duration])
+            setColorBar(nb_colors, label="Total fixation duration in ms")
+        elif self.experiment.plotMethod.value == PlotMethod.HEATMAP.value:
+            point_list = self.getGazePoints(end_line)
+            plotHeatmap(point_list)

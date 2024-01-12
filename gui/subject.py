@@ -2,19 +2,18 @@ from gui.progress_widget import ProgressWidget
 from eyetracking.experiment import ExperimentException
 
 class TrialData:
-    def __init__(self, experiment, subject, trial, frequency):
+    def __init__(self, experiment, subject, trial):
         self.experiment = experiment
         self.trial = trial
         self.image = None
         self.video = None
         self.subject = subject
-        self.frequency = frequency
 
     def getImage(self):
         if self.image != None:
             return self.image
         else:
-            self.image = self.experiment.scanpath(self.subject, self.trial, self.frequency)
+            self.image = self.experiment.plot(self.subject, self.trial)
             return self.image
 
     def getVideo(self, parent):
@@ -22,45 +21,26 @@ class TrialData:
             return self.video
         else:
             progress = ProgressWidget(parent, 1)
-            self.video = self.experiment.scanpathVideo(self.subject, self.trial, self.frequency, progress)
+            self.video = self.experiment.scanpathVideo(self.subject, self.trial, progress)
             progress.close()
             return self.video
 
-    def setFrequency(self, frequency : int):
-        if self.frequency != frequency:
-            self.clearScanpaths()
-            self.frequency = frequency
-
-    def clearScanpaths(self):
+    def clearPlots(self):
         self.video = None
         self.image = None
 
 class SubjectData:
-    def __init__(self, experiment, input_file: str, frequency, progress = None):
+    def __init__(self, experiment, input_file: str, progress = None):
         self.training_trial_datas = []
         self.trial_datas = []
         self.experiment = experiment
         self.subject = self.experiment.processSubject(input_file, progress)
 
         for trial in self.subject.training_trials:
-            self.training_trial_datas.append(TrialData(self.experiment, self.subject, trial, frequency))
+            self.training_trial_datas.append(TrialData(self.experiment, self.subject, trial))
 
         for trial in self.subject.trials:
-            self.trial_datas.append(TrialData(self.experiment, self.subject, trial, frequency))
-
-    def setFrequency(self, frequency : int):
-        for trial in self.training_trial_datas:
-            trial.setFrequency(frequency)
-
-        for trial in self.trial_datas:
-            trial.setFrequency(frequency)
+            self.trial_datas.append(TrialData(self.experiment, self.subject, trial))
 
     def getNTrainings(self):
         return len(self.training_trial_datas)
-
-    def clearScanpaths(self):
-        for trial in self.training_trial_datas:
-            trial.clearScanpaths()
-
-        for trial in self.trial_datas:
-            trial.clearScanpaths()

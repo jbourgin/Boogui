@@ -97,6 +97,9 @@ class Exp(Experiment):
 
         return Subject(self, self.n_trials, data, n_subject, None, progress)
 
+    def getTrialRegions(self, trial):
+        return [self.frame_list[trial.features["stimType"]][trial.features["pos_frame"]]]
+
     ######################################################
     ############## End of Overriden methods ##############
     ######################################################
@@ -119,7 +122,7 @@ class Exp(Experiment):
                 trial.features["stimType"] = StimType.SCENE
         # Do processTrial of parent after making sure that the trial will be considered
         super().processTrial(subject, trial)
-        target = self.frame_list[trial.features["stimType"]][trial.features["pos_frame"]]
+        target = self.getTrialRegions(trial)[0]
 
         # Get all fixations that occurred on target only after wait for saccade toward frame begins
         region_fixations = [x for x in trial.getFixationTime(InterestRegionList([target]), target) if x.getStartTime() > int(trial.features["start_wait_sac"])]
@@ -187,14 +190,14 @@ class Exp(Experiment):
     ###################### Plot data #####################
     ######################################################
 
-    # Get frame color (stim delimitation during scanpath plot)
+    # Get frame color (stim delimitation during plot)
     def getFrameColor(self, trial):
         if trial.features["trialType"] == TrialType.DISENGAGEMENT.value:
             return (0,1,0)
         else:
             return (1,0,0)
 
-    # plot regions for image scanpath
+    # plot regions for image plot
     def plotRegions(self, trial, image):
         frame_color = self.getFrameColor(trial)
         if trial.features["trialType"] != TrialType.CONTROL.value:

@@ -116,6 +116,13 @@ class Exp(Experiment):
     def isTraining(self, trial):
         return False
 
+    def getTrialRegions(self, trial):
+        rectangleRegions = []
+        for frame in self.frames[trial.getStimulus()]:
+            rectangleRegions.append(self.getRegion(frame))
+
+        return rectangleRegions
+
     ######################################################
     ############## End of Overriden methods ##############
     ######################################################
@@ -133,13 +140,9 @@ class Exp(Experiment):
             logTrace ('Subject %i has no saccades at trial %i !' %(subject.id, trial.id), Precision.DETAIL)
             return
 
-        rectangleRegions = []
-        for frame in self.frames[targetName]:
-            rectangleRegions.append(self.getRegion(frame))
+        regions = self.getTrialRegions(trial)
 
-        regions = InterestRegionList(rectangleRegions)
-        # We don't care about target but are forced to determine one
-        region_fixations = trial.getFixationTime(regions, rectangleRegions[0])
+        region_fixations = trial.getFixationTime(InterestRegionList(regions))
 
         # VDs
         response_time = trial.getStopTrial().getTime() - trial.features["image_onset"]
@@ -201,7 +204,7 @@ class Exp(Experiment):
     ###################### Plot data #####################
     ######################################################
 
-    # plot regions for image scanpath
+    # plot regions for image plot
     def plotRegions(self, trial, image):
         frame_color = self.getFrameColor(trial)
         if image is not None:

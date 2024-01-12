@@ -31,6 +31,11 @@ def logTrace(message, precision):
 # Interest regions and plot #
 #############################
 
+class PlotMethod(Enum):
+    SCANPATH = "Scanpath"
+    FIX = "Fixations"
+    HEATMAP = "Heatmap"
+
 # Type for points describing gaze positions on the screen.
 Point = Tuple[int,int]
 
@@ -109,12 +114,12 @@ def createResultsFolder() -> None:
     if not os.path.exists(getResultsFolder()):
         os.makedirs(getResultsFolder())
 
-def getScanpathsFolder() -> str:
-    return '_scanpaths'
+def getPlotsFolder() -> str:
+    return '_plots'
 
-def createScanpathsFolder() -> None:
-    if not os.path.exists(getScanpathsFolder()):
-        os.makedirs(getScanpathsFolder())
+def createPlotsFolder() -> None:
+    if not os.path.exists(getPlotsFolder()):
+        os.makedirs(getPlotsFolder())
 
 #############################
 ####### Miscellaneous #######

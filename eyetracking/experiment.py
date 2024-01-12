@@ -9,7 +9,7 @@ from typing import List, Dict, Union, Set
 from eyetracking.utils import *
 from eyetracking.subject import *
 from eyetracking.entry import *
-from eyetracking.scanpath import *
+from eyetracking.plot import *
 import itertools
 
 class Col():
@@ -62,6 +62,9 @@ class ExperimentException(Exception):
 
 class Experiment (ABC):
 
+    plotMethod = PlotMethod.FIX
+    frequency = 10 # We draw 10 points/sec (one each 100 ms)
+
     def __init__(self, expected_features: Set[str], exp_name):
         self.expected_features = expected_features
         self.dataframe = None
@@ -110,8 +113,8 @@ class Experiment (ABC):
         return None
 
     @staticmethod
-    def getPlotStep(recordFreq, frequency):
-        return int(recordFreq/frequency)
+    def getPlotStep(recordFreq):
+        return int(recordFreq/Experiment.frequency)
 
     #######################################
     ############ ENTRY PARSERS ############
@@ -299,6 +302,10 @@ class Experiment (ABC):
     #######################################
     ############ Trial process ############
     #######################################
+    @abstractmethod
+    def getTrialRegions(self, trial) -> List:
+        pass
+
     def processTrial(self, subject : "Subject", trial : Trial) -> None:
         logTrace ('Processing trial n°%i' % trial.id, Precision.DETAIL)
 
@@ -373,7 +380,7 @@ class Experiment (ABC):
     ############# Data plot ###############
     #######################################
 
-    # Draw base plot : create image with correct dimensions and plot images and regions (shared by video and image scanpath)
+    # Draw base plot : create image with correct dimensions and plot images and regions (shared by video and image plot)
     def drawBasePlot(self, trial):
         plt.clf()
 
@@ -398,37 +405,37 @@ class Experiment (ABC):
         self.plotRegions(trial, image)
 
     def getPlotName(self, trial, subject, extension):
-        return 'exp_%s_subject_%i_%s_%i.%s' % (self.exp_name, subject.id, "training" if trial.isTraining() else "trial", trial.id, extension)
+        return 'exp_%s_subject_%i_%s_%i_%s.%s' % (self.exp_name, subject.id, "training" if trial.isTraining() else "trial", trial.id, Experiment.plotMethod.value.lower(), extension)
 
-    # Get frame color (stim delimitation during scanpath plot)
+    # Get frame color (stim delimitation during plot)
     def getFrameColor(self, trial):
         return (0,0,0)
 
-    # Creates an image scanpath for one trial.
-    def scanpath(self, subject: Subject, trial, frequency : int) -> str:
+    # Creates an image plot for one trial.
+    def plot(self, subject: Subject, trial) -> str:
         self.drawBasePlot(trial)
 
         # For GazeContingent only
         try: end_line = self.returnStopImageEntry(trial)
         except AttributeError: end_line = None
         # Plotting gaze positions
-        trial.plot(self.getPlotStep(subject.recordFreq, frequency), end_line)
-        image_name = self.saveScanpath(trial, subject)
+        trial.plot(self.getPlotStep(subject.recordFreq), end_line)
+        image_name = self.savePlot(trial, subject)
         return image_name
 
-    def saveScanpath(self, trial, subject) -> str:
+    def savePlot(self, trial, subject) -> str:
     	image_name = self.getPlotName(trial, subject, "png")
-    	saveImage(getScanpathsFolder(), image_name)
+    	saveImage(getPlotsFolder(), image_name)
     	return image_name
 
     # Creates a video scanpath for one trial.
-    def scanpathVideo(self, subject : "Subject", trial : Trial, frequency : int, progress = None) -> str:
+    def scanpathVideo(self, subject : "Subject", trial : Trial, progress = None) -> str:
         n_elem_drawn = 20
         point_list = trial.getGazePoints()
         nb_points = len(point_list)
         point_color = (1,1,0)
 
-        plotStep = self.getPlotStep(subject.recordFreq, frequency)
+        plotStep = self.getPlotStep(subject.recordFreq)
         # Taking frequency into account
         point_list_f = []
         for i in range(0,len(point_list)-plotStep,plotStep):
@@ -459,7 +466,7 @@ class Experiment (ABC):
 
         progress.setText(0, 'Loading frames')
         # TODO : update fps
-        makeVideo(image_list, vid_name, fps=100/plotStep)
+        makeVideo(image_list, vid_name, fps=Experiment.frequency)
         return vid_name
 
     ##########################################

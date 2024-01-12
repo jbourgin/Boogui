@@ -84,6 +84,12 @@ class Exp(Experiment):
                 pass
         return None
 
+    def getTrialRegions(self, trial):
+        if trial.features['target_side'] == 'Gauche':
+            return [self.left]
+        elif trial.features['target_side'] == 'Droite':
+            return [self.right]
+
     ######################################################
     ############## End of Overriden methods ##############
     ######################################################
@@ -97,11 +103,10 @@ class Exp(Experiment):
         else:
             if trial.features['target_side'] == 'Gauche':
                 correct_position = 'Left'
-                target_position = self.left
             elif trial.features['target_side'] == 'Droite':
                 correct_position = 'Right'
-                target_position = self.right
 
+            target_position = self.getTrialRegions(trial)[0]
             start_trial_time = trial.getStartTrial().getTime()
 
             if 'Neg' in targetname[:3]:
@@ -186,7 +191,7 @@ class Exp(Experiment):
     ###################### Plot data #####################
     ######################################################
 
-    # Get frame color (stim delimitation during scanpath plot)
+    # Get frame color (stim delimitation during plot)
     def getFrameColor(self, trial):
         if 'P' in trial.getStimulus()[0]:
             return (0,1,0)
@@ -194,7 +199,7 @@ class Exp(Experiment):
             return (1,0,0)
         return (0,0,0)
 
-    # plot regions for image scanpath
+    # plot regions for image plot
     def plotRegions(self, trial, image):
         frame_color = self.getFrameColor(trial)
         if trial.features['target_side'] == 'Gauche':

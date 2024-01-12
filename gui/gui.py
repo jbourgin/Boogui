@@ -9,6 +9,7 @@ import pandas as pd
 from eyetracking.subject import Subject
 from eyetracking.utils import *
 from eyetracking.entry import *
+from eyetracking.experiment import Experiment, PlotMethod
 from gui.utils import *
 from gui.subject import *
 from gui.progress_widget import ProgressWidget
@@ -42,7 +43,6 @@ class Main(QMainWindow):
 
         # The main window widget
         self.main_wid = None
-        self.frequency = 10 # We draw 10 points/sec (one each 100 ms)
 
         self.initUI()
 
@@ -197,11 +197,11 @@ class Main(QMainWindow):
         self.exportAct.setEnabled(False)
         self.exportAct.triggered.connect(self.exportSubjects)
 
-        # Export scanpaths
-        self.exportScanAct = QAction("&Export scanpaths", self)
-        self.exportScanAct.setStatusTip('Export scanpaths')
-        self.exportScanAct.setEnabled(False)
-        self.exportScanAct.triggered.connect(self.exportScanpaths)
+        # Export Plots
+        self.exportPlotAct = QAction("&Export plots", self)
+        self.exportPlotAct.setStatusTip('Export plots')
+        self.exportPlotAct.setEnabled(False)
+        self.exportPlotAct.triggered.connect(self.exportPlots)
 
         # Export menu item
         self.clear = QAction("&Clear subjects", self)
@@ -215,7 +215,7 @@ class Main(QMainWindow):
         fileMenu.addAction(browseAct)
         fileMenu.addAction(convertAct)
         fileMenu.addAction(self.exportAct)
-        fileMenu.addAction(self.exportScanAct)
+        fileMenu.addAction(self.exportPlotAct)
         fileMenu.addAction(self.clear)
 
         # Experiment menu
@@ -248,8 +248,21 @@ class Main(QMainWindow):
             setFrequency.triggered.connect(self.setFrequency(i))
             a = ag.addAction(setFrequency)
             frequency_menu.addAction(a)
-            if i == self.frequency:
+            if i == Experiment.frequency:
                 setFrequency.setChecked(True)
+
+        # Plot submenu
+        ag = QActionGroup(self)
+        ag.setExclusive(True)
+        plot_menu = self.config_menu.addMenu('&Plot method')
+
+        for opt in PlotMethod:
+            setPlotMethod = QAction('&%s' % opt.value, self, checkable = True)
+            setPlotMethod.triggered.connect(self.setPlotMethod(opt))
+            a = ag.addAction(setPlotMethod)
+            plot_menu.addAction(a)
+            if opt == Experiment.plotMethod:
+                setPlotMethod.setChecked(True)
 
         # Warning submenu
         #warning_menu = self.config_menu.addMenu('&Exception is Warning')
@@ -290,7 +303,7 @@ class Main(QMainWindow):
             self.subject_buttons.setExclusive(True)
             # Disabling Save menu action
             self.exportAct.setEnabled(False)
-            self.exportScanAct.setEnabled(False)
+            self.exportPlotAct.setEnabled(False)
             # Enabling change of experiment
             self.experiment_menu.setEnabled(True)
             # Disbaling clear menu action
@@ -321,10 +334,22 @@ class Main(QMainWindow):
 
     def setFrequency(self, frequency : int):
         def set():
-            self.frequency = frequency
-            for subject in self.subject_datas:
-                subject.setFrequency(frequency)
+            if frequency != Experiment.frequency:
+                Experiment.frequency = frequency
+                self.clearPlots()
         return set
+
+    def setPlotMethod(self, plotMethod: PlotMethod):
+        def set():
+            if plotMethod != Experiment.plotMethod:
+                Experiment.plotMethod = plotMethod
+                self.clearPlots()
+        return set
+
+    def clearPlots(self):
+        for subj_data in self.subject_datas:
+            for trial_data in subj_data.trial_datas:
+                trial_data.clearPlots()
 
     ###########################
     ###### I/O functions ######
@@ -362,7 +387,7 @@ class Main(QMainWindow):
             self.dataDirectory = '/'.join(filenames[0].split('/')[0:-1])
             # Enabling Save menu action
             self.exportAct.setEnabled(True)
-            self.exportScanAct.setEnabled(True)
+            self.exportPlotAct.setEnabled(True)
             # Disabling change of experiment
             self.experiment_menu.setEnabled(False)
             # Enabling clear menu action
@@ -375,7 +400,7 @@ class Main(QMainWindow):
                 logTrace ('Reading subject file %s' % filename, Precision.INPUT)
 
                 try:
-                    subject = SubjectData(self.getExperiment(), filename, self.frequency, progress)
+                    subject = SubjectData(self.getExperiment(), filename, progress)
                     self.subject_datas.append(subject)
 
                     # Adding subject button
@@ -429,27 +454,25 @@ class Main(QMainWindow):
             # Closing progress bar
             progress.close()
 
-    def exportScanpaths(self):
+    def exportPlots(self):
         try:
             progress = ProgressWidget(self, 2)
             progress.setText(0, 'Exporting Subjects')
             progress.setMaximum(0, len(self.subject_datas))
+            createPlotsFolder()
             for subjectData in self.subject_datas:
                 progress.increment(0)
-                progress.setText(1, 'Exporting Scanpaths')
+                progress.setText(1, 'Exporting Plots')
                 progress.setMaximum(1, len(subjectData.subject.trials))
                 for trial in subjectData.subject.trials:
                     progress.increment(1)
-                    subjectData.experiment.scanpath(subjectData.subject, trial, 10)
-
+                    subjectData.experiment.plot(subjectData.subject, trial)
 
         except Exception as e:
-            raise Exception('Error while exporting scanpaths: \n%s' % (traceback.format_exc()))
+            raise Exception('Error while exporting plots: \n%s' % (traceback.format_exc()))
 
         # Closing progress bar
         progress.close()
-
-
 
     ###########################
     ######## CALLBACKS ########
@@ -525,7 +548,7 @@ class Main(QMainWindow):
             sb = self.logOutput.verticalScrollBar()
             sb.setValue(sb.minimum())
 
-            image_name = joinPaths(getScanpathsFolder(), self.getTrialData(n_subject, trial).getImage())
+            image_name = joinPaths(getPlotsFolder(), self.getTrialData(n_subject, trial).getImage())
             pixmap = QPixmap(image_name)
             self.previsu_image.setPixmap(pixmap)
             self.previsu_image.adjustSize()
