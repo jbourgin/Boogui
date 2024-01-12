@@ -42,7 +42,7 @@ class Main(QMainWindow):
 
         # The main window widget
         self.main_wid = None
-        self.frequency = 10
+        self.frequency = 10 # We draw 10 points/sec (one each 100 ms)
 
         self.initUI()
 
@@ -242,13 +242,14 @@ class Main(QMainWindow):
         ag = QActionGroup(self)
         ag.setExclusive(True)
         frequency_menu = self.config_menu.addMenu('&Frequency')
-        # Visual search
-        for i in [1,2,5,10]:
+
+        for i in [10,20,50,100,500,1000]:
             setFrequency = QAction('&%i' % i, self, checkable = True)
             setFrequency.triggered.connect(self.setFrequency(i))
             a = ag.addAction(setFrequency)
             frequency_menu.addAction(a)
-        setFrequency.setChecked(True)
+            if i == self.frequency:
+                setFrequency.setChecked(True)
 
         # Warning submenu
         #warning_menu = self.config_menu.addMenu('&Exception is Warning')
@@ -524,7 +525,7 @@ class Main(QMainWindow):
             sb = self.logOutput.verticalScrollBar()
             sb.setValue(sb.minimum())
 
-            image_name = joinPaths(getTmpFolder(), self.getTrialData(n_subject, trial).getImage())
+            image_name = joinPaths(getScanpathsFolder(), self.getTrialData(n_subject, trial).getImage())
             pixmap = QPixmap(image_name)
             self.previsu_image.setPixmap(pixmap)
             self.previsu_image.adjustSize()

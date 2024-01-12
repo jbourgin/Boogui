@@ -101,6 +101,18 @@ class Experiment (ABC):
                 return line[1]
         return None
 
+    # WARNING : we assume that record freq will not change for a given subject throughout the experiment.
+    @staticmethod
+    def getRecordFreq(lines: List[List[str]]) -> float:
+        for line in lines:
+            if len(line) >= 5 and line[0] == "EVENTS" and line[3] == "RATE":
+                return float(line[4])
+        return None
+
+    @staticmethod
+    def getPlotStep(recordFreq, frequency):
+        return int(recordFreq/frequency)
+
     #######################################
     ############ ENTRY PARSERS ############
     #######################################
@@ -393,19 +405,21 @@ class Experiment (ABC):
         return (0,0,0)
 
     # Creates an image scanpath for one trial.
-    def scanpath(self, subject: Subject, trial, frequency : int):
+    def scanpath(self, subject: Subject, trial, frequency : int) -> str:
         self.drawBasePlot(trial)
 
         # For GazeContingent only
         try: end_line = self.returnStopImageEntry(trial)
         except AttributeError: end_line = None
         # Plotting gaze positions
-        trial.plot(frequency, end_line)
-        self.saveScanpath(trial, subject)
+        trial.plot(self.getPlotStep(subject.recordFreq, frequency), end_line)
+        image_name = self.saveScanpath(trial, subject)
+        return image_name
 
-    def saveScanpath(self, trial, subject) -> None:
+    def saveScanpath(self, trial, subject) -> str:
     	image_name = self.getPlotName(trial, subject, "png")
     	saveImage(getScanpathsFolder(), image_name)
+    	return image_name
 
     # Creates a video scanpath for one trial.
     def scanpathVideo(self, subject : "Subject", trial : Trial, frequency : int, progress = None) -> str:
@@ -414,9 +428,10 @@ class Experiment (ABC):
         nb_points = len(point_list)
         point_color = (1,1,0)
 
+        plotStep = self.getPlotStep(subject.recordFreq, frequency)
         # Taking frequency into account
         point_list_f = []
-        for i in range(0,len(point_list)-frequency,frequency):
+        for i in range(0,len(point_list)-plotStep,plotStep):
             point_list_f.append(point_list[i])
 
         image_list = []
@@ -443,7 +458,8 @@ class Experiment (ABC):
         vid_name = self.getPlotName(trial, subject, "avi")
 
         progress.setText(0, 'Loading frames')
-        makeVideo(image_list, vid_name, fps=100/frequency)
+        # TODO : update fps
+        makeVideo(image_list, vid_name, fps=100/plotStep)
         return vid_name
 
     ##########################################

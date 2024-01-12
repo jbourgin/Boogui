@@ -11,6 +11,8 @@ class Subject:
         self.id = id
         # subject group
         self.group = group
+        # record freq in Hz
+        self.recordFreq = experiment.getRecordFreq(lines)
 
         if progress != None:
             progress.setText(1, 'Loading Trials: parsing entries')
