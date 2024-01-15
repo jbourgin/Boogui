@@ -3,5 +3,7 @@ _tmp/*
 _results/*
 _plots/*
 raw_data/*
+data/*
+!data/samples/
 
 Pipfile.lock
