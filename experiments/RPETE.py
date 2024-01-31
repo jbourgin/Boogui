@@ -42,7 +42,7 @@ class Exp(Experiment):
             self.frames[stimName] = []
             for word_num in range(1,8):
                 word = df.loc[row_num, "word%i"%word_num]
-                if not pd.isnull(word):
+                if not pd.isnull(word) and word not in ["plus", "moins"]: # We exclude operation terms
                     splitted_size = df.loc[row_num, "size%i"%word_num].split(",")
                     width = splitted_size[0].replace("(","")
                     height = splitted_size[1].replace(")","")
