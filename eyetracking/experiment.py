@@ -405,7 +405,7 @@ class Experiment (ABC):
         self.plotRegions(trial, image)
 
     def getPlotName(self, trial, subject, extension):
-        return 'exp_%s_subject_%i_%s_%i_%s.%s' % (self.exp_name, subject.id, "training" if trial.isTraining() else "trial", trial.id, Experiment.plotMethod.value.lower(), extension)
+        return 'exp_%s_subject_%s%i_%s_%i_%s.%s' % (self.exp_name, subject.group, subject.id, "training" if trial.isTraining() else "trial", trial.id, Experiment.plotMethod.value.lower(), extension)
 
     # Get frame color (stim delimitation during plot)
     def getFrameColor(self, trial):

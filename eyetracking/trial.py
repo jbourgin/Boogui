@@ -95,8 +95,12 @@ class Trial:
             entry = self.experiment.parseEntry(line)
             if entry != None:
                 if isinstance(entry, StartTrial):
+                    # Check that we have only one starttrial and one stoptrial (one may be missing if tracker is disconnected during experiment).
+                    # For instance MB5 in RPETE protocol on first trial (MSG 25373364 tracker_disconnected MSG 25373364 TRIAL ABORTED)
+                    if started:
+                        raise TrialException('We already got one start entry on trial {0}'.format(self.id))
                     started = True
-                    self.id = entry.trial_number
+                    self.id = entry.trial_number        
                 if started:
                     entry.check()
                     self.entries.append(entry)

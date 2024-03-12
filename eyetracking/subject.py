@@ -32,8 +32,9 @@ class Subject:
                         self.trials.append(trial)
                         if progress != None:
                             progress.increment(1)
-            except:
+            except Exception as error:
                 print('%s skipped because of errors' % trial)
+                print(error)
                 continue
 
 
