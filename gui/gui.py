@@ -5,7 +5,6 @@ from PyQt5.QtGui import *
 from PyQt5.QtMultimedia import*
 from PyQt5.QtCore import *
 import pandas as pd
-from datetime import datetime
 
 from eyetracking.subject import Subject
 from eyetracking.utils import *
@@ -19,6 +18,10 @@ from gui.video_widget import VideoWidget
 
 import re #To format data lists
 import traceback
+
+class FileType():
+    CSV = "CSV Files (*.csv)"
+    EXCEL = "Excel files (*.xlsx)"
 
 class Main(QMainWindow):
 
@@ -192,11 +195,16 @@ class Main(QMainWindow):
         browseAct.triggered.connect(self.file_open)
 
         # Export menu item
-        self.exportAct = QAction("&Export subjects", self)
+        self.exportAct = QAction("&Export subjects CSV", self)
         self.exportAct.setShortcut('Ctrl+S')
-        self.exportAct.setStatusTip('Export files')
+        self.exportAct.setStatusTip('Export files CSV format')
         self.exportAct.setEnabled(False)
-        self.exportAct.triggered.connect(self.exportSubjects)
+        self.exportAct.triggered.connect(lambda : self.exportSubjects(FileType.CSV))
+
+        self.exportActExc = QAction("&Export subjects Excel", self)
+        self.exportActExc.setStatusTip('Export files Excel format')
+        self.exportActExc.setEnabled(False)
+        self.exportActExc.triggered.connect(lambda : self.exportSubjects(FileType.EXCEL))
 
         # Export Plots
         self.exportPlotAct = QAction("&Export plots", self)
@@ -216,6 +224,7 @@ class Main(QMainWindow):
         fileMenu.addAction(browseAct)
         fileMenu.addAction(convertAct)
         fileMenu.addAction(self.exportAct)
+        fileMenu.addAction(self.exportActExc)
         fileMenu.addAction(self.exportPlotAct)
         fileMenu.addAction(self.clear)
 
@@ -304,6 +313,7 @@ class Main(QMainWindow):
             self.subject_buttons.setExclusive(True)
             # Disabling Save menu action
             self.exportAct.setEnabled(False)
+            self.exportActExc.setEnabled(False)
             self.exportPlotAct.setEnabled(False)
             # Enabling change of experiment
             self.experiment_menu.setEnabled(True)
@@ -388,6 +398,7 @@ class Main(QMainWindow):
             self.dataDirectory = '/'.join(filenames[0].split('/')[0:-1])
             # Enabling Save menu action
             self.exportAct.setEnabled(True)
+            self.exportActExc.setEnabled(True)
             self.exportPlotAct.setEnabled(True)
             # Disabling change of experiment
             self.experiment_menu.setEnabled(False)
@@ -423,12 +434,12 @@ class Main(QMainWindow):
             #closing message box
             progress.close()
 
-    def exportSubjects(self):
+    def exportSubjects(self, format):
         """
         hyp: len(subject_datas) > 0
         """
         filedialog = QFileDialog()
-        filename,_ = filedialog.getSaveFileName(self, 'Save File', os.path.join(getResultsFolder(), self.subject_datas[0].experiment.exp_name), "CSV Files (*.csv)")
+        filename,_ = filedialog.getSaveFileName(self, 'Save File', os.path.join(getResultsFolder(), self.subject_datas[0].experiment.exp_name), format)
         # Creation of results file
         if len(filename) > 0:
             try:
@@ -438,6 +449,9 @@ class Main(QMainWindow):
                 progress.setMaximum(0, len(self.subject_datas))
 
                 createResultsFolder()
+                newExcelFile = True
+                # reset experiment trial_dict (in case we export several times while not quitting Boogui)
+                self.subject_datas[0].experiment.resetTrialDict()
                 for subjectData in self.subject_datas:
                     progress.increment(0)
                     progress.setText(1, 'Exporting Trials')
@@ -447,10 +461,16 @@ class Main(QMainWindow):
                         subjectData.experiment.processTrial(subjectData.subject, trial)
                     subjectData.experiment.dataframe = pd.DataFrame.from_dict(subjectData.experiment.trial_dict)
                     subjectData.experiment.postProcess()
-                    subjectData.experiment.dataframe.to_csv(filename, index = False, compression = None, sep=";")
-                    # also export to xlsx for encoding to be ok
-                    subjectData.experiment.dataframe.to_excel(filename.replace(".csv", "{0}.xlsx".format(datetime.now().strftime("_%d-%m-%Y_%H-%M-%S"))), index = False)
-
+                    if format == FileType.CSV:
+                        subjectData.experiment.dataframe.to_csv(filename, index = False, compression = None, sep=";")
+                    else:
+                        if newExcelFile:
+                            writer = pd.ExcelWriter(filename, mode="w", engine="openpyxl")
+                            newExcelFile = False
+                        else:
+                            writer = pd.ExcelWriter(filename, mode="a", engine="openpyxl", if_sheet_exists="overlay")# overlay takes content of the sheet and append after
+                        subjectData.experiment.dataframe.to_excel(writer, index=False)
+                        writer.close()
             except Exception as e:
                 raise Exception('Error while exporting to file %s: \n%s' % (filename, traceback.format_exc()))
 
