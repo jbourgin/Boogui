@@ -62,17 +62,19 @@ class ExperimentException(Exception):
 
 class Experiment (ABC):
 
-    plotMethod = PlotMethod.FIX
+    plotMethod = PlotMethod.SCANPATH
     frequency = 10 # We draw 10 points/sec (one each 100 ms)
 
     def __init__(self, expected_features: Set[str], exp_name):
         self.expected_features = expected_features
         self.dataframe = None
-        self.trial_dict = dict()
         self.exp_name = os.path.basename(os.path.splitext(exp_name)[0])
         self.path_images = None
         self.IVs = []
         self.DVs = []
+
+    def resetTrialDict(self):
+        self.trial_dict = dict()
 
     def processSubject(self, input_file: str, progress_bar = None) -> "Subject":
         subject = self.parseSubject(input_file, progress_bar)
