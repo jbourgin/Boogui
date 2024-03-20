@@ -5,6 +5,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtMultimedia import*
 from PyQt5.QtCore import *
 import pandas as pd
+from datetime import datetime
 
 from eyetracking.subject import Subject
 from eyetracking.utils import *
@@ -22,7 +23,7 @@ import traceback
 class Main(QMainWindow):
 
     scrollLayoutWidth = 125
-    previsuAreaWidth = 700
+    previsuAreaWidth = 640
 
     # folder where the "open" file dialog starts
     dataDirectory = 'data'
@@ -150,7 +151,7 @@ class Main(QMainWindow):
 
         previsualizer_layout.addWidget(self.previsu_image)
         previsualizer_layout.addWidget(self.video_widget)
-        self.previsualizer.setFixedWidth(self.previsuAreaWidth)
+        self.previsualizer.setMaximumWidth(self.previsuAreaWidth)
 
         return self.previsualizer
 
@@ -230,7 +231,7 @@ class Main(QMainWindow):
             self.experiment_menu.addAction(a)
 
             #Default experiment: the first one
-            if exp_name == "RPETE":
+            if exp_name == "Hemifield":
                 setExp.setChecked(True)
                 self.setExperiment(exp_name)()
 
@@ -447,6 +448,8 @@ class Main(QMainWindow):
                     subjectData.experiment.dataframe = pd.DataFrame.from_dict(subjectData.experiment.trial_dict)
                     subjectData.experiment.postProcess()
                     subjectData.experiment.dataframe.to_csv(filename, index = False, compression = None, sep=";")
+                    # also export to xlsx for encoding to be ok
+                    subjectData.experiment.dataframe.to_excel(filename.replace(".csv", "{0}.xlsx".format(datetime.now().strftime("_%d-%m-%Y_%H-%M-%S"))), index = False)
 
             except Exception as e:
                 raise Exception('Error while exporting to file %s: \n%s' % (filename, traceback.format_exc()))
