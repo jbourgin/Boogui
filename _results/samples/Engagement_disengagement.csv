@@ -1,0 +1,33 @@
+Subject;Group;TrialID;Eye;Training;Type essai;Type stimulus;Emotion;Stimulus emo;Stimulus neu;Forme;Target Position;First fixation;Errors;Response time;Failed eyetracking;First blink type;First fixation_sorting;Response time_sorting
+4;;0;R;False;Disengagement;Face;Angry;Homme_Angry21.png;Homme_Neutral21.png;Rectangle;Left;245;0;655;0;No blink;Normal First fixation value;Normal Response time value
+4;;4;R;False;Engagement;Face;Sad;Homme_Sad49.png;Homme_Neutral49.png;Ellipse;Right;226;0;794;0;No blink;Normal First fixation value;Normal Response time value
+4;;5;R;False;Disengagement;Face;Sad;Femme_Sad61.png;Femme_Neutral61.png;Ellipse;Left;459;Anticipation saccade;662;0;No blink;First fixation not relevant;Response time not relevant
+4;;6;R;False;Disengagement;Face;Sad;Homme_Sad28.png;Homme_Neutral28.png;Rectangle;Right;323;0;601;0;No blink;Normal First fixation value;Normal Response time value
+4;;7;R;False;Disengagement;Face;Sad;Homme_Sad21.png;Homme_Neutral21.png;Ellipse;Right;194;0;484;0;No blink;Normal First fixation value;Normal Response time value
+4;;9;R;False;Engagement;Face;Sad;Femme_Sad2.png;Femme_Neutral2.png;Ellipse;Left;180;0;541;0;No blink;Normal First fixation value;Normal Response time value
+4;;11;R;False;Engagement;Face;Sad;Femme_Sad16.png;Femme_Neutral16.png;Rectangle;Left;213;0;500;0;Late;Normal First fixation value;Normal Response time value
+4;;13;R;False;Engagement;Face;Sad;Homme_Sad46.png;Homme_Neutral46.png;Rectangle;Right;231;0;483;0;No blink;Normal First fixation value;Normal Response time value
+4;;14;R;False;Engagement;Face;Angry;Femme_Angry2.png;Femme_Neutral2.png;Rectangle;Left;301;Anticipation saccade;546;0;No blink;First fixation not relevant;Response time not relevant
+4;;15;R;False;Engagement;Face;Angry;Homme_Angry28.png;Homme_Neutral28.png;Rectangle;Right;257;0;475;0;No blink;Normal First fixation value;Normal Response time value
+4;;16;R;False;Disengagement;Face;Sad;Femme_Sad31.png;Femme_Neutral31.png;Rectangle;Left;213;0;525;0;No blink;Normal First fixation value;Normal Response time value
+4;;18;R;False;Disengagement;Face;Angry;Femme_Angry31.png;Femme_Neutral31.png;Ellipse;Right;223;0;585;0;No blink;Normal First fixation value;Normal Response time value
+4;;20;R;False;Engagement;Face;Angry;Femme_Angry58.png;Femme_Neutral58.png;Ellipse;Left;195;0;580;0;No blink;Normal First fixation value;Normal Response time value
+4;;21;R;False;Disengagement;Face;Angry;Femme_Angry61.png;Femme_Neutral61.png;Ellipse;Left;202;0;517;0;Late;Normal First fixation value;Normal Response time value
+4;;22;R;False;Engagement;Face;Angry;Homme_Angry33.png;Homme_Neutral33.png;Ellipse;Right;216;Anticipation saccade;557;0;No blink;First fixation not relevant;Response time not relevant
+4;;23;R;False;Disengagement;Face;Angry;Homme_Angry36.png;Homme_Neutral36.png;Rectangle;Right;321;0;572;0;No blink;Normal First fixation value;Normal Response time value
+4;;2;R;False;Disengagement;Scene;neg;neg12.png;neu21.png;Rectangle;Right;186;0;534;0;No blink;Normal First fixation value;Normal Response time value
+4;;6;R;False;Disengagement;Scene;neg;neg11.png;neu7.png;Rectangle;Left;202;0;624;0;No blink;Normal First fixation value;Normal Response time value
+4;;7;R;False;Disengagement;Scene;po;po7.png;neu18.png;Ellipse;Right;423;1;674;0;No blink;First fixation not relevant;Response time not relevant
+4;;9;R;False;Disengagement;Scene;neg;neg9.png;neu2.png;Ellipse;Left;290;Anticipation saccade;793;0;No blink;First fixation not relevant;Response time not relevant
+4;;10;R;False;Engagement;Scene;neg;neg10.png;neu11.png;Ellipse;Left;239;Anticipation saccade;593;0;No blink;First fixation not relevant;Response time not relevant
+4;;11;R;False;Engagement;Scene;neg;neg4.png;neu6.png;Rectangle;Right;281;0;906;0;No blink;Normal First fixation value;Normal Response time value
+4;;12;R;False;Engagement;Scene;neg;neg5.png;neu4.png;Rectangle;Left;241;0;677;0;No blink;Normal First fixation value;Normal Response time value
+4;;13;R;False;Engagement;Scene;po;po5.png;neu19.png;Ellipse;Right;81;Anticipation saccade;823;0;No blink;First fixation not relevant;Response time not relevant
+4;;14;R;False;Engagement;Scene;neg;neg1.png;neu22.png;Ellipse;Right;416;0;691;0;No blink;Normal First fixation value;Normal Response time value
+4;;16;R;False;Disengagement;Scene;po;po6.png;neu13.png;Rectangle;Left;200;0;650;0;No blink;Normal First fixation value;Normal Response time value
+4;;17;R;False;Engagement;Scene;po;po12.png;neu17.png;Rectangle;Left;235;Anticipation saccade;664;0;No blink;First fixation not relevant;Response time not relevant
+4;;18;R;False;Disengagement;Scene;po;po4.png;neu5.png;Rectangle;Right;211;0;694;0;No blink;Normal First fixation value;Normal Response time value
+4;;19;R;False;Disengagement;Scene;neg;neg3.png;neu10.png;Ellipse;Right;356;0;651;0;No blink;Normal First fixation value;Normal Response time value
+4;;20;R;False;Engagement;Scene;po;po8.png;neu1.png;Ellipse;Left;171;0;533;0;No blink;Normal First fixation value;Normal Response time value
+4;;21;R;False;Disengagement;Scene;po;po1.png;neu12.png;Ellipse;Left;246;Anticipation saccade;606;0;No blink;First fixation not relevant;Response time not relevant
+4;;22;R;False;Engagement;Scene;po;po10.png;neu20.png;Rectangle;Right;422;Anticipation saccade;827;0;No blink;First fixation not relevant;Response time not relevant

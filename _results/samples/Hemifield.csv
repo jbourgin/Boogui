@@ -1,0 +1,121 @@
+Subject;Group;TrialID;Eye;Target Name;Emotion;Age;Target Position;Subject response;Response time;Correct start trial;Saccade during face presentation;Saccade toward face during presentation;Landing on face during presentation;First blink type
+27;YOUNG;0;L;173_y_f_f_b_bw.png;fear;young;Left;Peur;1820.3159000113371;False;False;False;False;No blink
+27;YOUNG;1;L;124_o_f_h-f_a-a_bw.png;happy-fear;old;Left;Joie;3002.2337999980664;False;False;False;False;No blink
+27;YOUNG;2;L;151_o_m_f-h_a-b_bw.png;fear-happy;old;Left;Dégoût;1804.650699996273;False;False;False;False;No blink
+27;YOUNG;3;L;067_o_f_h-f_a-b_bw.png;happy-fear;old;Left;Peur;2655.0726999994367;False;False;False;False;No blink
+27;YOUNG;4;L;101_y_f_h-f_b-b_bw.png;happy-fear;young;Right;Joie;851.221799995983;False;False;False;False;No blink
+27;YOUNG;5;L;101_y_f_f-h_a-b_bw.png;fear-happy;young;Right;Dégoût;1165.872000012314;False;False;False;False;No blink
+27;YOUNG;6;L;132_y_f_f-h_a-b_bw.png;fear-happy;young;Left;Neutre;5743.709000002127;False;False;False;False;No blink
+27;YOUNG;7;L;132_y_f_d-s_a-b_bw.png;disgust-sad;young;Right;Dégoût;1824.2551000003004;False;False;False;False;No blink
+27;YOUNG;8;L;072_y_m_a-n_a-a_bw.png;angry-neutral;young;Left;Neutre;752.524399998947;False;False;False;False;No blink
+27;YOUNG;9;L;102_o_m_h-f_a-a_bw.png;happy-fear;old;Right;Joie;1019.9750000028872;False;False;False;False;No blink
+27;YOUNG;10;L;101_y_f_f-n_a-b_bw.png;fear-neutral;young;Right;Dégoût;1805.4095999978017;True;False;False;False;Late
+27;YOUNG;11;L;124_o_f_h-f_a-a_bw.png;happy-fear;old;Right;Joie;807.6722999976482;True;False;False;False;No blink
+27;YOUNG;12;L;102_o_m_s-d_b-a_bw.png;sad-disgust;old;Right;Dégoût;2266.087299998617;True;True;True;False;Late
+27;YOUNG;13;L;102_o_m_f-h_a-a_bw.png;fear-happy;old;Left;Dégoût;803.9221999933943;False;False;False;False;No blink
+27;YOUNG;14;L;101_y_f_n-f_b-a_bw.png;neutral-fear;young;Left;Neutre;3968.537500011735;True;False;False;False;No blink
+27;YOUNG;15;L;102_o_m_n-f_a-a_bw.png;neutral-fear;old;Right;Dégoût;3698.458800005028;True;False;False;False;Late
+27;YOUNG;16;L;132_y_f_f-h_a-b_bw.png;fear-happy;young;Right;Peur;4351.710500006448;True;True;True;False;Late
+27;YOUNG;17;L;124_o_f_n-f_a-a_bw.png;neutral-fear;old;Left;Neutre;2145.73720000044;False;True;False;False;Late
+27;YOUNG;18;L;072_y_m_f-h_b-a_bw.png;fear-happy;young;Right;Dégoût;2494.0339000022504;True;True;False;False;Late
+27;YOUNG;19;L;004_o_m_f-h_b-a_bw.png;fear-happy;old;Left;Tristesse;3735.6049999943934;True;True;False;False;Late
+27;YOUNG;20;L;151_o_m_d-s_b-a_bw.png;disgust-sad;old;Left;Tristesse;2391.0903000069084;True;False;False;False;Late
+27;YOUNG;21;L;151_o_m_h-f_b-a_bw.png;happy-fear;old;Left;Joie;1402.8315000032308;True;False;False;False;Late
+27;YOUNG;22;L;102_o_m_d-s_a-b_bw.png;disgust-sad;old;Left;Neutre;1232.3207000008551;True;False;False;False;Late
+27;YOUNG;23;L;072_y_m_h_a_bw.png;happy;young;Left;Joie;752.1875000093132;True;False;False;False;Late
+27;YOUNG;24;L;173_y_f_h-n_b-b_bw.png;happy-neutral;young;Left;Joie;459.277200003271;True;True;False;False;No blink
+27;YOUNG;25;L;089_y_m_n-h_b-a_bw.png;neutral-happy;young;Left;Dégoût;2022.3873000068124;False;False;False;False;Late
+27;YOUNG;26;L;004_o_m_d-s_b-a_bw.png;disgust-sad;old;Left;Tristesse;2093.745200007106;True;True;False;False;No blink
+27;YOUNG;27;L;173_y_f_h-f_b-b_bw.png;happy-fear;young;Right;Joie;713.7766999949235;True;True;True;False;No blink
+27;YOUNG;28;L;004_o_m_f-h_b-a_bw.png;fear-happy;old;Right;Tristesse;3349.063200003002;False;True;False;False;Late
+27;YOUNG;29;L;067_o_f_n-h_a-a_bw.png;neutral-happy;old;Right;Colère;3075.0489000056405;True;False;False;False;Late
+27;YOUNG;30;L;124_o_f_f-h_a-a_bw.png;fear-happy;old;Left;Neutre;2798.628699994879;True;True;False;False;Late
+27;YOUNG;31;L;132_y_f_f_a_bw.png;fear;young;Right;Dégoût;4846.599800002878;False;False;False;False;Late
+27;YOUNG;32;L;173_y_f_d-s_a-b_bw.png;disgust-sad;young;Right;Dégoût;1417.085599998245;False;False;False;False;Late
+27;YOUNG;33;L;124_o_f_h_a_bw.png;happy;old;Right;Joie;605.852299995604;True;False;False;False;No blink
+27;YOUNG;34;L;173_y_f_h-f_b-b_bw.png;happy-fear;young;Left;Joie;576.8736000027275;True;True;True;False;No blink
+27;YOUNG;35;L;004_o_m_f-n_b-a_bw.png;fear-neutral;old;Left;Tristesse;3491.3986999890767;True;True;True;False;Late
+27;YOUNG;36;L;072_y_m_h-f_a-b_bw.png;happy-fear;young;Right;Joie;797.9026999964844;True;False;False;False;No blink
+27;YOUNG;37;L;067_o_f_f-h_b-a_bw.png;fear-happy;old;Left;Tristesse;1700.7752000063192;True;True;True;False;Late
+27;YOUNG;38;L;101_y_f_d-s_a-a_bw.png;disgust-sad;young;Right;Tristesse;893.4364000015194;False;True;True;False;No blink
+27;YOUNG;39;L;151_o_m_f-h_a-b_bw.png;fear-happy;old;Right;Tristesse;3092.4186000047484;True;True;True;False;Late
+27;YOUNG;40;L;124_o_f_s-d_a-a_bw.png;sad-disgust;old;Left;Tristesse;1295.8590000052936;False;False;False;False;No blink
+27;YOUNG;41;L;173_y_f_n-h_b-b_bw.png;neutral-happy;young;Right;Tristesse;1816.2219999940132;True;False;False;False;No blink
+27;YOUNG;42;L;124_o_f_f-n_a-a_bw.png;fear-neutral;old;Right;Tristesse;4294.52979999769;True;False;False;False;Late
+27;YOUNG;43;L;089_y_m_d-s_b-b_bw.png;disgust-sad;young;Right;Dégoût;1433.3956999907969;True;True;False;False;Late
+27;YOUNG;44;L;173_y_f_d-s_a-b_bw.png;disgust-sad;young;Left;Neutre;3415.568099997472;True;False;False;False;Late
+27;YOUNG;45;L;132_y_f_s-d_b-a_bw.png;sad-disgust;young;Left;Tristesse;1752.016400001594;False;True;False;False;Late
+27;YOUNG;46;L;067_o_f_d-s_a-b_bw.png;disgust-sad;old;Left;Tristesse;1298.2399000029543;True;False;False;False;Late
+27;YOUNG;47;L;132_y_f_h-f_b-a_bw.png;happy-fear;young;Left;Joie;482.15799999888986;True;True;True;False;No blink
+27;YOUNG;48;L;132_y_f_d-s_a-b_bw.png;disgust-sad;young;Left;Dégoût;1250.735599998734;True;False;False;False;No blink
+27;YOUNG;49;L;089_y_m_h-n_a-b_bw.png;happy-neutral;young;Left;Joie;909.2947999888564;False;False;False;False;No blink
+27;YOUNG;50;L;124_o_f_a-n_b-a_bw.png;angry-neutral;old;Right;Tristesse;1910.443200002192;True;False;False;False;Late
+27;YOUNG;51;L;089_y_m_s-d_b-b_bw.png;sad-disgust;young;Left;Neutre;2652.955200013821;True;False;False;False;Late
+27;YOUNG;52;L;004_o_m_h-f_a-b_bw.png;happy-fear;old;Left;Joie;1177.3036000085997;True;False;False;False;No blink
+27;YOUNG;53;L;004_o_m_s-d_a-b_bw.png;sad-disgust;old;Left;Dégoût;2309.6566000021994;False;False;False;False;Late
+27;YOUNG;54;L;151_o_m_f_a_bw.png;fear;old;Left;Tristesse;5095.967100001872;True;False;False;False;Late
+27;YOUNG;55;L;102_o_m_f-h_a-a_bw.png;fear-happy;old;Right;Joie;1091.3527000084289;True;False;False;False;No blink
+27;YOUNG;56;L;101_y_f_a-n_b-b_bw.png;angry-neutral;young;Left;Tristesse;1349.0231999894604;True;False;False;False;No blink
+27;YOUNG;57;L;101_y_f_f-h_a-b_bw.png;fear-happy;young;Left;Dégoût;1885.136199998669;True;False;False;False;No blink
+27;YOUNG;58;L;072_y_m_n-a_a-a_bw.png;neutral-angry;young;Left;Neutre;1957.1706999995515;True;False;False;False;No blink
+27;YOUNG;59;L;151_o_m_h-f_b-a_bw.png;happy-fear;old;Right;Joie;577.9187000007369;True;True;False;False;No blink
+27;YOUNG;60;L;067_o_f_h-n_a-a_bw.png;happy-neutral;old;Left;Joie;3533.991900010733;True;False;False;False;Late
+27;YOUNG;61;L;004_o_m_h_a_bw.png;happy;old;Right;Dégoût;1810.845799991512;True;False;False;False;Late
+27;YOUNG;62;L;101_y_f_h-n_b-b_bw.png;happy-neutral;young;Right;Joie;530.5018999933964;True;False;False;False;No blink
+27;YOUNG;63;L;089_y_m_n-f_b-a_bw.png;neutral-fear;young;Left;Tristesse;2502.0726999937324;True;False;False;False;No blink
+27;YOUNG;64;L;089_y_m_f-h_a-a_bw.png;fear-happy;young;Left;Dégoût;1460.893199997372;True;True;True;False;No blink
+27;YOUNG;65;L;067_o_f_s-d_b-a_bw.png;sad-disgust;old;Right;Dégoût;762.6260000106413;False;True;True;False;No blink
+27;YOUNG;66;L;004_o_m_a-n_a-a_bw.png;angry-neutral;old;Left;Tristesse;3308.835799994995;True;False;False;False;Late
+27;YOUNG;67;L;067_o_f_d-s_a-b_bw.png;disgust-sad;old;Right;Dégoût;1390.1688999903854;True;True;True;False;No blink
+27;YOUNG;68;L;101_y_f_s-d_a-a_bw.png;sad-disgust;young;Right;Tristesse;682.3260999954073;False;True;True;False;No blink
+27;YOUNG;69;L;151_o_m_a-n_b-a_bw.png;angry-neutral;old;Left;Dégoût;801.7585999914445;False;False;False;False;No blink
+27;YOUNG;70;L;173_y_f_n-a_b-a_bw.png;neutral-angry;young;Left;Colère;2568.2231999962823;True;False;False;False;Late
+27;YOUNG;71;L;067_o_f_s-d_b-a_bw.png;sad-disgust;old;Left;Dégoût;3664.444599999115;False;True;True;False;Late
+27;YOUNG;72;L;089_y_m_s-d_b-b_bw.png;sad-disgust;young;Right;Dégoût;1230.4714000056265;True;True;True;False;No blink
+27;YOUNG;73;L;089_y_m_h-f_a-a_bw.png;happy-fear;young;Left;Joie;921.032300000661;True;False;False;False;No blink
+27;YOUNG;74;L;102_o_m_n-h_a-a_bw.png;neutral-happy;old;Right;Neutre;2155.7367000059457;True;False;False;False;Late
+27;YOUNG;75;L;004_o_m_n-a_a-a_bw.png;neutral-angry;old;Right;Dégoût;791.4509999973234;True;False;False;False;No blink
+27;YOUNG;76;L;101_y_f_d-s_a-a_bw.png;disgust-sad;young;Left;Tristesse;2644.836100007524;False;False;False;False;Late
+27;YOUNG;77;L;067_o_f_h-f_a-b_bw.png;happy-fear;old;Right;Joie;516.4064999989932;True;False;False;False;No blink
+27;YOUNG;78;L;173_y_f_s-d_b-a_bw.png;sad-disgust;young;Right;Dégoût;773.1937000062317;True;True;True;False;No blink
+27;YOUNG;79;L;089_y_m_d-s_b-b_bw.png;disgust-sad;young;Left;Neutre;1309.8797999991802;True;False;False;False;No blink
+27;YOUNG;80;L;089_y_m_f-h_a-a_bw.png;fear-happy;young;Right;Dégoût;1360.6154000008246;True;True;False;False;Late
+27;YOUNG;81;L;067_o_f_n-a_a-b_bw.png;neutral-angry;old;Left;Neutre;651.5034000040032;True;False;False;False;No blink
+27;YOUNG;82;L;124_o_f_s-d_a-a_bw.png;sad-disgust;old;Right;Tristesse;2153.1762999948114;True;False;False;False;Late
+27;YOUNG;83;L;151_o_m_d-s_b-a_bw.png;disgust-sad;old;Right;Dégoût;1466.310000003432;False;True;True;False;Late
+27;YOUNG;84;L;102_o_m_f-n_a-a_bw.png;fear-neutral;old;Left;Peur;1687.5290000025416;True;True;True;False;No blink
+27;YOUNG;85;L;072_y_m_f-h_b-a_bw.png;fear-happy;young;Left;Tristesse;3663.8990999927046;True;True;True;False;Late
+27;YOUNG;86;L;067_o_f_f-h_b-a_bw.png;fear-happy;old;Right;Dégoût;1607.3831000103382;True;True;True;False;Late
+27;YOUNG;87;L;173_y_f_f-h_b-b_bw.png;fear-happy;young;Left;Dégoût;380.1968999905512;True;True;False;False;No blink
+27;YOUNG;88;L;124_o_f_f-h_a-a_bw.png;fear-happy;old;Right;Tristesse;1389.38190000772;True;False;False;False;No blink
+27;YOUNG;89;L;101_y_f_s-d_a-a_bw.png;sad-disgust;young;Left;Tristesse;612.2029999969527;False;False;False;False;No blink
+27;YOUNG;90;L;101_y_f_h-f_b-b_bw.png;happy-fear;young;Left;Joie;729.0865000104532;True;False;False;False;No blink
+27;YOUNG;91;L;072_y_m_d-s_b-a_bw.png;disgust-sad;young;Left;Tristesse;1039.9429999961285;True;False;False;False;No blink
+27;YOUNG;92;L;151_o_m_s-d_a-b_bw.png;sad-disgust;old;Right;Dégoût;1817.444100001012;True;True;False;False;Late
+27;YOUNG;93;L;102_o_m_d-s_a-b_bw.png;disgust-sad;old;Right;Dégoût;460.5854000110412;True;False;False;False;Late
+27;YOUNG;94;L;151_o_m_n-f_a-b_bw.png;neutral-fear;old;Left;Neutre;580.3358000121079;True;True;False;False;Late
+27;YOUNG;95;L;132_y_f_n-a_a-a_bw.png;neutral-angry;young;Right;Colère;975.9314999973868;True;False;False;False;No blink
+27;YOUNG;96;L;067_o_f_f_b_bw.png;fear;old;Right;Dégoût;729.4985000044107;True;True;True;False;No blink
+27;YOUNG;97;L;151_o_m_h_b_bw.png;happy;old;Right;Joie;803.0871000082698;True;True;True;False;No blink
+27;YOUNG;98;L;004_o_m_h-f_a-b_bw.png;happy-fear;old;Right;Joie;631.8693999928655;False;False;False;False;No blink
+27;YOUNG;99;L;004_o_m_d-s_b-a_bw.png;disgust-sad;old;Right;Tristesse;2310.9898999973666;True;True;True;False;No blink
+27;YOUNG;100;L;173_y_f_s-d_b-a_bw.png;sad-disgust;young;Left;Colère;1391.3448999956015;True;False;False;False;Late
+27;YOUNG;101;L;102_o_m_h-n_a-a_bw.png;happy-neutral;old;Right;Joie;558.5589999973308;True;True;False;False;No blink
+27;YOUNG;102;L;072_y_m_h-f_a-b_bw.png;happy-fear;young;Left;Joie;856.8825999973342;False;False;False;False;No blink
+27;YOUNG;103;L;173_y_f_f-h_b-b_bw.png;fear-happy;young;Right;Dégoût;1129.5315000024857;False;False;False;False;No blink
+27;YOUNG;104;L;072_y_m_s-d_a-b_bw.png;sad-disgust;young;Left;Dégoût;2687.8063999902224;True;False;False;False;Late
+27;YOUNG;105;L;132_y_f_n-h_a-b_bw.png;neutral-happy;young;Right;Dégoût;856.724099998246;False;False;False;False;No blink
+27;YOUNG;106;L;072_y_m_d-s_b-a_bw.png;disgust-sad;young;Right;Dégoût;603.3250000036787;False;True;True;False;No blink
+27;YOUNG;107;L;004_o_m_s-d_a-b_bw.png;sad-disgust;old;Right;Dégoût;769.0048999938881;False;False;False;False;No blink
+27;YOUNG;108;L;124_o_f_d-s_a-a_bw.png;disgust-sad;old;Left;Tristesse;1419.784699988668;True;False;False;False;No blink
+27;YOUNG;109;L;102_o_m_s-d_b-a_bw.png;sad-disgust;old;Left;Tristesse;1768.1834000104573;True;False;False;False;Late
+27;YOUNG;110;L;072_y_m_f_b_bw.png;fear;young;Right;Peur;3399.6175000065705;False;False;False;False;Late
+27;YOUNG;111;L;151_o_m_s-d_a-b_bw.png;sad-disgust;old;Left;Tristesse;2258.0794999958016;True;False;False;False;Late
+27;YOUNG;112;L;124_o_f_d-s_a-a_bw.png;disgust-sad;old;Right;Tristesse;1495.0447000010172;True;True;True;False;No blink
+27;YOUNG;113;L;089_y_m_f-n_a-b_bw.png;fear-neutral;young;Right;Dégoût;2145.426099988981;True;True;True;False;Late
+27;YOUNG;114;L;132_y_f_s-d_b-a_bw.png;sad-disgust;young;Right;Dégoût;2410.116600003676;True;True;False;False;Late
+27;YOUNG;115;L;089_y_m_h-f_a-a_bw.png;happy-fear;young;Right;Joie;552.9292999999598;True;False;False;False;No blink
+27;YOUNG;116;L;132_y_f_h_b_bw.png;happy;young;Right;Joie;540.3961000120034;True;True;True;False;No blink
+27;YOUNG;117;L;132_y_f_h-f_b-a_bw.png;happy-fear;young;Right;Joie;825.2162999997381;True;False;False;False;No blink
+27;YOUNG;118;L;102_o_m_h-f_a-a_bw.png;happy-fear;old;Left;Joie;1085.7258000032743;True;True;True;False;No blink
+27;YOUNG;119;L;072_y_m_s-d_a-b_bw.png;sad-disgust;young;Right;Dégoût;1955.299199995352;False;True;False;False;Late
