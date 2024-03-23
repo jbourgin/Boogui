@@ -106,6 +106,9 @@ class Exp(Experiment):
 
     def processTrial(self, subject: Subject, trial):
 
+        if trial.isEmpty():
+            logTrace ("Subject %i has no gaze positions at trial %i !" %(subject.id, trial.id), Precision.DETAIL)
+            return
         if trial.saccades == []:
             logTrace ('Subject %i has no saccades at trial %i !' %(subject.id, trial.id), Precision.DETAIL)
             return

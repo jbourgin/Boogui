@@ -95,91 +95,95 @@ class Exp(Experiment):
     ######################################################
 
     def processTrial(self, subject: Subject, trial):
+        if trial.isEmpty():
+            logTrace ("Subject %i has no gaze positions at trial %i !" %(subject.id, trial.id), Precision.DETAIL)
+            return
+        elif trial.saccades == []:
+            logTrace ('Subject %i has no saccades at trial %i !' %(subject.id, trial.id), Precision.DETAIL)
+            return
+        # Do processTrial of parent after making sure that the trial will be considered
         super().processTrial(subject, trial)
         targetname = trial.getStimulus()
 
-        if trial.saccades == []:
-            logTrace ('Subject %i has no saccades at trial %i !' %(subject.id, trial.id), Precision.DETAIL)
+        if trial.features['target_side'] == 'Gauche':
+            correct_position = 'Left'
+        elif trial.features['target_side'] == 'Droite':
+            correct_position = 'Right'
+
+        target_position = self.getTrialRegions(trial)[0]
+        start_trial_time = trial.getStartTrial().getTime()
+
+        if 'Neg' in targetname[:3]:
+            emotion = 'Negative'
+        elif 'P' in targetname[0]:
+            emotion = 'Positive'
+        elif 'Neu' in targetname[:3]:
+            emotion = 'Neutral'
         else:
-            if trial.features['target_side'] == 'Gauche':
-                correct_position = 'Left'
-            elif trial.features['target_side'] == 'Droite':
-                correct_position = 'Right'
+            emotion = 'Training'
 
-            target_position = self.getTrialRegions(trial)[0]
-            start_trial_time = trial.getStartTrial().getTime()
+        # First saccade
+        SRT_real = trial.saccades[0].getStartTime() - start_trial_time
+        sac_duration = trial.saccades[0].getEndTime() - trial.saccades[0].getStartTime()
+        sac_amplitude = distance(trial.saccades[0].getFirstGazePosition(), trial.saccades[0].getLastGazePosition())
+        horizontal_gaze_position_end = trial.saccades[0].getLastGazePosition()[0]
+        SRT_threshold = SRT_real + sac_duration
 
-            if 'Neg' in targetname[:3]:
-                emotion = 'Negative'
-            elif 'P' in targetname[0]:
-                emotion = 'Positive'
-            elif 'Neu' in targetname[:3]:
-                emotion = 'Neutral'
+        if SRT_real > 500:
+            threshold_excess = 'YES'
+        else:
+            threshold_excess = 'NO'
+
+        # Determining blink category
+        if trial.blinks == []:
+            blink_category = BLINK.NO
+        else:
+            if trial.blinks[0].getStartTime() < SRT_threshold:
+                blink_category = BLINK.EARLY
             else:
-                emotion = 'Training'
+                blink_category = BLINK.LATE
 
-            # First saccade
-            SRT_real = trial.saccades[0].getStartTime() - start_trial_time
-            sac_duration = trial.saccades[0].getEndTime() - trial.saccades[0].getStartTime()
-            sac_amplitude = distance(trial.saccades[0].getFirstGazePosition(), trial.saccades[0].getLastGazePosition())
-            horizontal_gaze_position_end = trial.saccades[0].getLastGazePosition()[0]
-            SRT_threshold = SRT_real + sac_duration
+        # Error :
+        if not trial.isStartValid(self.screen_center, self.valid_distance_center)[0]:
+            error = ERROR.START_INVALID
+        elif blink_category == BLINK.EARLY:
+            error = ERROR.EARLY_BLINK
+        elif SRT_real <= 80:
+            error = ERROR.EARLY_SACCADE
+        elif sac_duration < 22:
+            error = ERROR.SHORT_SACCADE
+        elif sac_amplitude < self.valid_distance_center:
+            error = ERROR.MICRO_SACCADE
+        elif ((correct_position == 'Right'
+              and horizontal_gaze_position_end < self.screen_center[0])
+              or (correct_position == 'Left'
+                  and horizontal_gaze_position_end > self.screen_center[0])):
+            error = '1'
+        elif ((correct_position == 'Right'
+              and horizontal_gaze_position_end > self.screen_center[0])
+              or (correct_position == 'Left'
+                  and horizontal_gaze_position_end < self.screen_center[0])):
+            error = '0'
+        else:
+            error = None
 
-            if SRT_real > 500:
-                threshold_excess = 'YES'
-            else:
-                threshold_excess = 'NO'
+        # Writing data in result csv file
+        new_dict = {
+            Col.TRAINING: trial.features['training'],
+            Col.EMOTION: emotion,
+            PSCol.TARGET: targetname,
+            Col.TARGET_POS: trial.features['target_side'],
+            PSCol.COR_POS: correct_position,
+            Col.ERR: error,
+            PSCol.FIRST_RT: trial.saccades[0].getStartTime() - start_trial_time,
+            PSCol.FIRST_POS_START: trial.saccades[0].getFirstGazePosition(),
+            PSCol.FIRST_POS_END: trial.saccades[0].getLastGazePosition(),
+            PSCol.FIRST_DUR: trial.saccades[0].getEndTime() - trial.saccades[0].getStartTime(),
+            Col.BLINK: blink_category,
+            PSCol.THRESH: threshold_excess
+        }
 
-            # Determining blink category
-            if trial.blinks == []:
-                blink_category = BLINK.NO
-            else:
-                if trial.blinks[0].getStartTime() < SRT_threshold:
-                    blink_category = BLINK.EARLY
-                else:
-                    blink_category = BLINK.LATE
-
-            # Error :
-            if not trial.isStartValid(self.screen_center, self.valid_distance_center)[0]:
-                error = ERROR.START_INVALID
-            elif blink_category == BLINK.EARLY:
-                error = ERROR.EARLY_BLINK
-            elif SRT_real <= 80:
-                error = ERROR.EARLY_SACCADE
-            elif sac_duration < 22:
-                error = ERROR.SHORT_SACCADE
-            elif sac_amplitude < self.valid_distance_center:
-                error = ERROR.MICRO_SACCADE
-            elif ((correct_position == 'Right'
-                  and horizontal_gaze_position_end < self.screen_center[0])
-                  or (correct_position == 'Left'
-                      and horizontal_gaze_position_end > self.screen_center[0])):
-                error = '1'
-            elif ((correct_position == 'Right'
-                  and horizontal_gaze_position_end > self.screen_center[0])
-                  or (correct_position == 'Left'
-                      and horizontal_gaze_position_end < self.screen_center[0])):
-                error = '0'
-            else:
-                error = None
-
-            # Writing data in result csv file
-            new_dict = {
-                Col.TRAINING: trial.features['training'],
-                Col.EMOTION: emotion,
-                PSCol.TARGET: targetname,
-                Col.TARGET_POS: trial.features['target_side'],
-                PSCol.COR_POS: correct_position,
-                Col.ERR: error,
-                PSCol.FIRST_RT: trial.saccades[0].getStartTime() - start_trial_time,
-                PSCol.FIRST_POS_START: trial.saccades[0].getFirstGazePosition(),
-                PSCol.FIRST_POS_END: trial.saccades[0].getLastGazePosition(),
-                PSCol.FIRST_DUR: trial.saccades[0].getEndTime() - trial.saccades[0].getStartTime(),
-                Col.BLINK: blink_category,
-                PSCol.THRESH: threshold_excess
-            }
-
-            self.updateDict(new_dict)
+        self.updateDict(new_dict)
 
     def isEligibleTrial(self, trial, DV):
         if DV == PSCol.FIRST_RT:

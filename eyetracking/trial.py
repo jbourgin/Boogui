@@ -42,15 +42,17 @@ class Trial:
     def setEntries(self, lines: List[Line]) -> List[Line]:
         logTrace ('Parsing entries', Precision.NORMAL)
         rest_lines = self.parseEntries(lines)
+        logTrace ('Setting trial features', Precision.NORMAL)
+        self.setFeatures()
+        logTrace ('Setting eye', Precision.NORMAL)
+        self.eye = self.experiment.getEye(lines)
+        logTrace ('Setting if trial is training', Precision.NORMAL)
+        # WARNING 20/03/24 : no longer exclude trials when no gaze data inside (to avoid skipping rows). We kept skipping rows on old experiments (Gaze, Engagement, Prosaccade, RPETE), inside processTrial
         if not self.isEmpty():
-            logTrace ('Setting trial features', Precision.NORMAL)
-            self.setFeatures()
-            logTrace ('Setting eye', Precision.NORMAL)
-            self.eye = self.experiment.getEye(lines)
-            logTrace ('Setting if trial is training', Precision.NORMAL)
             self.is_training = self.experiment.isTraining(self)
         return rest_lines
 
+    # We need at least one row with gaze position for trial to be considered not empty
     def isEmpty(self) -> bool:
         for entry in self.entries:
             if isinstance(entry, Position):
@@ -100,7 +102,7 @@ class Trial:
                     if started:
                         raise TrialException('We already got one start entry on trial {0}'.format(self.id))
                     started = True
-                    self.id = entry.trial_number        
+                    self.id = entry.trial_number
                 if started:
                     entry.check()
                     self.entries.append(entry)

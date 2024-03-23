@@ -307,7 +307,7 @@ class Main(QMainWindow):
         if reply == QMessageBox.Yes:
             # Reset
             self.experiment.dataframe = None
-            self.experiment.trial_dict = dict()
+            self.experiment.resetTrialDict()
             self.subject_datas = []
             self.subject_buttons = QButtonGroup()
             self.subject_buttons.setExclusive(True)

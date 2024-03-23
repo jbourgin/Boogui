@@ -131,6 +131,9 @@ class Exp(Experiment):
         return RectangleRegion(frame["pos"], frame["half_width"], frame["half_height"])
 
     def processTrial(self, subject: Subject, trial):
+        if trial.isEmpty():
+            logTrace ("Subject %i has no gaze positions at trial %i !" %(subject.id, trial.id), Precision.DETAIL)
+            return
         super().processTrial(subject, trial)
         targetName = trial.getStimulus()
 

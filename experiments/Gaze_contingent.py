@@ -119,12 +119,17 @@ class Exp(Experiment):
         return None
 
     def processTrial(self, subject: Subject, trial, filename = None):
+        if trial.isEmpty():
+            logTrace ("Subject %i has no gaze positions at trial %i !" %(subject.id, trial.id), Precision.DETAIL)
+            return
+        elif trial.saccades == []:
+            logTrace ("Subject %i has no saccades at trial %i !" %(subject.id, trial.id), Precision.DETAIL)
+            return
+
+        # Do processTrial of parent after making sure that the trial will be considered
         super().processTrial(subject, trial)
         start_trial_time = trial.getStartTrial().getTime()
 
-        if trial.saccades == []:
-            logTrace ("Subject %i has no saccades at trial %i !" %(subject.id, trial.id), Precision.DETAIL)
-            return
         first_saccade = trial.saccades[0].getStartTimeFromStartTrial()
 
         if trial.features['target_side'] == 'Left':

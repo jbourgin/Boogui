@@ -25,13 +25,14 @@ class Subject:
             try:
                 logTrace ('Checking trial validity', Precision.NORMAL)
                 trial.checkValid()
-                if not trial.isEmpty():
-                    if trial.isTraining():
-                        self.training_trials.append(trial)
-                    else:
-                        self.trials.append(trial)
-                        if progress != None:
-                            progress.increment(1)
+                # WARNING 20/03/24 : no longer exclude trials when no gaze data inside (to avoid skipping rows). We kept skipping rows on old experiments (Gaze, Engagement, Prosaccade, RPETE), inside processTrial
+                # if not trial.isEmpty():
+                if trial.isTraining():
+                    self.training_trials.append(trial)
+                else:
+                    self.trials.append(trial)
+                    if progress != None:
+                        progress.increment(1)
             except Exception as error:
                 print('%s skipped because of errors' % trial)
                 print(error)
